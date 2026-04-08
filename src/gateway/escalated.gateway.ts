@@ -103,4 +103,78 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
       });
     }
   }
+
+  // ── Live Chat ──
+
+  @SubscribeMessage('join:chat')
+  handleJoinChat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: number },
+  ): void {
+    client.join(`chat:${data.sessionId}`);
+    this.logger.log(`Client ${client.id} joined chat:${data.sessionId}`);
+  }
+
+  @SubscribeMessage('leave:chat')
+  handleLeaveChat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: number },
+  ): void {
+    client.leave(`chat:${data.sessionId}`);
+  }
+
+  @SubscribeMessage('join:chat-queue')
+  handleJoinChatQueue(@ConnectedSocket() client: Socket): void {
+    client.join('chat-queue');
+  }
+
+  @SubscribeMessage('chat:typing')
+  handleChatTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: number; userName: string },
+  ): void {
+    client.to(`chat:${data.sessionId}`).emit('chat:typing', {
+      sessionId: data.sessionId,
+      userName: data.userName,
+    });
+  }
+
+  @OnEvent(ESCALATED_EVENTS.CHAT_STARTED)
+  handleChatStarted(event: any): void {
+    this.server?.to('chat-queue').emit('chat:started', {
+      session: event.session,
+    });
+  }
+
+  @OnEvent(ESCALATED_EVENTS.CHAT_ACCEPTED)
+  handleChatAccepted(event: any): void {
+    const sessionId = event.session?.id;
+    if (sessionId) {
+      this.server?.to(`chat:${sessionId}`).emit('chat:accepted', {
+        session: event.session,
+        agentId: event.agentId,
+      });
+    }
+  }
+
+  @OnEvent(ESCALATED_EVENTS.CHAT_MESSAGE)
+  handleChatMessage(event: any): void {
+    const sessionId = event.session?.id;
+    if (sessionId) {
+      this.server?.to(`chat:${sessionId}`).emit('chat:message', {
+        reply: event.reply,
+        sessionId,
+      });
+    }
+  }
+
+  @OnEvent(ESCALATED_EVENTS.CHAT_ENDED)
+  handleChatEnded(event: any): void {
+    const sessionId = event.session?.id;
+    if (sessionId) {
+      this.server?.to(`chat:${sessionId}`).emit('chat:ended', {
+        session: event.session,
+      });
+    }
+  }
 }
