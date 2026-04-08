@@ -44,6 +44,8 @@ import {
   SavedView,
   KbCategory,
   KbArticle,
+  ChatSession,
+  ChatRoutingRule,
 } from './entities';
 
 // Services
@@ -72,6 +74,8 @@ import {
   TagService,
   SkillService,
   BusinessScheduleService,
+  ChatSessionService,
+  ChatRoutingService,
 } from './services';
 
 // Controllers
@@ -92,6 +96,8 @@ import { AdminTwoFactorController } from './controllers/admin/two-factor.control
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
 import { CustomerKnowledgeBaseController } from './controllers/customer/knowledge-base.controller';
 import { WidgetController } from './controllers/widget/widget.controller';
+import { AgentChatController } from './controllers/agent/chat.controller';
+import { WidgetChatController } from './controllers/widget/chat.controller';
 
 // Guards
 import { ApiTokenGuard } from './guards/api-token.guard';
@@ -140,6 +146,8 @@ const entities = [
   SavedView,
   KbCategory,
   KbArticle,
+  ChatSession,
+  ChatRoutingRule,
 ];
 
 const services = [
@@ -167,6 +175,8 @@ const services = [
   TagService,
   SkillService,
   BusinessScheduleService,
+  ChatSessionService,
+  ChatRoutingService,
 ];
 
 const controllers = [
@@ -187,6 +197,8 @@ const controllers = [
   CustomerTicketController,
   CustomerKnowledgeBaseController,
   WidgetController,
+  AgentChatController,
+  WidgetChatController,
 ];
 
 @Module({})

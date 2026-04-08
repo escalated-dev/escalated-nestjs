@@ -5,6 +5,7 @@ import { Repository, LessThanOrEqual } from 'typeorm';
 import { SlaService } from '../services/sla.service';
 import { EscalationService } from '../services/escalation.service';
 import { WebhookService } from '../services/webhook.service';
+import { ChatSessionService } from '../services/chat-session.service';
 import { Ticket } from '../entities/ticket.entity';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class EscalatedSchedulerService {
     private readonly slaService: SlaService,
     private readonly escalationService: EscalationService,
     private readonly webhookService: WebhookService,
+    private readonly chatSessionService: ChatSessionService,
     @InjectRepository(Ticket)
     private readonly ticketRepo: Repository<Ticket>,
   ) {}
@@ -67,6 +69,16 @@ export class EscalatedSchedulerService {
       await this.webhookService.retryFailedDeliveries(3);
     } catch (error) {
       this.logger.error('Error retrying webhook deliveries', error);
+    }
+  }
+
+  /** Clean up idle chat sessions every minute */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async cleanupIdleChatSessions(): Promise<void> {
+    try {
+      await this.chatSessionService.cleanupIdleSessions(30);
+    } catch (error) {
+      this.logger.error('Error cleaning up idle chat sessions', error);
     }
   }
 }

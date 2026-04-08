@@ -79,4 +79,8 @@ export const ESCALATED_EVENTS = {
   TICKET_SPLIT: 'escalated.ticket.split',
   SLA_BREACHED: 'escalated.sla.breached',
   WEBHOOK_DISPATCH: 'escalated.webhook.dispatch',
+  CHAT_STARTED: 'escalated.chat.started',
+  CHAT_ACCEPTED: 'escalated.chat.accepted',
+  CHAT_MESSAGE: 'escalated.chat.message',
+  CHAT_ENDED: 'escalated.chat.ended',
 } as const;

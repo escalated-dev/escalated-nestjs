@@ -30,3 +30,5 @@ export { EscalatedSettings } from './escalated-settings.entity';
 export { SavedView } from './saved-view.entity';
 export { KbCategory } from './kb-category.entity';
 export { KbArticle } from './kb-article.entity';
+export { ChatSession } from './chat-session.entity';
+export { ChatRoutingRule } from './chat-routing-rule.entity';
