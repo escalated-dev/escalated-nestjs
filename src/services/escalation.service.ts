@@ -66,11 +66,11 @@ export class EscalationService {
       .andWhere('ticket.isMerged = :isMerged', { isMerged: false });
 
     if (rule.triggerType === 'first_response_breach') {
-      qb.andWhere('ticket.firstResponseDueAt < :now', { now })
-        .andWhere('ticket.firstRespondedAt IS NULL');
+      qb.andWhere('ticket.firstResponseDueAt < :now', { now }).andWhere(
+        'ticket.firstRespondedAt IS NULL',
+      );
     } else if (rule.triggerType === 'resolution_breach') {
-      qb.andWhere('ticket.resolutionDueAt < :now', { now })
-        .andWhere('ticket.resolvedAt IS NULL');
+      qb.andWhere('ticket.resolutionDueAt < :now', { now }).andWhere('ticket.resolvedAt IS NULL');
     } else if (rule.triggerType === 'approaching_breach') {
       const threshold = new Date(now.getTime() + rule.minutesBefore * 60000);
       qb.andWhere('ticket.firstResponseDueAt <= :threshold', { threshold })

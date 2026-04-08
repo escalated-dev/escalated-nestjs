@@ -74,7 +74,7 @@ describe('WebhookService', () => {
 
   describe('getDeliveries', () => {
     it('should return webhook deliveries', async () => {
-      const result = await service.getDeliveries(1);
+      await service.getDeliveries(1);
       expect(deliveryRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({ where: { webhookId: 1 } }),
       );

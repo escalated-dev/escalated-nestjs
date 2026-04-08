@@ -61,7 +61,11 @@ export class ApiTokenService {
     if (!token) return null;
     if (token.expiresAt && new Date(token.expiresAt) < new Date()) return null;
 
-    if (requiredAbility && !token.abilities.includes('*') && !token.abilities.includes(requiredAbility)) {
+    if (
+      requiredAbility &&
+      !token.abilities.includes('*') &&
+      !token.abilities.includes(requiredAbility)
+    ) {
       return null;
     }
 

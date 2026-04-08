@@ -75,9 +75,9 @@ describe('CustomFieldService', () => {
     });
 
     it('should validate select field values', async () => {
-      await expect(
-        service.setValues('ticket', 1, { 1: 'InvalidOption' }),
-      ).rejects.toThrow('Invalid option');
+      await expect(service.setValues('ticket', 1, { 1: 'InvalidOption' })).rejects.toThrow(
+        'Invalid option',
+      );
     });
   });
 

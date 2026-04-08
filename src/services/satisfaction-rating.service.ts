@@ -54,7 +54,11 @@ export class SatisfactionRatingService {
     return rating;
   }
 
-  async submitByToken(token: string, ratingValue: number, comment?: string): Promise<SatisfactionRating> {
+  async submitByToken(
+    token: string,
+    ratingValue: number,
+    comment?: string,
+  ): Promise<SatisfactionRating> {
     const rating = await this.findByToken(token);
     rating.rating = ratingValue;
     if (comment) rating.comment = comment;

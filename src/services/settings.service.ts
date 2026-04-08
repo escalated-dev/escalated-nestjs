@@ -31,8 +31,13 @@ export class SettingsService {
     }
   }
 
-  async set(key: string, value: any, type: string = 'string', group: string = 'general'): Promise<EscalatedSettings> {
-    let setting = await this.settingsRepo.findOne({ where: { key } });
+  async set(
+    key: string,
+    value: any,
+    type: string = 'string',
+    group: string = 'general',
+  ): Promise<EscalatedSettings> {
+    const setting = await this.settingsRepo.findOne({ where: { key } });
 
     const stringValue = type === 'json' ? JSON.stringify(value) : String(value);
 
@@ -56,7 +61,9 @@ export class SettingsService {
     return this.settingsRepo.find({ where, order: { key: 'ASC' } });
   }
 
-  async setMany(settings: { key: string; value: any; type?: string; group?: string }[]): Promise<void> {
+  async setMany(
+    settings: { key: string; value: any; type?: string; group?: string }[],
+  ): Promise<void> {
     for (const s of settings) {
       await this.set(s.key, s.value, s.type || 'string', s.group || 'general');
     }

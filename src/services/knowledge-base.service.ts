@@ -130,7 +130,7 @@ export class KnowledgeBaseService {
   }
 
   async rateArticle(id: number, helpful: boolean): Promise<void> {
-    const article = await this.findArticleById(id);
+    await this.findArticleById(id);
     if (helpful) {
       await this.articleRepo.update(id, { helpfulCount: () => 'helpfulCount + 1' });
     } else {

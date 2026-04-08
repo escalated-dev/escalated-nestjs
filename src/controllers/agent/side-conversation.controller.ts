@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Req,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, ParseIntPipe } from '@nestjs/common';
 import { SideConversationService } from '../../services/side-conversation.service';
 
 @Controller('escalated/agent/tickets/:ticketId/side-conversations')

@@ -8,7 +8,7 @@ import { Reflector } from '@nestjs/core';
 describe('AgentTicketController', () => {
   let controller: AgentTicketController;
   let ticketService: any;
-  let replyService: any;
+  let _replyService: any;
 
   const mockTicket = {
     id: 1,
@@ -62,7 +62,7 @@ describe('AgentTicketController', () => {
 
     controller = module.get<AgentTicketController>(AgentTicketController);
     ticketService = module.get(TicketService);
-    replyService = module.get(ReplyService);
+    _replyService = module.get(ReplyService);
   });
 
   it('should be defined', () => {
@@ -89,10 +89,7 @@ describe('AgentTicketController', () => {
   describe('create', () => {
     it('should create a ticket', async () => {
       const req = { user: { id: 1 } };
-      const result = await controller.create(
-        { subject: 'Test', description: 'Desc' },
-        req,
-      );
+      const result = await controller.create({ subject: 'Test', description: 'Desc' }, req);
       expect(result).toEqual(mockTicket);
     });
   });

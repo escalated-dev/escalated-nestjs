@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Req,
-  ParseIntPipe,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Req, ParseIntPipe } from '@nestjs/common';
 import { MacroService } from '../../services/macro.service';
 import { CannedResponseService } from '../../services/canned-response.service';
 

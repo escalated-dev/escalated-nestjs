@@ -29,7 +29,12 @@ export class RoleService {
     return role;
   }
 
-  async create(data: { name: string; slug: string; description?: string; permissionIds?: number[] }): Promise<Role> {
+  async create(data: {
+    name: string;
+    slug: string;
+    description?: string;
+    permissionIds?: number[];
+  }): Promise<Role> {
     const role = this.roleRepo.create({
       name: data.name,
       slug: data.slug,

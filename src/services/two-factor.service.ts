@@ -13,7 +13,10 @@ export class TwoFactorService {
     private readonly agentProfileRepo: Repository<AgentProfile>,
   ) {}
 
-  async generateSecret(userId: number, appName: string = 'Escalated'): Promise<{
+  async generateSecret(
+    userId: number,
+    appName: string = 'Escalated',
+  ): Promise<{
     secret: string;
     qrCodeUrl: string;
     recoveryCodes: string[];
@@ -22,11 +25,7 @@ export class TwoFactorService {
     if (!profile) throw new BadRequestException('Agent profile not found');
 
     const secret = authenticator.generateSecret();
-    const otpauthUrl = authenticator.keyuri(
-      `user-${userId}`,
-      appName,
-      secret,
-    );
+    const otpauthUrl = authenticator.keyuri(`user-${userId}`, appName, secret);
     const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
 
     // Generate recovery codes

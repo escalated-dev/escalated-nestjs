@@ -57,10 +57,7 @@ export class ReplyService {
     return saved;
   }
 
-  async findByTicketId(
-    ticketId: number,
-    includeInternal: boolean = true,
-  ): Promise<Reply[]> {
+  async findByTicketId(ticketId: number, includeInternal: boolean = true): Promise<Reply[]> {
     const where: any = { ticketId };
     if (!includeInternal) {
       where.isInternal = false;

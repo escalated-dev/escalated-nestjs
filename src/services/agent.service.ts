@@ -90,7 +90,10 @@ export class AgentService {
     return capacity;
   }
 
-  async updateCapacity(agentProfileId: number, data: Partial<AgentCapacity>): Promise<AgentCapacity> {
+  async updateCapacity(
+    agentProfileId: number,
+    data: Partial<AgentCapacity>,
+  ): Promise<AgentCapacity> {
     const capacity = await this.getCapacity(agentProfileId);
     await this.capacityRepo.update(capacity.id, data);
     return this.getCapacity(agentProfileId);

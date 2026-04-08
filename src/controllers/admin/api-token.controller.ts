@@ -22,7 +22,10 @@ export class AdminApiTokenController {
   }
 
   @Post()
-  async create(@Body() body: { name: string; abilities?: string[]; expiresAt?: string }, @Req() req: any) {
+  async create(
+    @Body() body: { name: string; abilities?: string[]; expiresAt?: string },
+    @Req() req: any,
+  ) {
     const userId = req.user?.id || req.apiUserId || 1;
     return this.apiTokenService.create({
       name: body.name,

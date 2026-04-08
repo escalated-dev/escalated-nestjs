@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, In } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuidv4 } from 'uuid';
 import { Ticket } from '../entities/ticket.entity';
@@ -278,7 +278,8 @@ export class TicketService {
     }
     if ((dto as any).closedAt) updateData.closedAt = (dto as any).closedAt;
     if ((dto as any).resolvedAt) updateData.resolvedAt = (dto as any).resolvedAt;
-    if ((dto as any).snoozedUntil !== undefined) updateData.snoozedUntil = (dto as any).snoozedUntil;
+    if ((dto as any).snoozedUntil !== undefined)
+      updateData.snoozedUntil = (dto as any).snoozedUntil;
 
     if (Object.keys(updateData).length > 0) {
       await this.ticketRepo.update(id, updateData);

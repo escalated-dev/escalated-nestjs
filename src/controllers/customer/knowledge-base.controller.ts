@@ -26,10 +26,7 @@ export class CustomerKnowledgeBaseController {
   }
 
   @Post('articles/:id/rate')
-  async rateArticle(
-    @Param('id') id: number,
-    @Body('helpful') helpful: boolean,
-  ) {
+  async rateArticle(@Param('id') id: number, @Body('helpful') helpful: boolean) {
     await this.kbService.rateArticle(id, helpful);
     return { success: true };
   }

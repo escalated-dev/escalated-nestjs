@@ -5,7 +5,7 @@ import { TicketService } from '../../src/services/ticket.service';
 import { ReplyService } from '../../src/services/reply.service';
 import { KnowledgeBaseService } from '../../src/services/knowledge-base.service';
 import { SatisfactionRatingService } from '../../src/services/satisfaction-rating.service';
-import { GuestAccessGuard } from '../../src/guards/guest-access.guard';
+
 import { Ticket } from '../../src/entities/ticket.entity';
 
 describe('WidgetController', () => {
