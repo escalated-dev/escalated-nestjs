@@ -5,7 +5,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToMany,
   ManyToMany,
   JoinTable,
   JoinColumn,

@@ -64,7 +64,7 @@ export class CustomFieldService {
       // Validate value against field type
       this.validateValue(field, value);
 
-      let existing = await this.valueRepo.findOne({
+      const existing = await this.valueRepo.findOne({
         where: {
           customFieldId: field.id,
           entityType,

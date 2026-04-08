@@ -54,10 +54,7 @@ export class AdminAgentController {
   }
 
   @Put(':id/skills')
-  async setSkills(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('skillIds') skillIds: number[],
-  ) {
+  async setSkills(@Param('id', ParseIntPipe) id: number, @Body('skillIds') skillIds: number[]) {
     return this.agentService.setSkills(id, skillIds);
   }
 

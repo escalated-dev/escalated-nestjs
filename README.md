@@ -79,22 +79,22 @@ export class AppModule {}
 
 ### 2. Configuration options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `routePrefix` | `string` | `'escalated'` | URL prefix for all routes |
-| `enableWebsockets` | `boolean` | `false` | Enable Socket.IO real-time broadcasting |
-| `enableKnowledgeBase` | `boolean` | `true` | Enable KB articles and categories |
-| `enableCsat` | `boolean` | `true` | Enable satisfaction surveys |
-| `enable2fa` | `boolean` | `false` | Enable TOTP 2FA for agents |
-| `appName` | `string` | `'Escalated'` | Branding name for emails |
-| `appUrl` | `string` | -- | Base URL for links |
-| `maxFileSize` | `number` | `10485760` | Max upload size in bytes |
-| `webhookMaxRetries` | `number` | `3` | Webhook retry attempts |
-| `widgetOrigins` | `string[]` | `['*']` | CORS origins for widget |
-| `adminGuard` | `class` | -- | Custom guard for admin routes |
-| `agentGuard` | `class` | -- | Custom guard for agent routes |
-| `customerGuard` | `class` | -- | Custom guard for customer routes |
-| `userResolver` | `function` | -- | Extract user from request |
+| Option                | Type       | Default       | Description                             |
+| --------------------- | ---------- | ------------- | --------------------------------------- |
+| `routePrefix`         | `string`   | `'escalated'` | URL prefix for all routes               |
+| `enableWebsockets`    | `boolean`  | `false`       | Enable Socket.IO real-time broadcasting |
+| `enableKnowledgeBase` | `boolean`  | `true`        | Enable KB articles and categories       |
+| `enableCsat`          | `boolean`  | `true`        | Enable satisfaction surveys             |
+| `enable2fa`           | `boolean`  | `false`       | Enable TOTP 2FA for agents              |
+| `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
+| `appUrl`              | `string`   | --            | Base URL for links                      |
+| `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
+| `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
+| `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
+| `adminGuard`          | `class`    | --            | Custom guard for admin routes           |
+| `agentGuard`          | `class`    | --            | Custom guard for agent routes           |
+| `customerGuard`       | `class`    | --            | Custom guard for customer routes        |
+| `userResolver`        | `function` | --            | Extract user from request               |
 
 ### 3. Database migration
 
@@ -111,73 +111,73 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 
 ### Agent Routes (`/escalated/agent/`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/tickets` | List tickets with filters |
-| POST | `/tickets` | Create ticket |
-| GET | `/tickets/:id` | Show ticket with replies |
-| PUT | `/tickets/:id` | Update ticket |
-| DELETE | `/tickets/:id` | Delete ticket |
-| POST | `/tickets/:id/replies` | Add reply |
-| POST | `/tickets/:id/merge/:targetId` | Merge tickets |
-| POST | `/tickets/:id/split` | Split ticket |
-| POST | `/tickets/:id/snooze` | Snooze ticket |
-| GET | `/tickets/:ticketId/links` | List ticket links |
-| POST | `/tickets/:ticketId/links` | Link tickets |
-| GET | `/tickets/:ticketId/side-conversations` | List side conversations |
-| POST | `/tickets/:ticketId/side-conversations` | Create side conversation |
-| GET | `/macros` | List macros |
-| POST | `/macros/:macroId/execute/:ticketId` | Execute macro |
-| GET | `/canned-responses` | List canned responses |
-| GET | `/saved-views` | List saved views |
-| POST | `/saved-views` | Create saved view |
+| Method | Path                                    | Description               |
+| ------ | --------------------------------------- | ------------------------- |
+| GET    | `/tickets`                              | List tickets with filters |
+| POST   | `/tickets`                              | Create ticket             |
+| GET    | `/tickets/:id`                          | Show ticket with replies  |
+| PUT    | `/tickets/:id`                          | Update ticket             |
+| DELETE | `/tickets/:id`                          | Delete ticket             |
+| POST   | `/tickets/:id/replies`                  | Add reply                 |
+| POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
+| POST   | `/tickets/:id/split`                    | Split ticket              |
+| POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
+| GET    | `/tickets/:ticketId/links`              | List ticket links         |
+| POST   | `/tickets/:ticketId/links`              | Link tickets              |
+| GET    | `/tickets/:ticketId/side-conversations` | List side conversations   |
+| POST   | `/tickets/:ticketId/side-conversations` | Create side conversation  |
+| GET    | `/macros`                               | List macros               |
+| POST   | `/macros/:macroId/execute/:ticketId`    | Execute macro             |
+| GET    | `/canned-responses`                     | List canned responses     |
+| GET    | `/saved-views`                          | List saved views          |
+| POST   | `/saved-views`                          | Create saved view         |
 
 ### Admin Routes (`/escalated/admin/`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET/PUT | `/settings` | Manage settings |
-| CRUD | `/departments` | Manage departments |
-| CRUD | `/tags` | Manage tags |
-| CRUD | `/custom-fields` | Manage custom fields |
-| CRUD | `/roles` | Manage roles |
-| CRUD | `/sla/policies` | Manage SLA policies |
-| CRUD | `/sla/escalation-rules` | Manage escalation rules |
-| CRUD | `/sla/schedules` | Manage business schedules |
-| CRUD | `/webhooks` | Manage webhooks |
-| CRUD | `/api-tokens` | Manage API tokens |
-| CRUD | `/agents` | Manage agent profiles |
-| CRUD | `/macros` | Manage macros |
-| CRUD | `/canned-responses` | Manage canned responses |
-| CRUD | `/kb/categories` | Manage KB categories |
-| CRUD | `/kb/articles` | Manage KB articles |
-| POST | `/import/tickets` | Bulk import tickets |
-| POST | `/2fa/generate` | Generate 2FA secret |
-| POST | `/2fa/enable` | Enable 2FA |
-| GET | `/audit-logs` | View audit logs |
+| Method  | Path                    | Description               |
+| ------- | ----------------------- | ------------------------- |
+| GET/PUT | `/settings`             | Manage settings           |
+| CRUD    | `/departments`          | Manage departments        |
+| CRUD    | `/tags`                 | Manage tags               |
+| CRUD    | `/custom-fields`        | Manage custom fields      |
+| CRUD    | `/roles`                | Manage roles              |
+| CRUD    | `/sla/policies`         | Manage SLA policies       |
+| CRUD    | `/sla/escalation-rules` | Manage escalation rules   |
+| CRUD    | `/sla/schedules`        | Manage business schedules |
+| CRUD    | `/webhooks`             | Manage webhooks           |
+| CRUD    | `/api-tokens`           | Manage API tokens         |
+| CRUD    | `/agents`               | Manage agent profiles     |
+| CRUD    | `/macros`               | Manage macros             |
+| CRUD    | `/canned-responses`     | Manage canned responses   |
+| CRUD    | `/kb/categories`        | Manage KB categories      |
+| CRUD    | `/kb/articles`          | Manage KB articles        |
+| POST    | `/import/tickets`       | Bulk import tickets       |
+| POST    | `/2fa/generate`         | Generate 2FA secret       |
+| POST    | `/2fa/enable`           | Enable 2FA                |
+| GET     | `/audit-logs`           | View audit logs           |
 
 ### Customer Routes (`/escalated/customer/`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/tickets` | List own tickets |
-| POST | `/tickets` | Create ticket |
-| GET | `/tickets/:id` | View own ticket |
-| POST | `/tickets/:id/replies` | Reply to own ticket |
-| POST | `/tickets/:id/rate` | Submit CSAT rating |
-| GET | `/kb/categories` | Browse KB categories |
-| GET | `/kb/articles` | Browse KB articles |
-| GET | `/kb/search` | Search KB |
+| Method | Path                   | Description          |
+| ------ | ---------------------- | -------------------- |
+| GET    | `/tickets`             | List own tickets     |
+| POST   | `/tickets`             | Create ticket        |
+| GET    | `/tickets/:id`         | View own ticket      |
+| POST   | `/tickets/:id/replies` | Reply to own ticket  |
+| POST   | `/tickets/:id/rate`    | Submit CSAT rating   |
+| GET    | `/kb/categories`       | Browse KB categories |
+| GET    | `/kb/articles`         | Browse KB articles   |
+| GET    | `/kb/search`           | Search KB            |
 
 ### Widget Routes (`/escalated/widget/`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/tickets` | Create ticket (public) |
-| GET | `/tickets/:id` | View ticket (guest token) |
-| POST | `/tickets/:id/replies` | Reply (guest token) |
-| GET | `/kb/search` | Search KB |
-| POST | `/rate/:token` | Submit CSAT |
+| Method | Path                   | Description               |
+| ------ | ---------------------- | ------------------------- |
+| POST   | `/tickets`             | Create ticket (public)    |
+| GET    | `/tickets/:id`         | View ticket (guest token) |
+| POST   | `/tickets/:id/replies` | Reply (guest token)       |
+| GET    | `/kb/search`           | Search KB                 |
+| POST   | `/rate/:token`         | Submit CSAT               |
 
 ## Using Services Directly
 
@@ -229,7 +229,7 @@ Enable WebSocket broadcasting for live ticket updates:
 ```typescript
 EscalatedModule.forRoot({
   enableWebsockets: true,
-})
+});
 ```
 
 Client-side (Socket.IO):

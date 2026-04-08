@@ -203,9 +203,12 @@ describe('TicketService', () => {
   describe('merge', () => {
     it('should merge two tickets', async () => {
       const target = { ...mockTicket, id: 2, referenceNumber: 'TK-DEF456' };
-      ticketRepo.findOne.mockResolvedValueOnce(mockTicket).mockResolvedValueOnce(target).mockResolvedValue(target);
+      ticketRepo.findOne
+        .mockResolvedValueOnce(mockTicket)
+        .mockResolvedValueOnce(target)
+        .mockResolvedValue(target);
 
-      const result = await service.merge(1, 2, 1);
+      await service.merge(1, 2, 1);
 
       expect(ticketRepo.update).toHaveBeenCalledWith(1, {
         isMerged: true,

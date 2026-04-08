@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, IsNull, Not } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { SlaService } from '../services/sla.service';
 import { EscalationService } from '../services/escalation.service';
 import { WebhookService } from '../services/webhook.service';

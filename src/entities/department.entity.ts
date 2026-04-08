@@ -4,7 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
 
 @Entity('escalated_departments')

@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-  ParseIntPipe,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, HttpCode } from '@nestjs/common';
 import { TicketLinkService } from '../../services/ticket-link.service';
 
 @Controller('escalated/agent/tickets/:ticketId/links')

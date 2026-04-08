@@ -5,7 +5,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import * as crypto from 'crypto';
 import { Webhook } from '../entities/webhook.entity';
 import { WebhookDelivery } from '../entities/webhook-delivery.entity';
-import { ESCALATED_EVENTS, WebhookEvent } from '../events/escalated.events';
 
 @Injectable()
 export class WebhookService {

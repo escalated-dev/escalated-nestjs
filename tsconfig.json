@@ -19,8 +19,8 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"]
+  "include": ["src/**/*", "test/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
 }

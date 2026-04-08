@@ -226,11 +226,7 @@ export class EscalatedModule {
         AuditLogInterceptor,
         EscalatedSchedulerService,
       ],
-      exports: [
-        ...services,
-        optionsProvider,
-        TypeOrmModule,
-      ],
+      exports: [...services, optionsProvider, TypeOrmModule],
     };
   }
 }

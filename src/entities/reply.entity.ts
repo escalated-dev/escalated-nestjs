@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
 

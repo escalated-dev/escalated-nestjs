@@ -99,9 +99,7 @@ describe('AgentService', () => {
       await service.create({ userId: 10, displayName: 'New Agent' });
 
       expect(profileRepo.save).toHaveBeenCalled();
-      expect(capacityRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ maxTickets: 20 }),
-      );
+      expect(capacityRepo.save).toHaveBeenCalledWith(expect.objectContaining({ maxTickets: 20 }));
     });
   });
 

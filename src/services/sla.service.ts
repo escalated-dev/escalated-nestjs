@@ -157,21 +157,31 @@ export class SlaService {
 
   private getFirstResponseMinutes(policy: SlaPolicy, priority: string): number {
     switch (priority) {
-      case 'urgent': return policy.firstResponseUrgent;
-      case 'high': return policy.firstResponseHigh;
-      case 'medium': return policy.firstResponseMedium;
-      case 'low': return policy.firstResponseLow;
-      default: return policy.firstResponseMedium;
+      case 'urgent':
+        return policy.firstResponseUrgent;
+      case 'high':
+        return policy.firstResponseHigh;
+      case 'medium':
+        return policy.firstResponseMedium;
+      case 'low':
+        return policy.firstResponseLow;
+      default:
+        return policy.firstResponseMedium;
     }
   }
 
   private getResolutionMinutes(policy: SlaPolicy, priority: string): number {
     switch (priority) {
-      case 'urgent': return policy.resolutionUrgent;
-      case 'high': return policy.resolutionHigh;
-      case 'medium': return policy.resolutionMedium;
-      case 'low': return policy.resolutionLow;
-      default: return policy.resolutionMedium;
+      case 'urgent':
+        return policy.resolutionUrgent;
+      case 'high':
+        return policy.resolutionHigh;
+      case 'medium':
+        return policy.resolutionMedium;
+      case 'low':
+        return policy.resolutionLow;
+      default:
+        return policy.resolutionMedium;
     }
   }
 
