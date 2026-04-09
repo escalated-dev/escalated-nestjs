@@ -42,7 +42,10 @@ describe('AdvancedReportingService', () => {
 
   describe('calculateChanges', () => {
     it('computes percentage changes', () => {
-      const changes = service.calculateChanges({ total_created: 100, total_resolved: 80, resolution_rate: 80 }, { total_created: 50, total_resolved: 40, resolution_rate: 80 });
+      const changes = service.calculateChanges(
+        { total_created: 100, total_resolved: 80, resolution_rate: 80 },
+        { total_created: 50, total_resolved: 40, resolution_rate: 80 },
+      );
       expect(changes.total_created).toBe(100);
     });
   });
