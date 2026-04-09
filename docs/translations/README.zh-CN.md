@@ -17,36 +17,36 @@
 
 # @escalated-dev/escalated-nestjs
 
-Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
+NestJS 应用程序的嵌入式帮助台模块。即插即用的工单系统、SLA 管理、知识库等。
 
-## 功能特性
+## 功能
 
-- **Ticket Management** -- Full CRUD with lifecycle tracking, priorities, departments, tags, and custom fields
-- **SLA Policies** -- Configurable response/resolution targets with business hours support
-- **Automations** -- Time-based processing via `@nestjs/schedule` (SLA checks, snooze wake-up, webhook retries)
-- **Escalation Rules** -- Automatic reassignment and notifications on SLA breach
-- **Macros & Canned Responses** -- One-click multi-action macros and templated replies
-- **Custom Fields** -- Dynamic fields with validation (text, number, select, checkbox, date)
-- **Knowledge Base** -- Articles with categories, search, view tracking, and helpfulness ratings
-- **Webhooks** -- HMAC-signed delivery with exponential backoff retry
-- **API Tokens** -- Bearer token authentication with scoped abilities
-- **Roles & Permissions** -- Granular permission system with NestJS guards
-- **Audit Logging** -- Interceptor-based activity tracking for all mutations
-- **Import System** -- Bulk import for tickets, tags, and departments
-- **Side Conversations** -- Threaded discussions within a ticket
-- **Ticket Merging & Linking** -- Merge duplicates, link related tickets
-- **Ticket Splitting** -- Break a ticket into separate issues
-- **Ticket Snooze** -- Snooze with automatic wake-up via cron
-- **Saved Views** -- Personal and shared filtered views
-- **Widget API** -- Public endpoints for embeddable support widget with rate limiting
-- **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
-- **Capacity Management** -- Per-agent ticket limits with real-time tracking
-- **Skill-based Routing** -- Assign tickets based on agent skills and availability
-- **CSAT Ratings** -- Post-resolution satisfaction surveys with token-based submission
-- **2FA (TOTP)** -- Two-factor authentication for agents via `otplib`
-- **Guest Access** -- Token-based ticket access without authentication
+- **Ticket Management** -- 通过生命周期跟踪、优先级、部门、标签和自定义字段实现完整管理
+- **SLA Policies** -- 可配置的响应/解决目标，支持工作时间
+- **Automations** -- 通过 `@nestjs/schedule` 进行基于时间的处理（SLA 检查、休眠唤醒、Webhook 重试）
+- **Escalation Rules** -- SLA 违规时自动重新分配和通知
+- **Macros & Canned Responses** -- 一键多操作宏和模板回复
+- **Custom Fields** -- 带验证的动态字段（文本、数字、选择、复选框、日期）
+- **Knowledge Base** -- 带分类、搜索、浏览跟踪和有用性评分的文章
+- **Webhooks** -- 带指数退避重试的 HMAC 签名交付
+- **API Tokens** -- 具有范围权限的 Bearer 令牌认证
+- **Roles & Permissions** -- 使用 NestJS 守卫的细粒度权限系统
+- **Audit Logging** -- 基于拦截器的所有变更活动跟踪
+- **Import System** -- 工单、标签和部门的批量导入
+- **Side Conversations** -- 工单内的线程讨论
+- **Ticket Merging & Linking** -- 合并重复项，链接相关工单
+- **Ticket Splitting** -- 将工单拆分为独立问题
+- **Ticket Snooze** -- 通过 cron 自动唤醒的休眠
+- **Saved Views** -- 个人和共享的过滤视图
+- **Widget API** -- 带速率限制的可嵌入式支持小部件公共端点
+- **Real-time Broadcasting** -- 用于实时更新的 Socket.IO 网关（可选启用）
+- **Capacity Management** -- 带实时跟踪的每个客服人员工单限制
+- **Skill-based Routing** -- 根据客服人员技能和可用性分配工单
+- **CSAT Ratings** -- 基于令牌提交的解决后满意度调查
+- **2FA (TOTP)** -- 通过 `otplib` 为客服人员提供双因素认证
+- **Guest Access** -- 无需认证的基于令牌的工单访问
 
-## 系统要求
+## 要求
 
 - Node.js 18+
 - NestJS 10+
@@ -61,7 +61,7 @@ npm install @escalated-dev/escalated-nestjs
 
 ## 设置
 
-### 1. Import the module
+### 1. 导入模块
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -94,111 +94,111 @@ import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
 export class AppModule {}
 ```
 
-### 2. Configuration options
+### 2. 配置选项
 
-| Option                | Type       | Default       | Description                             |
+| Option                | Type       | Default       | 描述                             |
 | --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | URL prefix for all routes               |
-| `enableWebsockets`    | `boolean`  | `false`       | Enable Socket.IO real-time broadcasting |
-| `enableKnowledgeBase` | `boolean`  | `true`        | Enable KB articles and categories       |
-| `enableCsat`          | `boolean`  | `true`        | Enable satisfaction surveys             |
-| `enable2fa`           | `boolean`  | `false`       | Enable TOTP 2FA for agents              |
-| `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
-| `appUrl`              | `string`   | --            | Base URL for links                      |
-| `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
-| `adminGuard`          | `class`    | --            | Custom guard for admin routes           |
-| `agentGuard`          | `class`    | --            | Custom guard for agent routes           |
-| `customerGuard`       | `class`    | --            | Custom guard for customer routes        |
-| `userResolver`        | `function` | --            | Extract user from request               |
+| `routePrefix`         | `string`   | `'escalated'` | 所有路由的 URL 前缀               |
+| `enableWebsockets`    | `boolean`  | `false`       | 启用 Socket.IO 实时广播 |
+| `enableKnowledgeBase` | `boolean`  | `true`        | 启用知识库文章和分类       |
+| `enableCsat`          | `boolean`  | `true`        | 启用满意度调查             |
+| `enable2fa`           | `boolean`  | `false`       | 为客服人员启用 TOTP 2FA              |
+| `appName`             | `string`   | `'Escalated'` | 电子邮件品牌名称                |
+| `appUrl`              | `string`   | --            | 链接的基本 URL                      |
+| `maxFileSize`         | `number`   | `10485760`    | 最大上传大小（字节）                |
+| `webhookMaxRetries`   | `number`   | `3`           | Webhook 重试次数                  |
+| `widgetOrigins`       | `string[]` | `['*']`       | 小部件的 CORS 来源                 |
+| `adminGuard`          | `class`    | --            | 管理员路由的自定义守卫           |
+| `agentGuard`          | `class`    | --            | 客服人员路由的自定义守卫           |
+| `customerGuard`       | `class`    | --            | 客户路由的自定义守卫        |
+| `userResolver`        | `function` | --            | 从请求中提取用户               |
 
-### 3. Database migration
+### 3. 数据库迁移
 
-With `synchronize: true`, TypeORM auto-creates tables. For production, generate migrations:
+使用 `synchronize: true` 时，TypeORM 会自动创建表。对于生产环境，请生成迁移：
 
 ```bash
 npx typeorm migration:generate -n EscalatedSetup
 npx typeorm migration:run
 ```
 
-All tables are prefixed with `escalated_` to avoid conflicts.
+所有表都以 `escalated_` 为前缀以避免冲突。
 
-## API Endpoints
+## API 端点
 
 ### Agent Routes (`/escalated/agent/`)
 
-| Method | Path                                    | Description               |
+| 方法 | 路径 | 描述 |
 | ------ | --------------------------------------- | ------------------------- |
-| GET    | `/tickets`                              | List tickets with filters |
-| POST   | `/tickets`                              | Create ticket             |
-| GET    | `/tickets/:id`                          | Show ticket with replies  |
-| PUT    | `/tickets/:id`                          | Update ticket             |
-| DELETE | `/tickets/:id`                          | Delete ticket             |
-| POST   | `/tickets/:id/replies`                  | Add reply                 |
-| POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
-| POST   | `/tickets/:id/split`                    | Split ticket              |
-| POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
-| GET    | `/tickets/:ticketId/links`              | List ticket links         |
-| POST   | `/tickets/:ticketId/links`              | Link tickets              |
-| GET    | `/tickets/:ticketId/side-conversations` | List side conversations   |
-| POST   | `/tickets/:ticketId/side-conversations` | Create side conversation  |
-| GET    | `/macros`                               | List macros               |
-| POST   | `/macros/:macroId/execute/:ticketId`    | Execute macro             |
-| GET    | `/canned-responses`                     | List canned responses     |
-| GET    | `/saved-views`                          | List saved views          |
-| POST   | `/saved-views`                          | Create saved view         |
+| GET | `/tickets` | 列出带过滤器的工单 |
+| POST | `/tickets` | 创建工单 |
+| GET | `/tickets/:id` | 显示带回复的工单 |
+| PUT | `/tickets/:id` | 更新工单 |
+| DELETE | `/tickets/:id` | 删除工单 |
+| POST | `/tickets/:id/replies` | 添加回复 |
+| POST | `/tickets/:id/merge/:targetId` | 合并工单 |
+| POST | `/tickets/:id/split` | 拆分工单 |
+| POST | `/tickets/:id/snooze` | 休眠工单 |
+| GET | `/tickets/:ticketId/links` | 列出工单链接 |
+| POST | `/tickets/:ticketId/links` | 链接工单 |
+| GET | `/tickets/:ticketId/side-conversations` | 列出侧边对话 |
+| POST | `/tickets/:ticketId/side-conversations` | 创建侧边对话 |
+| GET | `/macros` | 列出宏 |
+| POST | `/macros/:macroId/execute/:ticketId` | 执行宏 |
+| GET | `/canned-responses` | 列出预设回复 |
+| GET | `/saved-views` | 列出已保存视图 |
+| POST | `/saved-views` | 创建已保存视图 |
 
 ### Admin Routes (`/escalated/admin/`)
 
-| Method  | Path                    | Description               |
-| ------- | ----------------------- | ------------------------- |
-| GET/PUT | `/settings`             | Manage settings           |
-| CRUD    | `/departments`          | Manage departments        |
-| CRUD    | `/tags`                 | Manage tags               |
-| CRUD    | `/custom-fields`        | Manage custom fields      |
-| CRUD    | `/roles`                | Manage roles              |
-| CRUD    | `/sla/policies`         | Manage SLA policies       |
-| CRUD    | `/sla/escalation-rules` | Manage escalation rules   |
-| CRUD    | `/sla/schedules`        | Manage business schedules |
-| CRUD    | `/webhooks`             | Manage webhooks           |
-| CRUD    | `/api-tokens`           | Manage API tokens         |
-| CRUD    | `/agents`               | Manage agent profiles     |
-| CRUD    | `/macros`               | Manage macros             |
-| CRUD    | `/canned-responses`     | Manage canned responses   |
-| CRUD    | `/kb/categories`        | Manage KB categories      |
-| CRUD    | `/kb/articles`          | Manage KB articles        |
-| POST    | `/import/tickets`       | Bulk import tickets       |
-| POST    | `/2fa/generate`         | Generate 2FA secret       |
-| POST    | `/2fa/enable`           | Enable 2FA                |
-| GET     | `/audit-logs`           | View audit logs           |
+| 方法 | 路径 | 描述 |
+| ------ | --------------------------------------- | ------------------------- |
+| GET/PUT | `/settings` | 管理设置 |
+| CRUD | `/departments` | 管理部门 |
+| CRUD | `/tags` | 管理标签 |
+| CRUD | `/custom-fields` | 管理自定义字段 |
+| CRUD | `/roles` | 管理角色 |
+| CRUD | `/sla/policies` | 管理 SLA 策略 |
+| CRUD | `/sla/escalation-rules` | 管理升级规则 |
+| CRUD | `/sla/schedules` | 管理业务日程 |
+| CRUD | `/webhooks` | 管理 Webhooks |
+| CRUD | `/api-tokens` | 管理 API 令牌 |
+| CRUD | `/agents` | 管理客服人员资料 |
+| CRUD | `/macros` | 管理宏 |
+| CRUD | `/canned-responses` | 管理预设回复 |
+| CRUD | `/kb/categories` | 管理知识库分类 |
+| CRUD | `/kb/articles` | 管理知识库文章 |
+| POST | `/import/tickets` | 批量导入工单 |
+| POST | `/2fa/generate` | 生成 2FA 密钥 |
+| POST | `/2fa/enable` | 启用 2FA |
+| GET | `/audit-logs` | 查看审计日志 |
 
 ### Customer Routes (`/escalated/customer/`)
 
-| Method | Path                   | Description          |
-| ------ | ---------------------- | -------------------- |
-| GET    | `/tickets`             | List own tickets     |
-| POST   | `/tickets`             | Create ticket        |
-| GET    | `/tickets/:id`         | View own ticket      |
-| POST   | `/tickets/:id/replies` | Reply to own ticket  |
-| POST   | `/tickets/:id/rate`    | Submit CSAT rating   |
-| GET    | `/kb/categories`       | Browse KB categories |
-| GET    | `/kb/articles`         | Browse KB articles   |
-| GET    | `/kb/search`           | Search KB            |
+| 方法 | 路径 | 描述 |
+| ------ | --------------------------------------- | ------------------------- |
+| GET | `/tickets` | 列出自己的工单 |
+| POST | `/tickets` | 创建工单 |
+| GET | `/tickets/:id` | 查看自己的工单 |
+| POST | `/tickets/:id/replies` | 回复自己的工单 |
+| POST | `/tickets/:id/rate` | 提交 CSAT 评分 |
+| GET | `/kb/categories` | 浏览知识库分类 |
+| GET | `/kb/articles` | 浏览知识库文章 |
+| GET | `/kb/search` | 搜索知识库 |
 
 ### Widget Routes (`/escalated/widget/`)
 
-| Method | Path                   | Description               |
-| ------ | ---------------------- | ------------------------- |
-| POST   | `/tickets`             | Create ticket (public)    |
-| GET    | `/tickets/:id`         | View ticket (guest token) |
-| POST   | `/tickets/:id/replies` | Reply (guest token)       |
-| GET    | `/kb/search`           | Search KB                 |
-| POST   | `/rate/:token`         | Submit CSAT               |
+| 方法 | 路径 | 描述 |
+| ------ | --------------------------------------- | ------------------------- |
+| POST | `/tickets` | 创建工单（公开） |
+| GET | `/tickets/:id` | 查看工单（访客令牌） |
+| POST | `/tickets/:id/replies` | 回复（访客令牌） |
+| GET | `/kb/search` | 搜索知识库 |
+| POST | `/rate/:token` | 提交 CSAT |
 
-## Using Services Directly
+## 直接使用服务
 
-All services are exported and can be injected into your own code:
+所有服务均已导出，可以注入到您自己的代码中：
 
 ```typescript
 import { Injectable } from '@nestjs/common';
@@ -222,7 +222,7 @@ export class MyService {
 
 ## 事件
 
-The module emits events via `@nestjs/event-emitter`:
+该模块通过 `@nestjs/event-emitter` 发出事件：
 
 ```typescript
 import { OnEvent } from '@nestjs/event-emitter';
@@ -239,9 +239,9 @@ export class NotificationService {
 
 Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
 
-## Real-time Updates
+## 实时更新
 
-Enable WebSocket broadcasting for live ticket updates:
+启用 WebSocket 广播以实现实时工单更新：
 
 ```typescript
 EscalatedModule.forRoot({
@@ -258,7 +258,7 @@ socket.on('ticket:updated', (data) => console.log('Updated:', data));
 socket.on('ticket:reply', (data) => console.log('New reply:', data));
 ```
 
-## Development
+## 开发
 
 ```bash
 git clone https://github.com/escalated-dev/escalated-nestjs.git
@@ -268,9 +268,9 @@ npm test
 npm run build
 ```
 
-## TypeORM Entities
+## TypeORM 实体
 
-All 32 entities are exported and prefixed with `escalated_`:
+所有 32 个实体均已导出并以 `escalated_` 为前缀：
 
 **Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
 
