@@ -17,34 +17,34 @@
 
 # @escalated-dev/escalated-nestjs
 
-Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
+Встроенный модуль helpdesk для приложений NestJS. Готовая система тикетов, управление SLA, база знаний и многое другое.
 
 ## Возможности
 
-- **Ticket Management** -- Full CRUD with lifecycle tracking, priorities, departments, tags, and custom fields
-- **SLA Policies** -- Configurable response/resolution targets with business hours support
-- **Automations** -- Time-based processing via `@nestjs/schedule` (SLA checks, snooze wake-up, webhook retries)
-- **Escalation Rules** -- Automatic reassignment and notifications on SLA breach
-- **Macros & Canned Responses** -- One-click multi-action macros and templated replies
-- **Custom Fields** -- Dynamic fields with validation (text, number, select, checkbox, date)
-- **Knowledge Base** -- Articles with categories, search, view tracking, and helpfulness ratings
-- **Webhooks** -- HMAC-signed delivery with exponential backoff retry
-- **API Tokens** -- Bearer token authentication with scoped abilities
-- **Roles & Permissions** -- Granular permission system with NestJS guards
-- **Audit Logging** -- Interceptor-based activity tracking for all mutations
-- **Import System** -- Bulk import for tickets, tags, and departments
-- **Side Conversations** -- Threaded discussions within a ticket
-- **Ticket Merging & Linking** -- Merge duplicates, link related tickets
-- **Ticket Splitting** -- Break a ticket into separate issues
-- **Ticket Snooze** -- Snooze with automatic wake-up via cron
-- **Saved Views** -- Personal and shared filtered views
-- **Widget API** -- Public endpoints for embeddable support widget with rate limiting
-- **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
-- **Capacity Management** -- Per-agent ticket limits with real-time tracking
-- **Skill-based Routing** -- Assign tickets based on agent skills and availability
-- **CSAT Ratings** -- Post-resolution satisfaction surveys with token-based submission
-- **2FA (TOTP)** -- Two-factor authentication for agents via `otplib`
-- **Guest Access** -- Token-based ticket access without authentication
+- **Ticket Management** -- Полное управление с отслеживанием жизненного цикла, приоритетами, отделами, тегами и пользовательскими полями
+- **SLA Policies** -- Настраиваемые цели ответа/решения с поддержкой рабочего времени
+- **Automations** -- Временная обработка через `@nestjs/schedule` (проверки SLA, пробуждение откладывания, повторы webhook)
+- **Escalation Rules** -- Автоматическое переназначение и уведомления при нарушении SLA
+- **Macros & Canned Responses** -- Макросы с несколькими действиями в один клик и шаблонные ответы
+- **Custom Fields** -- Динамические поля с валидацией (текст, число, выбор, чекбокс, дата)
+- **Knowledge Base** -- Статьи с категориями, поиском, отслеживанием просмотров и оценками полезности
+- **Webhooks** -- HMAC-подписанная доставка с экспоненциальным откатом повторов
+- **API Tokens** -- Аутентификация Bearer-токенами с ограниченными правами
+- **Roles & Permissions** -- Детальная система разрешений с guards NestJS
+- **Audit Logging** -- Отслеживание активности на основе перехватчиков для всех мутаций
+- **Import System** -- Массовый импорт заявок, тегов и отделов
+- **Side Conversations** -- Обсуждения в потоках внутри заявки
+- **Ticket Merging & Linking** -- Объединение дубликатов, связывание связанных заявок
+- **Ticket Splitting** -- Разделение заявки на отдельные проблемы
+- **Ticket Snooze** -- Откладывание с автоматическим пробуждением через cron
+- **Saved Views** -- Личные и общие фильтрованные представления
+- **Widget API** -- Публичные эндпоинты для встраиваемого виджета поддержки с ограничением скорости
+- **Real-time Broadcasting** -- Шлюз Socket.IO для обновлений в реальном времени (опционально)
+- **Capacity Management** -- Ограничения заявок на агента с отслеживанием в реальном времени
+- **Skill-based Routing** -- Назначение заявок на основе навыков и доступности агентов
+- **CSAT Ratings** -- Опросы удовлетворённости после решения с отправкой по токену
+- **2FA (TOTP)** -- Двухфакторная аутентификация для агентов через `otplib`
+- **Guest Access** -- Доступ к заявкам по токену без аутентификации
 
 ## Требования
 
@@ -61,7 +61,7 @@ npm install @escalated-dev/escalated-nestjs
 
 ## Настройка
 
-### 1. Import the module
+### 1. Импорт модуля
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -94,111 +94,111 @@ import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
 export class AppModule {}
 ```
 
-### 2. Configuration options
+### 2. Параметры конфигурации
 
-| Option                | Type       | Default       | Description                             |
+| Option                | Type       | Default       | Описание                             |
 | --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | URL prefix for all routes               |
-| `enableWebsockets`    | `boolean`  | `false`       | Enable Socket.IO real-time broadcasting |
-| `enableKnowledgeBase` | `boolean`  | `true`        | Enable KB articles and categories       |
-| `enableCsat`          | `boolean`  | `true`        | Enable satisfaction surveys             |
-| `enable2fa`           | `boolean`  | `false`       | Enable TOTP 2FA for agents              |
-| `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
-| `appUrl`              | `string`   | --            | Base URL for links                      |
-| `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
-| `adminGuard`          | `class`    | --            | Custom guard for admin routes           |
-| `agentGuard`          | `class`    | --            | Custom guard for agent routes           |
-| `customerGuard`       | `class`    | --            | Custom guard for customer routes        |
-| `userResolver`        | `function` | --            | Extract user from request               |
+| `routePrefix`         | `string`   | `'escalated'` | URL-префикс для всех маршрутов               |
+| `enableWebsockets`    | `boolean`  | `false`       | Включить Socket.IO вещание в реальном времени |
+| `enableKnowledgeBase` | `boolean`  | `true`        | Включить статьи и категории базы знаний       |
+| `enableCsat`          | `boolean`  | `true`        | Включить опросы удовлетворённости             |
+| `enable2fa`           | `boolean`  | `false`       | Включить TOTP 2FA для агентов              |
+| `appName`             | `string`   | `'Escalated'` | Название бренда для писем                |
+| `appUrl`              | `string`   | --            | Базовый URL для ссылок                      |
+| `maxFileSize`         | `number`   | `10485760`    | Макс. размер загрузки в байтах                |
+| `webhookMaxRetries`   | `number`   | `3`           | Количество повторов webhook                  |
+| `widgetOrigins`       | `string[]` | `['*']`       | CORS-источники для виджета                 |
+| `adminGuard`          | `class`    | --            | Пользовательский guard для маршрутов администратора           |
+| `agentGuard`          | `class`    | --            | Пользовательский guard для маршрутов агента           |
+| `customerGuard`       | `class`    | --            | Пользовательский guard для маршрутов клиента        |
+| `userResolver`        | `function` | --            | Извлечь пользователя из запроса               |
 
-### 3. Database migration
+### 3. Миграция базы данных
 
-With `synchronize: true`, TypeORM auto-creates tables. For production, generate migrations:
+С `synchronize: true` TypeORM автоматически создаёт таблицы. Для продакшена сгенерируйте миграции:
 
 ```bash
 npx typeorm migration:generate -n EscalatedSetup
 npx typeorm migration:run
 ```
 
-All tables are prefixed with `escalated_` to avoid conflicts.
+Все таблицы имеют префикс `escalated_` во избежание конфликтов.
 
-## API Endpoints
+## Эндпоинты API
 
 ### Agent Routes (`/escalated/agent/`)
 
-| Method | Path                                    | Description               |
+| Метод | Путь | Описание |
 | ------ | --------------------------------------- | ------------------------- |
-| GET    | `/tickets`                              | List tickets with filters |
-| POST   | `/tickets`                              | Create ticket             |
-| GET    | `/tickets/:id`                          | Show ticket with replies  |
-| PUT    | `/tickets/:id`                          | Update ticket             |
-| DELETE | `/tickets/:id`                          | Delete ticket             |
-| POST   | `/tickets/:id/replies`                  | Add reply                 |
-| POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
-| POST   | `/tickets/:id/split`                    | Split ticket              |
-| POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
-| GET    | `/tickets/:ticketId/links`              | List ticket links         |
-| POST   | `/tickets/:ticketId/links`              | Link tickets              |
-| GET    | `/tickets/:ticketId/side-conversations` | List side conversations   |
-| POST   | `/tickets/:ticketId/side-conversations` | Create side conversation  |
-| GET    | `/macros`                               | List macros               |
-| POST   | `/macros/:macroId/execute/:ticketId`    | Execute macro             |
-| GET    | `/canned-responses`                     | List canned responses     |
-| GET    | `/saved-views`                          | List saved views          |
-| POST   | `/saved-views`                          | Create saved view         |
+| GET | `/tickets` | Список заявок с фильтрами |
+| POST | `/tickets` | Создать заявку |
+| GET | `/tickets/:id` | Показать заявку с ответами |
+| PUT | `/tickets/:id` | Обновить заявку |
+| DELETE | `/tickets/:id` | Удалить заявку |
+| POST | `/tickets/:id/replies` | Добавить ответ |
+| POST | `/tickets/:id/merge/:targetId` | Объединить заявки |
+| POST | `/tickets/:id/split` | Разделить заявку |
+| POST | `/tickets/:id/snooze` | Отложить заявку |
+| GET | `/tickets/:ticketId/links` | Список связей заявок |
+| POST | `/tickets/:ticketId/links` | Связать заявки |
+| GET | `/tickets/:ticketId/side-conversations` | Список побочных бесед |
+| POST | `/tickets/:ticketId/side-conversations` | Создать побочную беседу |
+| GET | `/macros` | Список макросов |
+| POST | `/macros/:macroId/execute/:ticketId` | Выполнить макрос |
+| GET | `/canned-responses` | Список шаблонов ответов |
+| GET | `/saved-views` | Список сохранённых представлений |
+| POST | `/saved-views` | Создать сохранённое представление |
 
 ### Admin Routes (`/escalated/admin/`)
 
-| Method  | Path                    | Description               |
-| ------- | ----------------------- | ------------------------- |
-| GET/PUT | `/settings`             | Manage settings           |
-| CRUD    | `/departments`          | Manage departments        |
-| CRUD    | `/tags`                 | Manage tags               |
-| CRUD    | `/custom-fields`        | Manage custom fields      |
-| CRUD    | `/roles`                | Manage roles              |
-| CRUD    | `/sla/policies`         | Manage SLA policies       |
-| CRUD    | `/sla/escalation-rules` | Manage escalation rules   |
-| CRUD    | `/sla/schedules`        | Manage business schedules |
-| CRUD    | `/webhooks`             | Manage webhooks           |
-| CRUD    | `/api-tokens`           | Manage API tokens         |
-| CRUD    | `/agents`               | Manage agent profiles     |
-| CRUD    | `/macros`               | Manage macros             |
-| CRUD    | `/canned-responses`     | Manage canned responses   |
-| CRUD    | `/kb/categories`        | Manage KB categories      |
-| CRUD    | `/kb/articles`          | Manage KB articles        |
-| POST    | `/import/tickets`       | Bulk import tickets       |
-| POST    | `/2fa/generate`         | Generate 2FA secret       |
-| POST    | `/2fa/enable`           | Enable 2FA                |
-| GET     | `/audit-logs`           | View audit logs           |
+| Метод | Путь | Описание |
+| ------ | --------------------------------------- | ------------------------- |
+| GET/PUT | `/settings` | Управление настройками |
+| CRUD | `/departments` | Управление отделами |
+| CRUD | `/tags` | Управление тегами |
+| CRUD | `/custom-fields` | Управление пользовательскими полями |
+| CRUD | `/roles` | Управление ролями |
+| CRUD | `/sla/policies` | Управление политиками SLA |
+| CRUD | `/sla/escalation-rules` | Управление правилами эскалации |
+| CRUD | `/sla/schedules` | Управление расписаниями |
+| CRUD | `/webhooks` | Управление вебхуками |
+| CRUD | `/api-tokens` | Управление API-токенами |
+| CRUD | `/agents` | Управление профилями агентов |
+| CRUD | `/macros` | Управление макросами |
+| CRUD | `/canned-responses` | Управление шаблонами ответов |
+| CRUD | `/kb/categories` | Управление категориями базы знаний |
+| CRUD | `/kb/articles` | Управление статьями базы знаний |
+| POST | `/import/tickets` | Массовый импорт заявок |
+| POST | `/2fa/generate` | Генерация секрета 2FA |
+| POST | `/2fa/enable` | Включение 2FA |
+| GET | `/audit-logs` | Просмотр журналов аудита |
 
 ### Customer Routes (`/escalated/customer/`)
 
-| Method | Path                   | Description          |
-| ------ | ---------------------- | -------------------- |
-| GET    | `/tickets`             | List own tickets     |
-| POST   | `/tickets`             | Create ticket        |
-| GET    | `/tickets/:id`         | View own ticket      |
-| POST   | `/tickets/:id/replies` | Reply to own ticket  |
-| POST   | `/tickets/:id/rate`    | Submit CSAT rating   |
-| GET    | `/kb/categories`       | Browse KB categories |
-| GET    | `/kb/articles`         | Browse KB articles   |
-| GET    | `/kb/search`           | Search KB            |
+| Метод | Путь | Описание |
+| ------ | --------------------------------------- | ------------------------- |
+| GET | `/tickets` | Список своих заявок |
+| POST | `/tickets` | Создать заявку |
+| GET | `/tickets/:id` | Просмотр своей заявки |
+| POST | `/tickets/:id/replies` | Ответ на свою заявку |
+| POST | `/tickets/:id/rate` | Отправка оценки CSAT |
+| GET | `/kb/categories` | Просмотр категорий базы знаний |
+| GET | `/kb/articles` | Просмотр статей базы знаний |
+| GET | `/kb/search` | Поиск по базе знаний |
 
 ### Widget Routes (`/escalated/widget/`)
 
-| Method | Path                   | Description               |
-| ------ | ---------------------- | ------------------------- |
-| POST   | `/tickets`             | Create ticket (public)    |
-| GET    | `/tickets/:id`         | View ticket (guest token) |
-| POST   | `/tickets/:id/replies` | Reply (guest token)       |
-| GET    | `/kb/search`           | Search KB                 |
-| POST   | `/rate/:token`         | Submit CSAT               |
+| Метод | Путь | Описание |
+| ------ | --------------------------------------- | ------------------------- |
+| POST | `/tickets` | Создать заявку (публичную) |
+| GET | `/tickets/:id` | Просмотр заявки (гостевой токен) |
+| POST | `/tickets/:id/replies` | Ответ (гостевой токен) |
+| GET | `/kb/search` | Поиск по базе знаний |
+| POST | `/rate/:token` | Отправить CSAT |
 
-## Using Services Directly
+## Прямое использование сервисов
 
-All services are exported and can be injected into your own code:
+Все сервисы экспортированы и могут быть внедрены в ваш собственный код:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
@@ -222,7 +222,7 @@ export class MyService {
 
 ## События
 
-The module emits events via `@nestjs/event-emitter`:
+Модуль генерирует события через `@nestjs/event-emitter`:
 
 ```typescript
 import { OnEvent } from '@nestjs/event-emitter';
@@ -239,9 +239,9 @@ export class NotificationService {
 
 Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
 
-## Real-time Updates
+## Обновления в реальном времени
 
-Enable WebSocket broadcasting for live ticket updates:
+Включите WebSocket-вещание для обновлений заявок в реальном времени:
 
 ```typescript
 EscalatedModule.forRoot({
@@ -258,7 +258,7 @@ socket.on('ticket:updated', (data) => console.log('Updated:', data));
 socket.on('ticket:reply', (data) => console.log('New reply:', data));
 ```
 
-## Development
+## Разработка
 
 ```bash
 git clone https://github.com/escalated-dev/escalated-nestjs.git
@@ -268,9 +268,9 @@ npm test
 npm run build
 ```
 
-## TypeORM Entities
+## Сущности TypeORM
 
-All 32 entities are exported and prefixed with `escalated_`:
+Все 32 сущности экспортированы и имеют префикс `escalated_`:
 
 **Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
 

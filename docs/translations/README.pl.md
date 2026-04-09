@@ -17,34 +17,34 @@
 
 # @escalated-dev/escalated-nestjs
 
-Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
+Wbudowany moduł helpdesk dla aplikacji NestJS. Gotowy system zgłoszeń, zarządzanie SLA, baza wiedzy i więcej.
 
 ## Funkcje
 
-- **Ticket Management** -- Full CRUD with lifecycle tracking, priorities, departments, tags, and custom fields
-- **SLA Policies** -- Configurable response/resolution targets with business hours support
-- **Automations** -- Time-based processing via `@nestjs/schedule` (SLA checks, snooze wake-up, webhook retries)
-- **Escalation Rules** -- Automatic reassignment and notifications on SLA breach
-- **Macros & Canned Responses** -- One-click multi-action macros and templated replies
-- **Custom Fields** -- Dynamic fields with validation (text, number, select, checkbox, date)
-- **Knowledge Base** -- Articles with categories, search, view tracking, and helpfulness ratings
-- **Webhooks** -- HMAC-signed delivery with exponential backoff retry
-- **API Tokens** -- Bearer token authentication with scoped abilities
-- **Roles & Permissions** -- Granular permission system with NestJS guards
-- **Audit Logging** -- Interceptor-based activity tracking for all mutations
-- **Import System** -- Bulk import for tickets, tags, and departments
-- **Side Conversations** -- Threaded discussions within a ticket
-- **Ticket Merging & Linking** -- Merge duplicates, link related tickets
-- **Ticket Splitting** -- Break a ticket into separate issues
-- **Ticket Snooze** -- Snooze with automatic wake-up via cron
-- **Saved Views** -- Personal and shared filtered views
-- **Widget API** -- Public endpoints for embeddable support widget with rate limiting
-- **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
-- **Capacity Management** -- Per-agent ticket limits with real-time tracking
-- **Skill-based Routing** -- Assign tickets based on agent skills and availability
-- **CSAT Ratings** -- Post-resolution satisfaction surveys with token-based submission
-- **2FA (TOTP)** -- Two-factor authentication for agents via `otplib`
-- **Guest Access** -- Token-based ticket access without authentication
+- **Ticket Management** -- Pełne zarządzanie ze śledzeniem cyklu życia, priorytetami, działami, tagami i polami niestandardowymi
+- **SLA Policies** -- Konfigurowalne cele odpowiedzi/rozwiązania ze wsparciem godzin pracy
+- **Automations** -- Przetwarzanie czasowe przez `@nestjs/schedule` (sprawdzanie SLA, budzenie odkładania, ponawianie webhooków)
+- **Escalation Rules** -- Automatyczne ponowne przypisanie i powiadomienia przy naruszeniu SLA
+- **Macros & Canned Responses** -- Makra wieloakcyjne jednym kliknięciem i szablonowe odpowiedzi
+- **Custom Fields** -- Dynamiczne pola z walidacją (tekst, liczba, wybór, pole wyboru, data)
+- **Knowledge Base** -- Artykuły z kategoriami, wyszukiwaniem, śledzeniem wyświetleń i ocenami przydatności
+- **Webhooks** -- Dostarczanie podpisane HMAC z ponowieniem z wykładniczym wycofaniem
+- **API Tokens** -- Uwierzytelnianie tokenem Bearer z ograniczonymi uprawnieniami
+- **Roles & Permissions** -- Szczegółowy system uprawnień z guardami NestJS
+- **Audit Logging** -- Śledzenie aktywności oparte na interceptorach dla wszystkich mutacji
+- **Import System** -- Masowy import zgłoszeń, tagów i działów
+- **Side Conversations** -- Dyskusje wątkowe wewnątrz zgłoszenia
+- **Ticket Merging & Linking** -- Łączenie duplikatów, wiązanie powiązanych zgłoszeń
+- **Ticket Splitting** -- Dzielenie zgłoszenia na oddzielne problemy
+- **Ticket Snooze** -- Odkładanie z automatycznym budzeniem przez cron
+- **Saved Views** -- Osobiste i współdzielone filtrowane widoki
+- **Widget API** -- Publiczne endpointy dla osadzalnego widgetu wsparcia z ograniczeniem szybkości
+- **Real-time Broadcasting** -- Brama Socket.IO dla aktualizacji na żywo (opcjonalnie)
+- **Capacity Management** -- Limity zgłoszeń na agenta ze śledzeniem w czasie rzeczywistym
+- **Skill-based Routing** -- Przypisywanie zgłoszeń na podstawie umiejętności i dostępności agentów
+- **CSAT Ratings** -- Ankiety satysfakcji po rozwiązaniu z wysyłaniem opartym na tokenie
+- **2FA (TOTP)** -- Uwierzytelnianie dwuskładnikowe dla agentów przez `otplib`
+- **Guest Access** -- Dostęp do zgłoszeń oparty na tokenie bez uwierzytelniania
 
 ## Wymagania
 
@@ -61,7 +61,7 @@ npm install @escalated-dev/escalated-nestjs
 
 ## Konfiguracja
 
-### 1. Import the module
+### 1. Importuj moduł
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -94,111 +94,111 @@ import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
 export class AppModule {}
 ```
 
-### 2. Configuration options
+### 2. Opcje konfiguracji
 
-| Option                | Type       | Default       | Description                             |
+| Option                | Type       | Default       | Opis                             |
 | --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | URL prefix for all routes               |
-| `enableWebsockets`    | `boolean`  | `false`       | Enable Socket.IO real-time broadcasting |
-| `enableKnowledgeBase` | `boolean`  | `true`        | Enable KB articles and categories       |
-| `enableCsat`          | `boolean`  | `true`        | Enable satisfaction surveys             |
-| `enable2fa`           | `boolean`  | `false`       | Enable TOTP 2FA for agents              |
-| `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
-| `appUrl`              | `string`   | --            | Base URL for links                      |
-| `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
-| `adminGuard`          | `class`    | --            | Custom guard for admin routes           |
-| `agentGuard`          | `class`    | --            | Custom guard for agent routes           |
-| `customerGuard`       | `class`    | --            | Custom guard for customer routes        |
-| `userResolver`        | `function` | --            | Extract user from request               |
+| `routePrefix`         | `string`   | `'escalated'` | Prefiks URL dla wszystkich tras               |
+| `enableWebsockets`    | `boolean`  | `false`       | Włącz transmisję Socket.IO w czasie rzeczywistym |
+| `enableKnowledgeBase` | `boolean`  | `true`        | Włącz artykuły i kategorie KB       |
+| `enableCsat`          | `boolean`  | `true`        | Włącz ankiety satysfakcji             |
+| `enable2fa`           | `boolean`  | `false`       | Włącz TOTP 2FA dla agentów              |
+| `appName`             | `string`   | `'Escalated'` | Nazwa marki dla e-maili                |
+| `appUrl`              | `string`   | --            | Bazowy URL dla linków                      |
+| `maxFileSize`         | `number`   | `10485760`    | Maksymalny rozmiar przesyłania w bajtach                |
+| `webhookMaxRetries`   | `number`   | `3`           | Próby ponowienia webhook                  |
+| `widgetOrigins`       | `string[]` | `['*']`       | Źródła CORS dla widgetu                 |
+| `adminGuard`          | `class`    | --            | Niestandardowy guard dla tras administratora           |
+| `agentGuard`          | `class`    | --            | Niestandardowy guard dla tras agenta           |
+| `customerGuard`       | `class`    | --            | Niestandardowy guard dla tras klienta        |
+| `userResolver`        | `function` | --            | Wyodrębnij użytkownika z żądania               |
 
-### 3. Database migration
+### 3. Migracja bazy danych
 
-With `synchronize: true`, TypeORM auto-creates tables. For production, generate migrations:
+Z `synchronize: true`, TypeORM automatycznie tworzy tabele. Dla produkcji, wygeneruj migracje:
 
 ```bash
 npx typeorm migration:generate -n EscalatedSetup
 npx typeorm migration:run
 ```
 
-All tables are prefixed with `escalated_` to avoid conflicts.
+Wszystkie tabele mają prefiks `escalated_`, aby uniknąć konfliktów.
 
-## API Endpoints
+## Endpointy API
 
 ### Agent Routes (`/escalated/agent/`)
 
-| Method | Path                                    | Description               |
+| Metoda | Ścieżka | Opis |
 | ------ | --------------------------------------- | ------------------------- |
-| GET    | `/tickets`                              | List tickets with filters |
-| POST   | `/tickets`                              | Create ticket             |
-| GET    | `/tickets/:id`                          | Show ticket with replies  |
-| PUT    | `/tickets/:id`                          | Update ticket             |
-| DELETE | `/tickets/:id`                          | Delete ticket             |
-| POST   | `/tickets/:id/replies`                  | Add reply                 |
-| POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
-| POST   | `/tickets/:id/split`                    | Split ticket              |
-| POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
-| GET    | `/tickets/:ticketId/links`              | List ticket links         |
-| POST   | `/tickets/:ticketId/links`              | Link tickets              |
-| GET    | `/tickets/:ticketId/side-conversations` | List side conversations   |
-| POST   | `/tickets/:ticketId/side-conversations` | Create side conversation  |
-| GET    | `/macros`                               | List macros               |
-| POST   | `/macros/:macroId/execute/:ticketId`    | Execute macro             |
-| GET    | `/canned-responses`                     | List canned responses     |
-| GET    | `/saved-views`                          | List saved views          |
-| POST   | `/saved-views`                          | Create saved view         |
+| GET | `/tickets` | Lista zgłoszeń z filtrami |
+| POST | `/tickets` | Utwórz zgłoszenie |
+| GET | `/tickets/:id` | Pokaż zgłoszenie z odpowiedziami |
+| PUT | `/tickets/:id` | Zaktualizuj zgłoszenie |
+| DELETE | `/tickets/:id` | Usuń zgłoszenie |
+| POST | `/tickets/:id/replies` | Dodaj odpowiedź |
+| POST | `/tickets/:id/merge/:targetId` | Scal zgłoszenia |
+| POST | `/tickets/:id/split` | Podziel zgłoszenie |
+| POST | `/tickets/:id/snooze` | Odłóż zgłoszenie |
+| GET | `/tickets/:ticketId/links` | Lista linków zgłoszeń |
+| POST | `/tickets/:ticketId/links` | Powiąż zgłoszenia |
+| GET | `/tickets/:ticketId/side-conversations` | Lista konwersacji pobocznych |
+| POST | `/tickets/:ticketId/side-conversations` | Utwórz konwersację poboczną |
+| GET | `/macros` | Lista makr |
+| POST | `/macros/:macroId/execute/:ticketId` | Wykonaj makro |
+| GET | `/canned-responses` | Lista szablonów odpowiedzi |
+| GET | `/saved-views` | Lista zapisanych widoków |
+| POST | `/saved-views` | Utwórz zapisany widok |
 
 ### Admin Routes (`/escalated/admin/`)
 
-| Method  | Path                    | Description               |
-| ------- | ----------------------- | ------------------------- |
-| GET/PUT | `/settings`             | Manage settings           |
-| CRUD    | `/departments`          | Manage departments        |
-| CRUD    | `/tags`                 | Manage tags               |
-| CRUD    | `/custom-fields`        | Manage custom fields      |
-| CRUD    | `/roles`                | Manage roles              |
-| CRUD    | `/sla/policies`         | Manage SLA policies       |
-| CRUD    | `/sla/escalation-rules` | Manage escalation rules   |
-| CRUD    | `/sla/schedules`        | Manage business schedules |
-| CRUD    | `/webhooks`             | Manage webhooks           |
-| CRUD    | `/api-tokens`           | Manage API tokens         |
-| CRUD    | `/agents`               | Manage agent profiles     |
-| CRUD    | `/macros`               | Manage macros             |
-| CRUD    | `/canned-responses`     | Manage canned responses   |
-| CRUD    | `/kb/categories`        | Manage KB categories      |
-| CRUD    | `/kb/articles`          | Manage KB articles        |
-| POST    | `/import/tickets`       | Bulk import tickets       |
-| POST    | `/2fa/generate`         | Generate 2FA secret       |
-| POST    | `/2fa/enable`           | Enable 2FA                |
-| GET     | `/audit-logs`           | View audit logs           |
+| Metoda | Ścieżka | Opis |
+| ------ | --------------------------------------- | ------------------------- |
+| GET/PUT | `/settings` | Zarządzaj ustawieniami |
+| CRUD | `/departments` | Zarządzaj działami |
+| CRUD | `/tags` | Zarządzaj tagami |
+| CRUD | `/custom-fields` | Zarządzaj polami niestandardowymi |
+| CRUD | `/roles` | Zarządzaj rolami |
+| CRUD | `/sla/policies` | Zarządzaj politykami SLA |
+| CRUD | `/sla/escalation-rules` | Zarządzaj regułami eskalacji |
+| CRUD | `/sla/schedules` | Zarządzaj harmonogramami pracy |
+| CRUD | `/webhooks` | Zarządzaj webhookami |
+| CRUD | `/api-tokens` | Zarządzaj tokenami API |
+| CRUD | `/agents` | Zarządzaj profilami agentów |
+| CRUD | `/macros` | Zarządzaj makrami |
+| CRUD | `/canned-responses` | Zarządzaj szablonami odpowiedzi |
+| CRUD | `/kb/categories` | Zarządzaj kategoriami KB |
+| CRUD | `/kb/articles` | Zarządzaj artykułami KB |
+| POST | `/import/tickets` | Masowy import zgłoszeń |
+| POST | `/2fa/generate` | Wygeneruj sekret 2FA |
+| POST | `/2fa/enable` | Włącz 2FA |
+| GET | `/audit-logs` | Wyświetl dzienniki audytu |
 
 ### Customer Routes (`/escalated/customer/`)
 
-| Method | Path                   | Description          |
-| ------ | ---------------------- | -------------------- |
-| GET    | `/tickets`             | List own tickets     |
-| POST   | `/tickets`             | Create ticket        |
-| GET    | `/tickets/:id`         | View own ticket      |
-| POST   | `/tickets/:id/replies` | Reply to own ticket  |
-| POST   | `/tickets/:id/rate`    | Submit CSAT rating   |
-| GET    | `/kb/categories`       | Browse KB categories |
-| GET    | `/kb/articles`         | Browse KB articles   |
-| GET    | `/kb/search`           | Search KB            |
+| Metoda | Ścieżka | Opis |
+| ------ | --------------------------------------- | ------------------------- |
+| GET | `/tickets` | Lista własnych zgłoszeń |
+| POST | `/tickets` | Utwórz zgłoszenie |
+| GET | `/tickets/:id` | Wyświetl własne zgłoszenie |
+| POST | `/tickets/:id/replies` | Odpowiedz na własne zgłoszenie |
+| POST | `/tickets/:id/rate` | Wyślij ocenę CSAT |
+| GET | `/kb/categories` | Przeglądaj kategorie KB |
+| GET | `/kb/articles` | Przeglądaj artykuły KB |
+| GET | `/kb/search` | Szukaj w KB |
 
 ### Widget Routes (`/escalated/widget/`)
 
-| Method | Path                   | Description               |
-| ------ | ---------------------- | ------------------------- |
-| POST   | `/tickets`             | Create ticket (public)    |
-| GET    | `/tickets/:id`         | View ticket (guest token) |
-| POST   | `/tickets/:id/replies` | Reply (guest token)       |
-| GET    | `/kb/search`           | Search KB                 |
-| POST   | `/rate/:token`         | Submit CSAT               |
+| Metoda | Ścieżka | Opis |
+| ------ | --------------------------------------- | ------------------------- |
+| POST | `/tickets` | Utwórz zgłoszenie (publiczne) |
+| GET | `/tickets/:id` | Wyświetl zgłoszenie (token gościa) |
+| POST | `/tickets/:id/replies` | Odpowiedz (token gościa) |
+| GET | `/kb/search` | Szukaj w KB |
+| POST | `/rate/:token` | Wyślij CSAT |
 
-## Using Services Directly
+## Bezpośrednie użycie usług
 
-All services are exported and can be injected into your own code:
+Wszystkie usługi są wyeksportowane i mogą być wstrzyknięte do własnego kodu:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
@@ -222,7 +222,7 @@ export class MyService {
 
 ## Zdarzenia
 
-The module emits events via `@nestjs/event-emitter`:
+Moduł emituje zdarzenia przez `@nestjs/event-emitter`:
 
 ```typescript
 import { OnEvent } from '@nestjs/event-emitter';
@@ -239,9 +239,9 @@ export class NotificationService {
 
 Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
 
-## Real-time Updates
+## Aktualizacje w czasie rzeczywistym
 
-Enable WebSocket broadcasting for live ticket updates:
+Włącz transmisję WebSocket dla aktualizacji zgłoszeń na żywo:
 
 ```typescript
 EscalatedModule.forRoot({
@@ -258,7 +258,7 @@ socket.on('ticket:updated', (data) => console.log('Updated:', data));
 socket.on('ticket:reply', (data) => console.log('New reply:', data));
 ```
 
-## Development
+## Programowanie
 
 ```bash
 git clone https://github.com/escalated-dev/escalated-nestjs.git
@@ -268,9 +268,9 @@ npm test
 npm run build
 ```
 
-## TypeORM Entities
+## Encje TypeORM
 
-All 32 entities are exported and prefixed with `escalated_`:
+Wszystkie 32 encje są wyeksportowane i mają prefiks `escalated_`:
 
 **Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
 
