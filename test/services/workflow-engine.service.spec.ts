@@ -2,14 +2,40 @@ import { WorkflowEngineService } from '../../src/services/workflow-engine.servic
 
 describe('WorkflowEngineService', () => {
   const engine = new WorkflowEngineService();
-  const ticket = { status: 'open', priority: 'medium', subject: 'Billing issue', description: '', reference: 'ESC-001' };
+  const ticket = {
+    status: 'open',
+    priority: 'medium',
+    subject: 'Billing issue',
+    description: '',
+    reference: 'ESC-001',
+  };
 
   it('evaluates AND conditions', () => {
-    expect(engine.evaluateConditions({ all: [{ field: 'status', operator: 'equals', value: 'open' }, { field: 'priority', operator: 'equals', value: 'medium' }] }, ticket)).toBe(true);
+    expect(
+      engine.evaluateConditions(
+        {
+          all: [
+            { field: 'status', operator: 'equals', value: 'open' },
+            { field: 'priority', operator: 'equals', value: 'medium' },
+          ],
+        },
+        ticket,
+      ),
+    ).toBe(true);
   });
 
   it('evaluates OR conditions', () => {
-    expect(engine.evaluateConditions({ any: [{ field: 'status', operator: 'equals', value: 'closed' }, { field: 'status', operator: 'equals', value: 'open' }] }, ticket)).toBe(true);
+    expect(
+      engine.evaluateConditions(
+        {
+          any: [
+            { field: 'status', operator: 'equals', value: 'closed' },
+            { field: 'status', operator: 'equals', value: 'open' },
+          ],
+        },
+        ticket,
+      ),
+    ).toBe(true);
   });
 
   it('contains operator', () => {
@@ -21,11 +47,17 @@ describe('WorkflowEngineService', () => {
   });
 
   it('interpolates variables', () => {
-    expect(engine.interpolateVariables('Ticket {{reference}} is {{status}}', ticket)).toBe('Ticket ESC-001 is open');
+    expect(engine.interpolateVariables('Ticket {{reference}} is {{status}}', ticket)).toBe(
+      'Ticket ESC-001 is open',
+    );
   });
 
   it('dry run returns preview', () => {
-    const result = engine.dryRun({ all: [{ field: 'status', operator: 'equals', value: 'open' }] }, [{ type: 'add_note', value: 'Note for {{reference}}' }], ticket);
+    const result = engine.dryRun(
+      { all: [{ field: 'status', operator: 'equals', value: 'open' }] },
+      [{ type: 'add_note', value: 'Note for {{reference}}' }],
+      ticket,
+    );
     expect(result.matched).toBe(true);
     expect(result.actions[0].value).toBe('Note for ESC-001');
   });
