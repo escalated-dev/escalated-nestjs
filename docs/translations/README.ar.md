@@ -1,25 +1,25 @@
 <p align="center">
-  <a href="docs/translations/README.ar.md">العربية</a> •
-  <a href="docs/translations/README.de.md">Deutsch</a> •
-  <b>English</b> •
-  <a href="docs/translations/README.es.md">Español</a> •
-  <a href="docs/translations/README.fr.md">Français</a> •
-  <a href="docs/translations/README.it.md">Italiano</a> •
-  <a href="docs/translations/README.ja.md">日本語</a> •
-  <a href="docs/translations/README.ko.md">한국어</a> •
-  <a href="docs/translations/README.nl.md">Nederlands</a> •
-  <a href="docs/translations/README.pl.md">Polski</a> •
-  <a href="docs/translations/README.pt-BR.md">Português (BR)</a> •
-  <a href="docs/translations/README.ru.md">Русский</a> •
-  <a href="docs/translations/README.tr.md">Türkçe</a> •
-  <a href="docs/translations/README.zh-CN.md">简体中文</a>
+  <b>العربية</b> •
+  <a href="README.de.md">Deutsch</a> •
+  <a href="../../README.md">English</a> •
+  <a href="README.es.md">Español</a> •
+  <a href="README.fr.md">Français</a> •
+  <a href="README.it.md">Italiano</a> •
+  <a href="README.ja.md">日本語</a> •
+  <a href="README.ko.md">한국어</a> •
+  <a href="README.nl.md">Nederlands</a> •
+  <a href="README.pl.md">Polski</a> •
+  <a href="README.pt-BR.md">Português (BR)</a> •
+  <a href="README.ru.md">Русский</a> •
+  <a href="README.tr.md">Türkçe</a> •
+  <a href="README.zh-CN.md">简体中文</a>
 </p>
 
 # @escalated-dev/escalated-nestjs
 
 Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
 
-## Features
+## الميزات
 
 - **Ticket Management** -- Full CRUD with lifecycle tracking, priorities, departments, tags, and custom fields
 - **SLA Policies** -- Configurable response/resolution targets with business hours support
@@ -46,20 +46,20 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 - **2FA (TOTP)** -- Two-factor authentication for agents via `otplib`
 - **Guest Access** -- Token-based ticket access without authentication
 
-## Requirements
+## المتطلبات
 
 - Node.js 18+
 - NestJS 10+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 
-## Installation
+## التثبيت
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## Setup
+## الإعداد
 
 ### 1. Import the module
 
@@ -220,7 +220,7 @@ export class MyService {
 }
 ```
 
-## Events
+## الأحداث
 
 The module emits events via `@nestjs/event-emitter`:
 
@@ -288,6 +288,6 @@ All 32 entities are exported and prefixed with `escalated_`:
 
 **Knowledge Base:** KbCategory, KbArticle
 
-## License
+## الرخصة
 
 MIT
