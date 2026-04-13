@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 import { Reply } from './reply.entity';
 
@@ -37,4 +38,12 @@ export class Attachment {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  /** Virtual field populated after entity load */
+  url: string;
+
+  @AfterLoad()
+  setUrl() {
+    this.url = `/escalated/attachments/${this.id}/download`;
+  }
 }

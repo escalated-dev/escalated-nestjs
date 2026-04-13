@@ -76,6 +76,7 @@ import {
   BusinessScheduleService,
   ChatSessionService,
   ChatRoutingService,
+  AttachmentService,
 } from './services';
 
 // Controllers
@@ -97,6 +98,7 @@ import { CustomerTicketController } from './controllers/customer/ticket.controll
 import { CustomerKnowledgeBaseController } from './controllers/customer/knowledge-base.controller';
 import { WidgetController } from './controllers/widget/widget.controller';
 import { AgentChatController } from './controllers/agent/chat.controller';
+import { AttachmentController } from './controllers/agent/attachment.controller';
 import { WidgetChatController } from './controllers/widget/chat.controller';
 
 // Guards
@@ -177,6 +179,7 @@ const services = [
   BusinessScheduleService,
   ChatSessionService,
   ChatRoutingService,
+  AttachmentService,
 ];
 
 const controllers = [
@@ -199,6 +202,7 @@ const controllers = [
   WidgetController,
   AgentChatController,
   WidgetChatController,
+  AttachmentController,
 ];
 
 @Module({})
