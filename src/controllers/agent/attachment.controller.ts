@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Res,
-  ParseIntPipe,
-  NotFoundException,
-} from '@nestjs/common';
+import { Controller, Get, Param, Res, ParseIntPipe, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { join } from 'path';
 import { existsSync } from 'fs';
