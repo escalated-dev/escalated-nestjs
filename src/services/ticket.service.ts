@@ -6,6 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
+import { Reply } from '../entities/reply.entity';
+import { AgentProfile } from '../entities/agent-profile.entity';
+import { ChatSession } from '../entities/chat-session.entity';
 import { Tag } from '../entities/tag.entity';
 import { CustomFieldValue } from '../entities/custom-field-value.entity';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
@@ -30,6 +33,12 @@ export class TicketService {
     private readonly statusRepo: Repository<TicketStatus>,
     @InjectRepository(TicketActivity)
     private readonly activityRepo: Repository<TicketActivity>,
+    @InjectRepository(Reply)
+    private readonly replyRepo: Repository<Reply>,
+    @InjectRepository(AgentProfile)
+    private readonly agentProfileRepo: Repository<AgentProfile>,
+    @InjectRepository(ChatSession)
+    private readonly chatSessionRepo: Repository<ChatSession>,
     @InjectRepository(Tag)
     private readonly tagRepo: Repository<Tag>,
     @InjectRepository(CustomFieldValue)
@@ -41,6 +50,104 @@ export class TicketService {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `TK-${timestamp}${random}`;
+  }
+
+  /**
+   * Populate computed fields (requester_name, requester_email, last_reply_at,
+   * last_reply_author) that cannot be derived inside an @AfterLoad hook because
+   * they require additional queries.
+   */
+  private async enrichTickets(tickets: Ticket[]): Promise<Ticket[]> {
+    if (tickets.length === 0) return tickets;
+
+    const ticketIds = tickets.map((t) => t.id);
+
+    // --- last reply per ticket (most recent non-internal reply) -----------
+    const lastReplies: { ticketId: number; createdAt: Date; userId: number }[] =
+      await this.replyRepo
+        .createQueryBuilder('reply')
+        .select('reply.ticketId', 'ticketId')
+        .addSelect('MAX(reply.createdAt)', 'createdAt')
+        .where('reply.ticketId IN (:...ticketIds)', { ticketIds })
+        .andWhere('reply.isInternal = :isInternal', { isInternal: false })
+        .groupBy('reply.ticketId')
+        .getRawMany();
+
+    // For author name we need the actual reply row so we can look up the user
+    const lastReplyMap = new Map<number, { createdAt: Date; userId: number }>();
+    if (lastReplies.length > 0) {
+      // Fetch the actual reply rows for the max timestamps
+      for (const lr of lastReplies) {
+        const reply = await this.replyRepo.findOne({
+          where: { ticketId: lr.ticketId, isInternal: false },
+          order: { createdAt: 'DESC' },
+          select: ['id', 'ticketId', 'userId', 'createdAt'],
+        });
+        if (reply) {
+          lastReplyMap.set(reply.ticketId, {
+            createdAt: reply.createdAt,
+            userId: reply.userId,
+          });
+        }
+      }
+    }
+
+    // --- collect unique user IDs we need to resolve ---------------------
+    const userIds = new Set<number>();
+    for (const t of tickets) {
+      userIds.add(t.requesterId);
+    }
+    for (const lr of lastReplyMap.values()) {
+      userIds.add(lr.userId);
+    }
+
+    // Build a userId -> { name, email } lookup from AgentProfile
+    const agentProfiles = await this.agentProfileRepo.find({
+      where: { userId: In([...userIds]) },
+      select: ['userId', 'displayName'],
+    });
+    const profileMap = new Map<number, AgentProfile>();
+    for (const p of agentProfiles) {
+      profileMap.set(p.userId, p);
+    }
+
+    // --- chat sessions for visitor info (requester on chat tickets) ------
+    const chatTicketIds = tickets.filter((t) => t.channel === 'chat').map((t) => t.id);
+    const chatSessionMap = new Map<number, ChatSession>();
+    if (chatTicketIds.length > 0) {
+      const sessions = await this.chatSessionRepo.find({
+        where: { ticketId: In(chatTicketIds) },
+        select: ['ticketId', 'visitorName', 'visitorEmail'],
+      });
+      for (const s of sessions) {
+        chatSessionMap.set(s.ticketId, s);
+      }
+    }
+
+    // --- assign computed fields -----------------------------------------
+    for (const ticket of tickets) {
+      // requester_name / requester_email
+      const chatSession = chatSessionMap.get(ticket.id);
+      const agentProfile = profileMap.get(ticket.requesterId);
+      ticket.requester_name =
+        chatSession?.visitorName || agentProfile?.displayName || `User #${ticket.requesterId}`;
+      ticket.requester_email = chatSession?.visitorEmail || undefined;
+
+      // last_reply_at / last_reply_author
+      const lr = lastReplyMap.get(ticket.id);
+      if (lr) {
+        ticket.last_reply_at = lr.createdAt;
+        const authorProfile = profileMap.get(lr.userId);
+        ticket.last_reply_author = authorProfile?.displayName || `User #${lr.userId}`;
+      }
+    }
+
+    return tickets;
+  }
+
+  private async enrichTicket(ticket: Ticket): Promise<Ticket> {
+    const [enriched] = await this.enrichTickets([ticket]);
+    return enriched;
   }
 
   async create(dto: CreateTicketDto, requesterId: number): Promise<Ticket> {
@@ -104,7 +211,7 @@ export class TicketService {
       throw new NotFoundException(`Ticket #${id} not found`);
     }
 
-    return ticket;
+    return this.enrichTicket(ticket);
   }
 
   async findByReference(referenceNumber: string): Promise<Ticket> {
@@ -117,7 +224,7 @@ export class TicketService {
       throw new NotFoundException(`Ticket ${referenceNumber} not found`);
     }
 
-    return ticket;
+    return this.enrichTicket(ticket);
   }
 
   async findAll(filters: TicketFilterDto): Promise<{ data: Ticket[]; total: number }> {
@@ -164,6 +271,7 @@ export class TicketService {
     qb.skip((page - 1) * perPage).take(perPage);
 
     const [data, total] = await qb.getManyAndCount();
+    await this.enrichTickets(data);
     return { data, total };
   }
 
