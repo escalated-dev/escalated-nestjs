@@ -5,9 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
+import { Attachment } from './attachment.entity';
 
 @Entity('escalated_replies')
 export class Reply {
@@ -35,6 +37,9 @@ export class Reply {
 
   @Column({ length: 255, nullable: true })
   emailMessageId: string;
+
+  @OneToMany(() => Attachment, (attachment) => attachment.reply, { eager: false })
+  attachments: Attachment[];
 
   @CreateDateColumn()
   createdAt: Date;
