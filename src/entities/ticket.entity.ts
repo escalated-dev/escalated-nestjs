@@ -9,6 +9,7 @@ import {
   JoinTable,
   JoinColumn,
   Index,
+  AfterLoad,
 } from 'typeorm';
 import { TicketStatus } from './ticket-status.entity';
 import { Department } from './department.entity';
@@ -111,4 +112,32 @@ export class Ticket {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  // ---------------------------------------------------------------------------
+  // Virtual / computed fields (not stored in DB, populated after load)
+  // ---------------------------------------------------------------------------
+
+  /** Guest or requester display name — populated by TicketService */
+  requester_name?: string;
+
+  /** Guest or requester email — populated by TicketService */
+  requester_email?: string;
+
+  /** Timestamp of the most recent reply — populated by TicketService */
+  last_reply_at?: Date;
+
+  /** Author name of the most recent reply — populated by TicketService */
+  last_reply_author?: string;
+
+  /** Whether the ticket is a live chat (status slug is "live" and channel is "chat") */
+  is_live_chat?: boolean;
+
+  /** Whether the ticket is currently snoozed */
+  is_snoozed?: boolean;
+
+  @AfterLoad()
+  computeDerivedFields() {
+    this.is_snoozed = !!this.snoozedUntil && new Date(this.snoozedUntil) > new Date();
+    this.is_live_chat = this.channel === 'chat' && !!(this.status && this.status.slug === 'live');
+  }
 }

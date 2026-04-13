@@ -5,6 +5,9 @@ import { TicketService } from '../../src/services/ticket.service';
 import { Ticket } from '../../src/entities/ticket.entity';
 import { TicketStatus } from '../../src/entities/ticket-status.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
+import { Reply } from '../../src/entities/reply.entity';
+import { AgentProfile } from '../../src/entities/agent-profile.entity';
+import { ChatSession } from '../../src/entities/chat-session.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { CustomFieldValue } from '../../src/entities/custom-field-value.entity';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
@@ -67,6 +70,32 @@ describe('TicketService', () => {
           provide: getRepositoryToken(TicketActivity),
           useValue: {
             save: jest.fn().mockResolvedValue({ id: 1 }),
+            find: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: getRepositoryToken(Reply),
+          useValue: {
+            findOne: jest.fn().mockResolvedValue(null),
+            createQueryBuilder: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnThis(),
+              addSelect: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              groupBy: jest.fn().mockReturnThis(),
+              getRawMany: jest.fn().mockResolvedValue([]),
+            }),
+          },
+        },
+        {
+          provide: getRepositoryToken(AgentProfile),
+          useValue: {
+            find: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: getRepositoryToken(ChatSession),
+          useValue: {
             find: jest.fn().mockResolvedValue([]),
           },
         },
