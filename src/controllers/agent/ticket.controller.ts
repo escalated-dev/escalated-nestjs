@@ -36,9 +36,28 @@ export class AgentTicketController {
   @Get(':id')
   async show(@Param('id', ParseIntPipe) id: number) {
     const ticket = await this.ticketService.findById(id);
-    const replies = await this.replyService.findByTicketId(id, true);
-    const activities = await this.ticketService.getActivities(id);
-    return { ticket, replies, activities };
+    const [replies, activities, chatContext, requesterTicketCount, relatedTickets] =
+      await Promise.all([
+        this.replyService.findByTicketId(id, true),
+        this.ticketService.getActivitiesWithHumanDates(id),
+        this.ticketService.getChatContext(id),
+        this.ticketService.getRequesterTicketCount(ticket.requesterId),
+        this.ticketService.getRelatedTickets(id),
+      ]);
+
+    return {
+      ticket: {
+        ...ticket,
+        chat_session_id: chatContext?.chat_session_id ?? null,
+        chat_started_at: chatContext?.chat_started_at ?? null,
+        chat_messages: chatContext?.chat_messages ?? [],
+        chat_metadata: chatContext?.chat_metadata ?? null,
+        requester_ticket_count: requesterTicketCount,
+        related_tickets: relatedTickets,
+      },
+      replies,
+      activities,
+    };
   }
 
   @Post()

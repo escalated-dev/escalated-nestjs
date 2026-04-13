@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
+import { TicketLink } from '../entities/ticket-link.entity';
 import { Reply } from '../entities/reply.entity';
 import { AgentProfile } from '../entities/agent-profile.entity';
 import { ChatSession } from '../entities/chat-session.entity';
@@ -39,6 +40,8 @@ export class TicketService {
     private readonly agentProfileRepo: Repository<AgentProfile>,
     @InjectRepository(ChatSession)
     private readonly chatSessionRepo: Repository<ChatSession>,
+    @InjectRepository(TicketLink)
+    private readonly ticketLinkRepo: Repository<TicketLink>,
     @InjectRepository(Tag)
     private readonly tagRepo: Repository<Tag>,
     @InjectRepository(CustomFieldValue)
@@ -483,6 +486,108 @@ export class TicketService {
     return this.activityRepo.find({
       where: { ticketId },
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Return activities with a human-readable `created_at_human` field appended.
+   */
+  async getActivitiesWithHumanDates(
+    ticketId: number,
+  ): Promise<(TicketActivity & { created_at_human: string })[]> {
+    const activities = await this.getActivities(ticketId);
+    return activities.map((a) => ({
+      ...a,
+      created_at_human: this.humanReadableDate(a.createdAt),
+    }));
+  }
+
+  /**
+   * Fetch chat context for a ticket: session info and chat messages.
+   * Returns null when the ticket has no associated chat session.
+   */
+  async getChatContext(ticketId: number): Promise<{
+    chat_session_id: number;
+    chat_started_at: Date;
+    chat_messages: Reply[];
+    chat_metadata: Record<string, any>;
+  } | null> {
+    const session = await this.chatSessionRepo.findOne({ where: { ticketId } });
+    if (!session) return null;
+
+    const messages = await this.replyRepo.find({
+      where: { ticketId },
+      order: { createdAt: 'ASC' },
+    });
+
+    return {
+      chat_session_id: session.id,
+      chat_started_at: session.createdAt,
+      chat_messages: messages,
+      chat_metadata: {
+        visitor_name: session.visitorName,
+        visitor_email: session.visitorEmail,
+        status: session.status,
+        agent_id: session.agentId,
+        department_id: session.departmentId,
+        accepted_at: session.acceptedAt,
+        ended_at: session.endedAt,
+        last_activity_at: session.lastActivityAt,
+      },
+    };
+  }
+
+  /**
+   * Count how many tickets the given requester has submitted.
+   */
+  async getRequesterTicketCount(requesterId: number): Promise<number> {
+    return this.ticketRepo.count({ where: { requesterId } });
+  }
+
+  /**
+   * Fetch related (linked) tickets with their reference, subject, and status.
+   */
+  async getRelatedTickets(
+    ticketId: number,
+  ): Promise<{ id: number; referenceNumber: string; subject: string; status: string }[]> {
+    const links = await this.ticketLinkRepo.find({
+      where: [{ ticketId }, { linkedTicketId: ticketId }],
+    });
+
+    if (links.length === 0) return [];
+
+    const relatedIds = links.map((l) => (l.ticketId === ticketId ? l.linkedTicketId : l.ticketId));
+
+    const tickets = await this.ticketRepo.find({
+      where: { id: In(relatedIds) },
+      relations: ['status'],
+      select: ['id', 'referenceNumber', 'subject', 'statusId'],
+    });
+
+    return tickets.map((t) => ({
+      id: t.id,
+      referenceNumber: t.referenceNumber,
+      subject: t.subject,
+      status: t.status?.slug || t.status?.name || 'unknown',
+    }));
+  }
+
+  private humanReadableDate(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+
+    if (diffSec < 60) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   }
 
