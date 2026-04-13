@@ -32,3 +32,5 @@ export { KbCategory } from './kb-category.entity';
 export { KbArticle } from './kb-article.entity';
 export { ChatSession } from './chat-session.entity';
 export { ChatRoutingRule } from './chat-routing-rule.entity';
+export { Workflow } from './workflow.entity';
+export { WorkflowLog } from './workflow-log.entity';
