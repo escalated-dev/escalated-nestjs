@@ -43,8 +43,31 @@ export class CustomerTicketController {
       throw new ForbiddenException('You can only view your own tickets');
     }
 
-    const replies = await this.replyService.findByTicketId(id, false); // No internal notes
-    return { ticket, replies };
+    const [replies, activities, chatContext, requesterTicketCount, relatedTickets] =
+      await Promise.all([
+        this.replyService.findByTicketId(id, false), // No internal notes
+        this.ticketService.getActivitiesWithHumanDates(id),
+        this.ticketService.getChatContext(id),
+        this.ticketService.getRequesterTicketCount(ticket.requesterId),
+        this.ticketService.getRelatedTickets(id),
+      ]);
+
+    // Exclude internal notes from chat messages for customer views
+    const chatMessages = (chatContext?.chat_messages ?? []).filter((m) => !m.isInternal);
+
+    return {
+      ticket: {
+        ...ticket,
+        chat_session_id: chatContext?.chat_session_id ?? null,
+        chat_started_at: chatContext?.chat_started_at ?? null,
+        chat_messages: chatMessages,
+        chat_metadata: chatContext?.chat_metadata ?? null,
+        requester_ticket_count: requesterTicketCount,
+        related_tickets: relatedTickets,
+      },
+      replies,
+      activities,
+    };
   }
 
   @Post()
