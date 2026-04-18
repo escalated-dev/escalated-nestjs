@@ -51,7 +51,7 @@ export class KbArticle {
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   publishedAt: Date;
 
   @CreateDateColumn()
