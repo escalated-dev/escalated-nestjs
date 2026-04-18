@@ -23,10 +23,10 @@ export class ApiToken {
   @Column({ type: 'simple-json', nullable: true })
   abilities: string[]; // ['tickets:read', 'tickets:write', ...]
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lastUsedAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   expiresAt: Date;
 
   @Column({ default: true })
