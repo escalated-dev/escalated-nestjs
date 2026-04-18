@@ -8,6 +8,7 @@ import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { Reply } from '../../src/entities/reply.entity';
 import { AgentProfile } from '../../src/entities/agent-profile.entity';
 import { ChatSession } from '../../src/entities/chat-session.entity';
+import { TicketLink } from '../../src/entities/ticket-link.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { CustomFieldValue } from '../../src/entities/custom-field-value.entity';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
@@ -97,6 +98,14 @@ describe('TicketService', () => {
           provide: getRepositoryToken(ChatSession),
           useValue: {
             find: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: getRepositoryToken(TicketLink),
+          useValue: {
+            find: jest.fn().mockResolvedValue([]),
+            save: jest.fn().mockResolvedValue({ id: 1 }),
+            delete: jest.fn().mockResolvedValue({ affected: 0 }),
           },
         },
         {
