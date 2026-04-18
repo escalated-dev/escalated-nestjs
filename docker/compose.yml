@@ -1,0 +1,40 @@
+name: escalated-nestjs-demo
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      APP_ENV: demo
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: escalated
+      DB_PASSWORD: escalated
+      DB_NAME: escalated
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: escalated
+      POSTGRES_USER: escalated
+      POSTGRES_PASSWORD: escalated
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U escalated -d escalated"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
