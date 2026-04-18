@@ -38,6 +38,10 @@ describe('AgentTicketController', () => {
             split: jest.fn().mockResolvedValue(mockTicket),
             unsnooze: jest.fn().mockResolvedValue(undefined),
             getActivities: jest.fn().mockResolvedValue([]),
+            getActivitiesWithHumanDates: jest.fn().mockResolvedValue([]),
+            getChatContext: jest.fn().mockResolvedValue(null),
+            getRelatedTickets: jest.fn().mockResolvedValue([]),
+            getRequesterTicketCount: jest.fn().mockResolvedValue(0),
           },
         },
         {
@@ -80,7 +84,7 @@ describe('AgentTicketController', () => {
   describe('show', () => {
     it('should return ticket with replies and activities', async () => {
       const result = await controller.show(1);
-      expect(result.ticket).toEqual(mockTicket);
+      expect(result.ticket).toMatchObject(mockTicket);
       expect(result.replies).toBeDefined();
       expect(result.activities).toBeDefined();
     });
