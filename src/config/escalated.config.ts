@@ -29,8 +29,53 @@ export interface EscalatedModuleOptions {
   /** Enable 2FA for agents (default: false) */
   enable2fa?: boolean;
 
-  /** Email sender address */
+  /** Email sender address (legacy — prefer `mail.from`). */
   emailFrom?: string;
+
+  /**
+   * Structured outbound mail configuration. When present, the module
+   * registers `@nestjs-modules/mailer` with the given transport.
+   */
+  mail?: {
+    from: string;
+    transport:
+      | {
+          host: string;
+          port: number;
+          auth: { user: string; pass: string };
+          secure?: boolean;
+        }
+      | {
+          service: 'postmark' | 'sendgrid' | 'mailgun';
+          auth: { user: string; pass: string };
+        };
+  };
+
+  /**
+   * Inbound email ingress configuration.
+   *   - `replyDomain` is the host of the signed Reply-To address.
+   *   - `replySecret` signs the reply-to token (HMAC-SHA256).
+   *   - `webhookSecret` authenticates provider webhook calls.
+   */
+  inbound?: {
+    replyDomain: string;
+    replySecret: string;
+    webhookSecret: string;
+    provider?: 'postmark' | 'mailgun' | 'sendgrid';
+  };
+
+  /**
+   * Default guest identity policy for public (anonymous) ticket submission.
+   *   - `unassigned`: ticket.requesterId = 0. Contact carries the identity.
+   *   - `guest_user`: ticket.requesterId = guestUserId (single shared host user).
+   *   - `prompt_signup`: ticket.requesterId = 0; emit a signup invite event.
+   *
+   * Admins may override this at runtime via the settings store.
+   */
+  guestPolicy?:
+    | { mode: 'unassigned' }
+    | { mode: 'guest_user'; guestUserId: number }
+    | { mode: 'prompt_signup'; signupUrlTemplate?: string };
 
   /** App name for branding */
   appName?: string;
