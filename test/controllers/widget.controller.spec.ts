@@ -8,6 +8,7 @@ import { ReplyService } from '../../src/services/reply.service';
 import { KnowledgeBaseService } from '../../src/services/knowledge-base.service';
 import { SatisfactionRatingService } from '../../src/services/satisfaction-rating.service';
 import { ContactService } from '../../src/services/contact.service';
+import { SettingsService } from '../../src/services/settings.service';
 import { ESCALATED_OPTIONS } from '../../src/config/escalated.config';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
@@ -18,11 +19,13 @@ interface MockedModule {
   controller: WidgetController;
   ticketService: { create: jest.Mock; findById: jest.Mock };
   contactService: { findOrCreateByEmail: jest.Mock };
+  settingsService: { getTyped: jest.Mock };
   eventEmitter: { emit: jest.Mock };
 }
 
 async function buildModule(
   policy?: EscalatedModuleOptions['guestPolicy'],
+  storedPolicy?: EscalatedModuleOptions['guestPolicy'] | null,
 ): Promise<MockedModule> {
   const mockTicket = {
     id: 1,
@@ -40,6 +43,14 @@ async function buildModule(
     findOrCreateByEmail: jest.fn().mockResolvedValue({ id: 42, email: 'alice@x.com' }),
   };
 
+  const settingsService = {
+    getTyped: jest
+      .fn()
+      .mockImplementation(async (_key: string, defaultValue: unknown) =>
+        storedPolicy !== undefined ? storedPolicy : defaultValue,
+      ),
+  };
+
   const eventEmitter = { emit: jest.fn() };
 
   const options: EscalatedModuleOptions = policy ? { guestPolicy: policy } : {};
@@ -50,6 +61,7 @@ async function buildModule(
       { provide: getRepositoryToken(Ticket), useValue: { findOne: jest.fn() } },
       { provide: TicketService, useValue: ticketService },
       { provide: ContactService, useValue: contactService },
+      { provide: SettingsService, useValue: settingsService },
       {
         provide: ReplyService,
         useValue: {
@@ -80,6 +92,7 @@ async function buildModule(
     controller: module.get(WidgetController),
     ticketService,
     contactService,
+    settingsService,
     eventEmitter,
   };
 }
@@ -210,6 +223,37 @@ describe('WidgetController', () => {
       });
 
       expect(ticketService.create).toHaveBeenCalledWith(expect.anything(), 0);
+    });
+
+    it('reads policy from SettingsService when set (overrides module option)', async () => {
+      const { controller, ticketService, settingsService } = await buildModule(
+        { mode: 'unassigned' }, // module option says unassigned
+        { mode: 'guest_user', guestUserId: 77 }, // settings says guest_user
+      );
+
+      await controller.createTicket({
+        email: 'a@b.com',
+        subject: 's',
+        description: 'd',
+      });
+
+      expect(settingsService.getTyped).toHaveBeenCalledWith('guest_policy', null);
+      expect(ticketService.create).toHaveBeenCalledWith(expect.anything(), 77);
+    });
+
+    it('falls back to module option when settings returns null', async () => {
+      const { controller, ticketService } = await buildModule(
+        { mode: 'guest_user', guestUserId: 33 },
+        null,
+      );
+
+      await controller.createTicket({
+        email: 'a@b.com',
+        subject: 's',
+        description: 'd',
+      });
+
+      expect(ticketService.create).toHaveBeenCalledWith(expect.anything(), 33);
     });
   });
 
