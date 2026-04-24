@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 import {
   EscalatedModuleOptions,
@@ -84,9 +85,10 @@ import {
   WorkflowEngineService,
   WorkflowExecutorService,
   WorkflowRunnerService,
+  EmailService,
 } from './services';
 
-import { WorkflowListener } from './listeners';
+import { WorkflowListener, EmailListener } from './listeners';
 
 // Controllers
 import { AgentTicketController } from './controllers/agent/ticket.controller';
@@ -197,6 +199,7 @@ const services = [
   WorkflowEngineService,
   WorkflowExecutorService,
   WorkflowRunnerService,
+  EmailService,
 ];
 
 const controllers = [
@@ -247,6 +250,14 @@ export class EscalatedModule {
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),
         ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+        ...(mergedOptions.mail
+          ? [
+              MailerModule.forRoot({
+                transport: mergedOptions.mail.transport as never,
+                defaults: { from: mergedOptions.mail.from },
+              }),
+            ]
+          : []),
       ],
       controllers: conditionalControllers,
       providers: [
@@ -260,6 +271,7 @@ export class EscalatedModule {
         AuditLogInterceptor,
         EscalatedSchedulerService,
         WorkflowListener,
+        EmailListener,
       ],
       exports: [...services, optionsProvider, TypeOrmModule],
     };
