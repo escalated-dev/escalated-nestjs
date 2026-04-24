@@ -5,9 +5,15 @@ import { Ticket } from '../../entities/ticket.entity';
 import { ContactService } from '../contact.service';
 import { ReplyService } from '../reply.service';
 import { TicketService } from '../ticket.service';
-import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import {
+  ESCALATED_OPTIONS,
+  type EscalatedModuleOptions,
+} from '../../config/escalated.config';
 import type { ParsedInboundEmail } from './inbound-parser.interface';
-import { parseTicketIdFromMessageId, verifyReplyTo } from './message-id';
+import {
+  parseTicketIdFromMessageId,
+  verifyReplyTo,
+} from './message-id';
 
 export interface InboundRouteResult {
   outcome: 'reply_added' | 'ticket_created' | 'ignored' | 'error';
@@ -111,14 +117,19 @@ export class InboundRouterService {
         createdReplyId: reply.id,
       };
     } catch (err) {
-      this.logger.error(`inbound reply on ticket #${ticketId} failed: ${this.msg(err)}`);
+      this.logger.error(
+        `inbound reply on ticket #${ticketId} failed: ${this.msg(err)}`,
+      );
       return { outcome: 'error', matchedTicketId: ticketId, error: this.msg(err) };
     }
   }
 
   private async createTicket(parsed: ParsedInboundEmail): Promise<InboundRouteResult> {
     try {
-      const contact = await this.contactService.findOrCreateByEmail(parsed.from, parsed.fromName);
+      const contact = await this.contactService.findOrCreateByEmail(
+        parsed.from,
+        parsed.fromName,
+      );
       const ticket = await this.ticketService.create(
         {
           subject: parsed.subject || '(no subject)',
