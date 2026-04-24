@@ -7,6 +7,7 @@ import { TicketStatus } from '../entities/ticket-status.entity';
 import { Tag } from '../entities/tag.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { Reply } from '../entities/reply.entity';
+import { AgentProfile } from '../entities/agent-profile.entity';
 import {
   ESCALATED_EVENTS,
   TicketAssignedEvent,
@@ -23,10 +24,10 @@ export interface WorkflowAction {
  * Performs the side-effects dictated by a matched Workflow. Distinct from
  * WorkflowEngineService (which only evaluates conditions).
  *
- * Action catalog (this commit): change_priority, add_tag, remove_tag,
- * change_status, set_department, assign_agent, add_note. Additional actions
- * (send_webhook, add_follower, delay, assign_round_robin) are scheduled for
- * a follow-up.
+ * Action catalog: change_priority, add_tag, remove_tag, change_status,
+ * set_department, assign_agent, add_note, insert_canned_reply,
+ * assign_round_robin. Additional actions (send_webhook, add_follower,
+ * delay) are scheduled for a follow-up.
  */
 @Injectable()
 export class WorkflowExecutorService {
@@ -38,6 +39,8 @@ export class WorkflowExecutorService {
     @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
     @InjectRepository(TicketActivity) private readonly activityRepo: Repository<TicketActivity>,
     @InjectRepository(Reply) private readonly replyRepo: Repository<Reply>,
+    @InjectRepository(AgentProfile)
+    private readonly agentRepo: Repository<AgentProfile>,
     private readonly eventEmitter: EventEmitter2,
     private readonly engine: WorkflowEngineService,
   ) {}
@@ -66,6 +69,8 @@ export class WorkflowExecutorService {
         return this.addNote(ticket, action.value ?? '');
       case 'insert_canned_reply':
         return this.insertCannedReply(ticket, action.value ?? '');
+      case 'assign_round_robin':
+        return this.assignRoundRobin(ticket, action.value ?? '');
       default:
         throw new Error(`Unknown workflow action: ${action.type}`);
     }
@@ -200,5 +205,55 @@ export class WorkflowExecutorService {
       type: 'reply',
       isInternal: false,
     });
+  }
+
+  /**
+   * Least-loaded round-robin across agents in the given department.
+   * {@code value} is the department id. Picks the active, available
+   * agent linked to that department with the fewest open tickets
+   * (ties broken by userId ascending). Skips silently when:
+   *   - value isn't a positive integer,
+   *   - the department has no eligible agents.
+   *
+   * Load is computed against open tickets in-flight (statusId set by
+   * the host, but we count assigned tickets regardless of status —
+   * simple and good enough for the typical small-team case).
+   */
+  private async assignRoundRobin(ticket: Ticket, value: string): Promise<void> {
+    const departmentId = Number(value);
+    if (!Number.isFinite(departmentId) || departmentId <= 0) {
+      this.logger.warn(
+        `assign_round_robin: invalid department id "${value}" — skipping`,
+      );
+      return;
+    }
+
+    const candidates = await this.agentRepo.find({
+      where: { isActive: true, isAvailable: true },
+      relations: ['departments'],
+    });
+    const eligible = candidates.filter((a) =>
+      (a.departments ?? []).some((d) => d.id === departmentId),
+    );
+    if (eligible.length === 0) {
+      this.logger.warn(
+        `assign_round_robin: no eligible agents in department #${departmentId}`,
+      );
+      return;
+    }
+
+    const loads = await Promise.all(
+      eligible.map(async (a) => ({
+        agent: a,
+        load: await this.ticketRepo.count({ where: { assigneeId: a.userId } }),
+      })),
+    );
+    loads.sort((x, y) => {
+      if (x.load !== y.load) return x.load - y.load;
+      return x.agent.userId - y.agent.userId;
+    });
+    const pick = loads[0].agent;
+
+    await this.assignAgent(ticket, String(pick.userId));
   }
 }

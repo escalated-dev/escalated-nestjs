@@ -6,6 +6,7 @@ import { TicketStatus } from '../../src/entities/ticket-status.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { Reply } from '../../src/entities/reply.entity';
+import { AgentProfile } from '../../src/entities/agent-profile.entity';
 import { WorkflowExecutorService } from '../../src/services/workflow-executor.service';
 import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
 import { buildTicket } from '../factories';
@@ -17,6 +18,7 @@ describe('WorkflowExecutorService', () => {
   let tagRepo: any;
   let activityRepo: any;
   let replyRepo: any;
+  let agentRepo: any;
   let eventEmitter: { emit: jest.Mock };
 
   beforeEach(async () => {
@@ -24,6 +26,7 @@ describe('WorkflowExecutorService', () => {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       findOne: jest.fn(),
       save: jest.fn(async (x) => x),
+      count: jest.fn().mockResolvedValue(0),
     };
     statusRepo = {
       findOne: jest.fn(),
@@ -38,6 +41,9 @@ describe('WorkflowExecutorService', () => {
     replyRepo = {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
     };
+    agentRepo = {
+      find: jest.fn().mockResolvedValue([]),
+    };
     eventEmitter = { emit: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -49,6 +55,7 @@ describe('WorkflowExecutorService', () => {
         { provide: getRepositoryToken(Tag), useValue: tagRepo },
         { provide: getRepositoryToken(TicketActivity), useValue: activityRepo },
         { provide: getRepositoryToken(Reply), useValue: replyRepo },
+        { provide: getRepositoryToken(AgentProfile), useValue: agentRepo },
         { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
@@ -247,6 +254,78 @@ describe('WorkflowExecutorService', () => {
       await expect(executor.execute(ticket, [{ type: 'nonsense' }])).rejects.toThrow(
         /Unknown workflow action/,
       );
+    });
+  });
+
+  describe('assign_round_robin', () => {
+    it('assigns to the least-loaded agent in the department', async () => {
+      const ticket = buildTicket({ id: 10, assigneeId: null }) as unknown as Ticket;
+      const dept = { id: 4, name: 'Support' } as any;
+      const agents = [
+        { userId: 100, isActive: true, isAvailable: true, departments: [dept] },
+        { userId: 200, isActive: true, isAvailable: true, departments: [dept] },
+        { userId: 300, isActive: true, isAvailable: true, departments: [dept] },
+      ];
+      agentRepo.find.mockResolvedValue(agents);
+      // Agent 200 has the fewest open tickets.
+      ticketRepo.count.mockImplementation(async ({ where }: any) => {
+        if (where.assigneeId === 100) return 5;
+        if (where.assigneeId === 200) return 1;
+        if (where.assigneeId === 300) return 3;
+        return 0;
+      });
+
+      await executor.execute(ticket, [{ type: 'assign_round_robin', value: '4' }]);
+
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, { assigneeId: 200 });
+    });
+
+    it('skips agents not linked to the department', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      const dept = { id: 4 } as any;
+      const otherDept = { id: 5 } as any;
+      agentRepo.find.mockResolvedValue([
+        { userId: 100, isActive: true, isAvailable: true, departments: [otherDept] },
+        { userId: 200, isActive: true, isAvailable: true, departments: [dept] },
+      ]);
+      ticketRepo.count.mockResolvedValue(0);
+
+      await executor.execute(ticket, [{ type: 'assign_round_robin', value: '4' }]);
+
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, { assigneeId: 200 });
+    });
+
+    it('breaks ties by userId ascending', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      const dept = { id: 4 } as any;
+      agentRepo.find.mockResolvedValue([
+        { userId: 500, isActive: true, isAvailable: true, departments: [dept] },
+        { userId: 100, isActive: true, isAvailable: true, departments: [dept] },
+        { userId: 300, isActive: true, isAvailable: true, departments: [dept] },
+      ]);
+      ticketRepo.count.mockResolvedValue(2); // everyone has equal load
+
+      await executor.execute(ticket, [{ type: 'assign_round_robin', value: '4' }]);
+
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, { assigneeId: 100 });
+    });
+
+    it('skips when no eligible agents in the department', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      agentRepo.find.mockResolvedValue([]);
+
+      await executor.execute(ticket, [{ type: 'assign_round_robin', value: '4' }]);
+
+      expect(ticketRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('skips on non-numeric department id', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+
+      await executor.execute(ticket, [{ type: 'assign_round_robin', value: 'not-a-number' }]);
+
+      expect(agentRepo.find).not.toHaveBeenCalled();
+      expect(ticketRepo.update).not.toHaveBeenCalled();
     });
   });
 });
