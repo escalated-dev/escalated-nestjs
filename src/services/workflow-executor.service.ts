@@ -12,7 +12,6 @@ import {
   TicketAssignedEvent,
   TicketStatusChangedEvent,
 } from '../events/escalated.events';
-import { WorkflowEngineService } from './workflow-engine.service';
 
 export interface WorkflowAction {
   type: string;
@@ -39,7 +38,6 @@ export class WorkflowExecutorService {
     @InjectRepository(TicketActivity) private readonly activityRepo: Repository<TicketActivity>,
     @InjectRepository(Reply) private readonly replyRepo: Repository<Reply>,
     private readonly eventEmitter: EventEmitter2,
-    private readonly engine: WorkflowEngineService,
   ) {}
 
   async execute(ticket: Ticket, actions: WorkflowAction[]): Promise<void> {
@@ -64,8 +62,6 @@ export class WorkflowExecutorService {
         return this.assignAgent(ticket, action.value ?? '');
       case 'add_note':
         return this.addNote(ticket, action.value ?? '');
-      case 'insert_canned_reply':
-        return this.insertCannedReply(ticket, action.value ?? '');
       default:
         throw new Error(`Unknown workflow action: ${action.type}`);
     }
@@ -87,11 +83,10 @@ export class WorkflowExecutorService {
       this.logger.debug(`add_tag: tag "${value}" not found`);
       return;
     }
-    const fresh =
-      (await this.ticketRepo.findOne({
-        where: { id: ticket.id },
-        relations: ['tags'],
-      })) ?? ticket;
+    const fresh = (await this.ticketRepo.findOne({
+      where: { id: ticket.id },
+      relations: ['tags'],
+    })) ?? ticket;
     const tags = fresh.tags ?? [];
     if (!tags.some((t) => t.id === tag.id)) {
       tags.push(tag);
@@ -103,11 +98,10 @@ export class WorkflowExecutorService {
   private async removeTag(ticket: Ticket, value: string): Promise<void> {
     const tag = await this.resolveTag(value);
     if (!tag) return;
-    const fresh =
-      (await this.ticketRepo.findOne({
-        where: { id: ticket.id },
-        relations: ['tags'],
-      })) ?? ticket;
+    const fresh = (await this.ticketRepo.findOne({
+      where: { id: ticket.id },
+      relations: ['tags'],
+    })) ?? ticket;
     fresh.tags = (fresh.tags ?? []).filter((t) => t.id !== tag.id);
     await this.ticketRepo.save(fresh);
   }
@@ -161,7 +155,12 @@ export class WorkflowExecutorService {
     });
     this.eventEmitter.emit(
       ESCALATED_EVENTS.TICKET_ASSIGNED,
-      new TicketAssignedEvent({ ...ticket, assigneeId }, previousAssigneeId, assigneeId, 0),
+      new TicketAssignedEvent(
+        { ...ticket, assigneeId },
+        previousAssigneeId,
+        assigneeId,
+        0,
+      ),
     );
   }
 
@@ -173,32 +172,6 @@ export class WorkflowExecutorService {
       body,
       type: 'note',
       isInternal: true,
-    });
-  }
-
-  /**
-   * Insert an external-visible reply built from a template. `{{field}}`
-   * placeholders are interpolated against the ticket via
-   * WorkflowEngineService.interpolateVariables. Unknown variables stay as
-   * literal `{{...}}` so the reader can see the gap.
-   */
-  private async insertCannedReply(ticket: Ticket, template: string): Promise<void> {
-    if (!template) return;
-    const ticketMap: Record<string, string> = {};
-    const raw = ticket as unknown as Record<string, unknown>;
-    for (const key of Object.keys(raw)) {
-      const v = raw[key];
-      if (v === null || v === undefined) continue;
-      if (typeof v === 'object') continue;
-      ticketMap[key] = String(v);
-    }
-    const body = this.engine.interpolateVariables(template, ticketMap);
-    await this.replyRepo.save({
-      ticketId: ticket.id,
-      userId: 0,
-      body,
-      type: 'reply',
-      isInternal: false,
     });
   }
 }
