@@ -16,10 +16,7 @@ describe('WorkflowListener', () => {
   beforeEach(async () => {
     runner = { runForEvent: jest.fn().mockResolvedValue(undefined) };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        WorkflowListener,
-        { provide: WorkflowRunnerService, useValue: runner },
-      ],
+      providers: [WorkflowListener, { provide: WorkflowRunnerService, useValue: runner }],
     }).compile();
     listener = module.get(WorkflowListener);
   });
@@ -44,9 +41,7 @@ describe('WorkflowListener', () => {
 
   it('maps TicketStatusChangedEvent to the ticket.status_changed trigger', async () => {
     const ticket = { id: 1 };
-    await listener.onTicketStatusChanged(
-      new TicketStatusChangedEvent(ticket, 1, 2, 0),
-    );
+    await listener.onTicketStatusChanged(new TicketStatusChangedEvent(ticket, 1, 2, 0));
     expect(runner.runForEvent).toHaveBeenCalledWith('ticket.status_changed', ticket);
   });
 

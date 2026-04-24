@@ -87,10 +87,11 @@ export class WorkflowExecutorService {
       this.logger.debug(`add_tag: tag "${value}" not found`);
       return;
     }
-    const fresh = (await this.ticketRepo.findOne({
-      where: { id: ticket.id },
-      relations: ['tags'],
-    })) ?? ticket;
+    const fresh =
+      (await this.ticketRepo.findOne({
+        where: { id: ticket.id },
+        relations: ['tags'],
+      })) ?? ticket;
     const tags = fresh.tags ?? [];
     if (!tags.some((t) => t.id === tag.id)) {
       tags.push(tag);
@@ -102,10 +103,11 @@ export class WorkflowExecutorService {
   private async removeTag(ticket: Ticket, value: string): Promise<void> {
     const tag = await this.resolveTag(value);
     if (!tag) return;
-    const fresh = (await this.ticketRepo.findOne({
-      where: { id: ticket.id },
-      relations: ['tags'],
-    })) ?? ticket;
+    const fresh =
+      (await this.ticketRepo.findOne({
+        where: { id: ticket.id },
+        relations: ['tags'],
+      })) ?? ticket;
     fresh.tags = (fresh.tags ?? []).filter((t) => t.id !== tag.id);
     await this.ticketRepo.save(fresh);
   }
@@ -159,12 +161,7 @@ export class WorkflowExecutorService {
     });
     this.eventEmitter.emit(
       ESCALATED_EVENTS.TICKET_ASSIGNED,
-      new TicketAssignedEvent(
-        { ...ticket, assigneeId },
-        previousAssigneeId,
-        assigneeId,
-        0,
-      ),
+      new TicketAssignedEvent({ ...ticket, assigneeId }, previousAssigneeId, assigneeId, 0),
     );
   }
 

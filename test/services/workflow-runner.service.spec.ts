@@ -59,9 +59,7 @@ describe('WorkflowRunnerService', () => {
     await runner.runForEvent('ticket.created', ticket);
 
     expect(executor.execute).toHaveBeenCalledWith(ticket, wf.actions);
-    expect(logRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ conditionsMatched: true }),
-    );
+    expect(logRepo.save).toHaveBeenCalledWith(expect.objectContaining({ conditionsMatched: true }));
   });
 
   it('skips execution when conditions do not match but still logs', async () => {
@@ -91,9 +89,7 @@ describe('WorkflowRunnerService', () => {
 
     // Only wf1 ran; wf2 should not have been logged
     expect(logRepo.save).toHaveBeenCalledTimes(1);
-    expect(logRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ workflow: { id: 1 } }),
-    );
+    expect(logRepo.save).toHaveBeenCalledWith(expect.objectContaining({ workflow: { id: 1 } }));
   });
 
   it('catches executor errors and stamps errorMessage on the log', async () => {

@@ -160,9 +160,9 @@ describe('WidgetController', () => {
     it('rejects when neither email nor requesterId is supplied', async () => {
       const { controller } = await buildModule();
 
-      await expect(
-        controller.createTicket({ subject: 'Help', description: 'd' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.createTicket({ subject: 'Help', description: 'd' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

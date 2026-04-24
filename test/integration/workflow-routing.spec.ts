@@ -126,10 +126,7 @@ describe('integration: TicketService.create → Workflow routing', () => {
       }),
     ]);
 
-    await ticketService.create(
-      { subject: 's', description: 'd', channel: 'widget' },
-      0,
-    );
+    await ticketService.create({ subject: 's', description: 'd', channel: 'widget' }, 0);
 
     // Give the async event listener a tick to run
     await new Promise((r) => setImmediate(r));
@@ -138,22 +135,16 @@ describe('integration: TicketService.create → Workflow routing', () => {
       where: { triggerEvent: 'ticket.created', isActive: true },
       order: { position: 'ASC' },
     });
-    expect(executorMock.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 10 }),
-      [{ type: 'assign_agent', value: '5' }],
-    );
-    expect(logRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ conditionsMatched: true }),
-    );
+    expect(executorMock.execute).toHaveBeenCalledWith(expect.objectContaining({ id: 10 }), [
+      { type: 'assign_agent', value: '5' },
+    ]);
+    expect(logRepo.save).toHaveBeenCalledWith(expect.objectContaining({ conditionsMatched: true }));
   });
 
   it('does not execute when no workflows match the trigger', async () => {
     workflowRepo.find.mockResolvedValue([]);
 
-    await ticketService.create(
-      { subject: 's', description: 'd', channel: 'widget' },
-      0,
-    );
+    await ticketService.create({ subject: 's', description: 'd', channel: 'widget' }, 0);
     await new Promise((r) => setImmediate(r));
 
     expect(executorMock.execute).not.toHaveBeenCalled();
