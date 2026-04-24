@@ -6,6 +6,7 @@ import { TicketStatus } from '../../src/entities/ticket-status.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { Reply } from '../../src/entities/reply.entity';
+import { TicketFollower } from '../../src/entities/ticket-follower.entity';
 import { WorkflowExecutorService } from '../../src/services/workflow-executor.service';
 import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
 import { buildTicket } from '../factories';
@@ -17,6 +18,7 @@ describe('WorkflowExecutorService', () => {
   let tagRepo: any;
   let activityRepo: any;
   let replyRepo: any;
+  let followerRepo: any;
   let eventEmitter: { emit: jest.Mock };
 
   beforeEach(async () => {
@@ -38,6 +40,10 @@ describe('WorkflowExecutorService', () => {
     replyRepo = {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
     };
+    followerRepo = {
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn(async (x) => ({ id: 1, ...x })),
+    };
     eventEmitter = { emit: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -49,6 +55,7 @@ describe('WorkflowExecutorService', () => {
         { provide: getRepositoryToken(Tag), useValue: tagRepo },
         { provide: getRepositoryToken(TicketActivity), useValue: activityRepo },
         { provide: getRepositoryToken(Reply), useValue: replyRepo },
+        { provide: getRepositoryToken(TicketFollower), useValue: followerRepo },
         { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
@@ -247,6 +254,38 @@ describe('WorkflowExecutorService', () => {
       await expect(executor.execute(ticket, [{ type: 'nonsense' }])).rejects.toThrow(
         /Unknown workflow action/,
       );
+    });
+  });
+
+  describe('add_follower', () => {
+    it('creates a TicketFollower row for a new follower', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      followerRepo.findOne.mockResolvedValue(null);
+
+      await executor.execute(ticket, [{ type: 'add_follower', value: '42' }]);
+
+      expect(followerRepo.findOne).toHaveBeenCalledWith({
+        where: { ticketId: 10, userId: 42 },
+      });
+      expect(followerRepo.save).toHaveBeenCalledWith({ ticketId: 10, userId: 42 });
+    });
+
+    it('is idempotent — no-op when the follower already exists', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      followerRepo.findOne.mockResolvedValue({ id: 7, ticketId: 10, userId: 42 });
+
+      await executor.execute(ticket, [{ type: 'add_follower', value: '42' }]);
+
+      expect(followerRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('skips on non-numeric user id', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+
+      await executor.execute(ticket, [{ type: 'add_follower', value: 'not-numeric' }]);
+
+      expect(followerRepo.findOne).not.toHaveBeenCalled();
+      expect(followerRepo.save).not.toHaveBeenCalled();
     });
   });
 });

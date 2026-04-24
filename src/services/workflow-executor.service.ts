@@ -7,6 +7,7 @@ import { TicketStatus } from '../entities/ticket-status.entity';
 import { Tag } from '../entities/tag.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { Reply } from '../entities/reply.entity';
+import { TicketFollower } from '../entities/ticket-follower.entity';
 import {
   ESCALATED_EVENTS,
   TicketAssignedEvent,
@@ -23,10 +24,10 @@ export interface WorkflowAction {
  * Performs the side-effects dictated by a matched Workflow. Distinct from
  * WorkflowEngineService (which only evaluates conditions).
  *
- * Action catalog (this commit): change_priority, add_tag, remove_tag,
- * change_status, set_department, assign_agent, add_note. Additional actions
- * (send_webhook, add_follower, delay, assign_round_robin) are scheduled for
- * a follow-up.
+ * Action catalog: change_priority, add_tag, remove_tag, change_status,
+ * set_department, assign_agent, add_note, insert_canned_reply,
+ * add_follower. Additional actions (send_webhook, delay,
+ * assign_round_robin) are scheduled for a follow-up.
  */
 @Injectable()
 export class WorkflowExecutorService {
@@ -38,6 +39,8 @@ export class WorkflowExecutorService {
     @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
     @InjectRepository(TicketActivity) private readonly activityRepo: Repository<TicketActivity>,
     @InjectRepository(Reply) private readonly replyRepo: Repository<Reply>,
+    @InjectRepository(TicketFollower)
+    private readonly followerRepo: Repository<TicketFollower>,
     private readonly eventEmitter: EventEmitter2,
     private readonly engine: WorkflowEngineService,
   ) {}
@@ -66,6 +69,8 @@ export class WorkflowExecutorService {
         return this.addNote(ticket, action.value ?? '');
       case 'insert_canned_reply':
         return this.insertCannedReply(ticket, action.value ?? '');
+      case 'add_follower':
+        return this.addFollower(ticket, action.value ?? '');
       default:
         throw new Error(`Unknown workflow action: ${action.type}`);
     }
@@ -200,5 +205,25 @@ export class WorkflowExecutorService {
       type: 'reply',
       isInternal: false,
     });
+  }
+
+  /**
+   * Add a host-app user as a follower on the ticket. Idempotent: if
+   * the user is already following, this is a no-op (returns existing
+   * row). Skips silently when value isn't a positive integer.
+   */
+  private async addFollower(ticket: Ticket, value: string): Promise<void> {
+    const userId = Number(value);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      this.logger.warn(`add_follower: invalid user id "${value}" — skipping`);
+      return;
+    }
+
+    const existing = await this.followerRepo.findOne({
+      where: { ticketId: ticket.id, userId },
+    });
+    if (existing) return;
+
+    await this.followerRepo.save({ ticketId: ticket.id, userId });
   }
 }
