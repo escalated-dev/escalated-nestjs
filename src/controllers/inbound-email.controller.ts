@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { InboundRouterService } from '../services/email/inbound-router.service';
 import { PostmarkInboundParser } from '../services/email/postmark-parser.service';
 import { MailgunInboundParser } from '../services/email/mailgun-parser.service';
+import { SESInboundParser } from '../services/email/ses-parser.service';
 import type { InboundEmailParser } from '../services/email/inbound-parser.interface';
 import { InboundEmail } from '../entities/inbound-email.entity';
 import { InboundWebhookSignatureGuard } from '../guards/inbound-webhook-signature.guard';
@@ -16,6 +17,7 @@ export class InboundEmailController {
     private readonly router: InboundRouterService,
     private readonly postmarkParser: PostmarkInboundParser,
     private readonly mailgunParser: MailgunInboundParser,
+    private readonly sesParser: SESInboundParser,
     @InjectRepository(InboundEmail)
     private readonly inboundRepo: Repository<InboundEmail>,
     @Inject(ESCALATED_OPTIONS)
@@ -58,6 +60,8 @@ export class InboundEmailController {
     switch (provider) {
       case 'mailgun':
         return this.mailgunParser;
+      case 'ses':
+        return this.sesParser;
       case 'postmark':
       default:
         return this.postmarkParser;
