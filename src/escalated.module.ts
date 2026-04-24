@@ -46,6 +46,7 @@ import {
   KbArticle,
   ChatSession,
   ChatRoutingRule,
+  Contact,
 } from './entities';
 
 // Services
@@ -150,6 +151,7 @@ const entities = [
   KbArticle,
   ChatSession,
   ChatRoutingRule,
+  Contact,
 ];
 
 const services = [
