@@ -33,9 +33,9 @@ describe('PublicSubmitThrottleGuard', () => {
       await guard.canActivate(mockContext({ email: 'a@b.com' }));
     }
 
-    await expect(guard.canActivate(mockContext({ email: 'a@b.com' }))).rejects.toBeInstanceOf(
-      HttpException,
-    );
+    await expect(
+      guard.canActivate(mockContext({ email: 'a@b.com' })),
+    ).rejects.toBeInstanceOf(HttpException);
 
     try {
       await guard.canActivate(mockContext({ email: 'a@b.com' }));
