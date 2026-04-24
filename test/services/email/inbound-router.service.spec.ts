@@ -3,6 +3,7 @@ import { InboundRouterService } from '../../../src/services/email/inbound-router
 import { ContactService } from '../../../src/services/contact.service';
 import { ReplyService } from '../../../src/services/reply.service';
 import { TicketService } from '../../../src/services/ticket.service';
+import { SettingsService } from '../../../src/services/settings.service';
 import { ESCALATED_OPTIONS } from '../../../src/config/escalated.config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Ticket } from '../../../src/entities/ticket.entity';
@@ -29,6 +30,7 @@ describe('InboundRouterService', () => {
   let replyService: { create: jest.Mock };
   let ticketService: { create: jest.Mock };
   let ticketRepo: { findOne: jest.Mock };
+  let settingsService: { getTyped: jest.Mock };
 
   const baseOptions = {
     inbound: {
@@ -51,6 +53,9 @@ describe('InboundRouterService', () => {
     ticketRepo = {
       findOne: jest.fn(),
     };
+    settingsService = {
+      getTyped: jest.fn().mockResolvedValue(null),
+    };
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,6 +64,7 @@ describe('InboundRouterService', () => {
         { provide: ReplyService, useValue: replyService },
         { provide: TicketService, useValue: ticketService },
         { provide: getRepositoryToken(Ticket), useValue: ticketRepo },
+        { provide: SettingsService, useValue: settingsService },
         { provide: ESCALATED_OPTIONS, useValue: options },
       ],
     }).compile();
@@ -185,6 +191,51 @@ describe('InboundRouterService', () => {
       const result = await router.route(parsed({ from: '' }));
       expect(result.outcome).toBe('ignored');
       expect(ticketService.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('guest policy on ticket creation', () => {
+    it('defaults requester to 0 when no guest policy is configured', async () => {
+      ticketRepo.findOne.mockResolvedValue(null);
+      settingsService.getTyped.mockResolvedValue(null);
+
+      await router.route(parsed());
+
+      expect(ticketService.create).toHaveBeenCalledWith(expect.any(Object), 0);
+    });
+
+    it('routes to the configured guest_user id from runtime settings', async () => {
+      ticketRepo.findOne.mockResolvedValue(null);
+      settingsService.getTyped.mockResolvedValue({ mode: 'guest_user', guestUserId: 42 });
+
+      await router.route(parsed());
+
+      expect(ticketService.create).toHaveBeenCalledWith(expect.any(Object), 42);
+    });
+
+    it('falls back to the compile-time module option when settings are empty', async () => {
+      ticketRepo.findOne.mockResolvedValue(null);
+      settingsService.getTyped.mockResolvedValue(null);
+      await buildRouter({
+        ...baseOptions,
+        guestPolicy: { mode: 'guest_user', guestUserId: 77 },
+      } as any);
+
+      await router.route(parsed());
+
+      expect(ticketService.create).toHaveBeenCalledWith(expect.any(Object), 77);
+    });
+
+    it('uses 0 for prompt_signup mode (signup-invite is a separate follow-up)', async () => {
+      ticketRepo.findOne.mockResolvedValue(null);
+      settingsService.getTyped.mockResolvedValue({
+        mode: 'prompt_signup',
+        signupUrlTemplate: 'https://example.com/signup?t={token}',
+      });
+
+      await router.route(parsed());
+
+      expect(ticketService.create).toHaveBeenCalledWith(expect.any(Object), 0);
     });
   });
 });

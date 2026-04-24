@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Ticket } from '../../entities/ticket.entity';
 import { ContactService } from '../contact.service';
 import { ReplyService } from '../reply.service';
+import { SettingsService } from '../settings.service';
 import { TicketService } from '../ticket.service';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import type { ParsedInboundEmail } from './inbound-parser.interface';
@@ -36,6 +37,7 @@ export class InboundRouterService {
     private readonly contactService: ContactService,
     private readonly replyService: ReplyService,
     private readonly ticketService: TicketService,
+    private readonly settingsService: SettingsService,
     @Inject(ESCALATED_OPTIONS)
     private readonly options: EscalatedModuleOptions,
   ) {}
@@ -119,6 +121,7 @@ export class InboundRouterService {
   private async createTicket(parsed: ParsedInboundEmail): Promise<InboundRouteResult> {
     try {
       const contact = await this.contactService.findOrCreateByEmail(parsed.from, parsed.fromName);
+      const requesterId = await this.resolveRequesterIdForGuestPolicy();
       const ticket = await this.ticketService.create(
         {
           subject: parsed.subject || '(no subject)',
@@ -126,12 +129,40 @@ export class InboundRouterService {
           channel: 'email',
           contactId: contact.id,
         },
-        0,
+        requesterId,
       );
       return { outcome: 'ticket_created', createdTicketId: ticket.id };
     } catch (err) {
       this.logger.error(`inbound new-ticket creation failed: ${this.msg(err)}`);
       return { outcome: 'error', error: this.msg(err) };
+    }
+  }
+
+  /**
+   * Resolve the host-app user id to attribute an inbound-created ticket
+   * to. Matches the widget controller's `requesterIdForPolicy`: reads
+   * the runtime `guest_policy` setting (falls back to the compile-time
+   * module option), then:
+   *   - `guest_user` → configured `guestUserId`
+   *   - `unassigned` / `prompt_signup` / (null) → 0
+   *
+   * Previously hard-coded 0, which meant admin-configured guest policy
+   * had zero effect on inbound-email-created tickets — mirror of the
+   * widget-controller bug fixed in widget.controller.ts.
+   */
+  private async resolveRequesterIdForGuestPolicy(): Promise<number> {
+    const stored = await this.settingsService.getTyped<
+      EscalatedModuleOptions['guestPolicy'] | null
+    >('guest_policy', null);
+    const policy = stored ?? this.options.guestPolicy;
+    if (!policy) return 0;
+    switch (policy.mode) {
+      case 'guest_user':
+        return policy.guestUserId;
+      case 'unassigned':
+      case 'prompt_signup':
+      default:
+        return 0;
     }
   }
 
