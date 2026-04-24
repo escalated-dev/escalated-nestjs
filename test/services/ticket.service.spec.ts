@@ -175,6 +175,24 @@ describe('TicketService', () => {
 
       expect(tagRepo.findBy).toHaveBeenCalled();
     });
+
+    it('persists contactId when provided', async () => {
+      const dto = { subject: 's', description: 'd', contactId: 42 };
+      await service.create(dto, 0);
+
+      expect(ticketRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ contactId: 42, requesterId: 0 }),
+      );
+    });
+
+    it('defaults contactId to null when absent', async () => {
+      const dto = { subject: 's', description: 'd' };
+      await service.create(dto, 5);
+
+      expect(ticketRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ contactId: null, requesterId: 5 }),
+      );
+    });
   });
 
   describe('findById', () => {
