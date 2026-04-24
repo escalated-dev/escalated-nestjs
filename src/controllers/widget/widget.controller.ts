@@ -17,6 +17,7 @@ import { ReplyService } from '../../services/reply.service';
 import { KnowledgeBaseService } from '../../services/knowledge-base.service';
 import { SatisfactionRatingService } from '../../services/satisfaction-rating.service';
 import { ContactService } from '../../services/contact.service';
+import { SettingsService } from '../../services/settings.service';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
 import {
@@ -53,17 +54,28 @@ export class WidgetController {
     private readonly kbService: KnowledgeBaseService,
     private readonly satisfactionService: SatisfactionRatingService,
     private readonly contactService: ContactService,
+    private readonly settingsService: SettingsService,
     private readonly eventEmitter: EventEmitter2,
     @Inject(ESCALATED_OPTIONS)
     private readonly options: EscalatedModuleOptions,
   ) {}
 
-  private resolveGuestRequesterId(): number {
-    const p = this.options.guestPolicy;
-    if (!p) return 0;
-    switch (p.mode) {
+  /**
+   * Resolve the effective guest policy: settings store overrides module
+   * option, so admins can change policy at runtime without redeploy.
+   */
+  private async resolveGuestPolicy(): Promise<EscalatedModuleOptions['guestPolicy']> {
+    const stored = await this.settingsService.getTyped<
+      EscalatedModuleOptions['guestPolicy'] | null
+    >('guest_policy', null);
+    return stored ?? this.options.guestPolicy;
+  }
+
+  private requesterIdForPolicy(policy: EscalatedModuleOptions['guestPolicy']): number {
+    if (!policy) return 0;
+    switch (policy.mode) {
       case 'guest_user':
-        return p.guestUserId;
+        return policy.guestUserId;
       case 'unassigned':
       case 'prompt_signup':
       default:
@@ -77,10 +89,12 @@ export class WidgetController {
     let contactId: number | null = null;
     let requesterId: number;
 
+    const policy = await this.resolveGuestPolicy();
+
     if (body.email) {
       const contact = await this.contactService.findOrCreateByEmail(body.email, body.name);
       contactId = contact.id;
-      requesterId = this.resolveGuestRequesterId();
+      requesterId = this.requesterIdForPolicy(policy);
     } else if (typeof body.requesterId === 'number') {
       requesterId = body.requesterId;
     } else {
@@ -98,7 +112,7 @@ export class WidgetController {
       requesterId,
     );
 
-    if (body.email && contactId !== null && this.options.guestPolicy?.mode === 'prompt_signup') {
+    if (body.email && contactId !== null && policy?.mode === 'prompt_signup') {
       this.eventEmitter.emit(
         ESCALATED_EVENTS.SIGNUP_INVITE,
         new TicketSignupInviteEvent(ticket.id, contactId, body.email),
