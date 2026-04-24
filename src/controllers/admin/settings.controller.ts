@@ -44,6 +44,83 @@ export class AdminSettingsController {
     return { success: true };
   }
 
+  // --- Public-ticket guest policy ---
+  //
+  // Dedicated endpoint that matches the shape shipped by all 10 host-framework
+  // plugins (Laravel/Rails/Django/Adonis/WordPress/Symfony/.NET/Go/Spring/Phoenix).
+  // Internally it writes a single `guest_policy` JSON blob so the widget
+  // controller's existing `settingsService.getTyped('guest_policy')` lookup
+  // continues to work with zero change.
+  //
+  // Validation semantics mirror the host-framework ports:
+  //   - Unknown mode → coerced to 'unassigned' (never 500s on bad input)
+  //   - Mode switch clears mode-specific fields (stale guestUserId can't leak
+  //     into prompt_signup behavior)
+  //   - Zero / negative user id surfaces as JSON null on GET
+  //   - Signup URL templates trimmed + truncated to 500 chars
+  //
+  // Wire format is snake_case to match what the shared
+  // Admin/Settings/PublicTickets.vue page sends.
+
+  @Get('settings/public-tickets')
+  async getPublicTicketsSettings() {
+    return this.loadPublicTicketsPayload();
+  }
+
+  @Put('settings/public-tickets')
+  @AuditAction('update', 'settings')
+  async updatePublicTicketsSettings(
+    @Body() body: {
+      guest_policy_mode?: string;
+      guest_policy_user_id?: number | null;
+      guest_policy_signup_url_template?: string | null;
+    },
+  ) {
+    const validModes = new Set(['unassigned', 'guest_user', 'prompt_signup']);
+    const mode = validModes.has(body.guest_policy_mode ?? '')
+      ? (body.guest_policy_mode as string)
+      : 'unassigned';
+
+    const stored: Record<string, unknown> = { mode };
+
+    if (mode === 'guest_user') {
+      const userId = Number(body.guest_policy_user_id);
+      if (Number.isFinite(userId) && userId > 0) {
+        stored.guestUserId = userId;
+      }
+    }
+
+    if (mode === 'prompt_signup') {
+      const raw = (body.guest_policy_signup_url_template ?? '').trim();
+      if (raw) {
+        stored.signupUrlTemplate = raw.length > 500 ? raw.slice(0, 500) : raw;
+      }
+    }
+
+    await this.settingsService.set('guest_policy', stored, 'json', 'public_tickets');
+    return this.loadPublicTicketsPayload();
+  }
+
+  private async loadPublicTicketsPayload() {
+    const stored = await this.settingsService.getTyped<Record<string, unknown> | null>(
+      'guest_policy',
+      null,
+    );
+
+    const mode = typeof stored?.mode === 'string' ? stored.mode : 'unassigned';
+    const userId = typeof stored?.guestUserId === 'number' && stored.guestUserId > 0
+      ? stored.guestUserId
+      : null;
+    const template =
+      typeof stored?.signupUrlTemplate === 'string' ? stored.signupUrlTemplate : '';
+
+    return {
+      guest_policy_mode: mode,
+      guest_policy_user_id: userId,
+      guest_policy_signup_url_template: template,
+    };
+  }
+
   // Departments
   @Get('departments')
   async listDepartments() {
