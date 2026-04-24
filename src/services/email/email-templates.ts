@@ -35,7 +35,9 @@ function greeting(name: string | null): string {
 }
 
 function escape(s: string): string {
-  return s.replace(/[&<>]/g, (c) => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'));
+  return s.replace(/[&<>]/g, (c) =>
+    c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;',
+  );
 }
 
 function htmlWrap(inner: string): string {
@@ -64,7 +66,9 @@ export function renderTicketCreated(data: TicketCreatedData): RenderedEmail {
       `<p><strong>Reference:</strong> ${escape(ticket.referenceNumber)}<br/>` +
       `<strong>Subject:</strong> ${escape(ticket.subject)}</p>` +
       `<blockquote style="border-left:3px solid #ddd;padding-left:12px;color:#555">${escape(ticket.description).replace(/\n/g, '<br/>')}</blockquote>` +
-      (portalLink ? `<p><a href="${portalLink}">View or reply to your ticket</a></p>` : '') +
+      (portalLink
+        ? `<p><a href="${portalLink}">View or reply to your ticket</a></p>`
+        : '') +
       `<p style="color:#888;font-size:12px">— ${escape(appName)}</p>`,
   );
 
@@ -89,7 +93,9 @@ export function renderReplyPosted(data: ReplyPostedData): RenderedEmail {
     `<p>${greeting(contact.name)}</p>` +
       `<p>We've posted a reply on your ticket.</p>` +
       `<blockquote style="border-left:3px solid #ddd;padding-left:12px;color:#555">${escape(reply.body).replace(/\n/g, '<br/>')}</blockquote>` +
-      (portalLink ? `<p><a href="${portalLink}">View the full conversation</a></p>` : '') +
+      (portalLink
+        ? `<p><a href="${portalLink}">View the full conversation</a></p>`
+        : '') +
       `<p style="color:#888;font-size:12px">— ${escape(appName)}</p>`,
   );
 
