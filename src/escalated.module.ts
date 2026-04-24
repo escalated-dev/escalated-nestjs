@@ -78,6 +78,7 @@ import {
   ChatSessionService,
   ChatRoutingService,
   AttachmentService,
+  ContactService,
 } from './services';
 
 // Controllers
@@ -182,6 +183,7 @@ const services = [
   ChatSessionService,
   ChatRoutingService,
   AttachmentService,
+  ContactService,
 ];
 
 const controllers = [
