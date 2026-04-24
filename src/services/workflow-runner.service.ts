@@ -5,7 +5,10 @@ import { Workflow } from '../entities/workflow.entity';
 import { WorkflowLog } from '../entities/workflow-log.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { WorkflowEngineService } from './workflow-engine.service';
-import { WorkflowExecutorService, type WorkflowAction } from './workflow-executor.service';
+import {
+  WorkflowExecutorService,
+  type WorkflowAction,
+} from './workflow-executor.service';
 
 /**
  * Orchestrates evaluation + execution of Workflows for a given trigger
@@ -52,7 +55,10 @@ export class WorkflowRunnerService {
       if (matched) {
         try {
           await this.executor.execute(ticket, wf.actions as unknown as WorkflowAction[]);
-          await this.logRepo.update({ id: (log as WorkflowLog).id }, { completedAt: new Date() });
+          await this.logRepo.update(
+            { id: (log as WorkflowLog).id },
+            { completedAt: new Date() },
+          );
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.error(
