@@ -89,6 +89,7 @@ import {
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
+  SESInboundParser,
   InboundRouterService,
 } from './services';
 
@@ -209,6 +210,7 @@ const services = [
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
+  SESInboundParser,
   InboundRouterService,
 ];
 

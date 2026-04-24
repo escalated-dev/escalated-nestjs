@@ -4,6 +4,7 @@ import { InboundEmailController } from '../../src/controllers/inbound-email.cont
 import { InboundRouterService } from '../../src/services/email/inbound-router.service';
 import { PostmarkInboundParser } from '../../src/services/email/postmark-parser.service';
 import { MailgunInboundParser } from '../../src/services/email/mailgun-parser.service';
+import { SESInboundParser } from '../../src/services/email/ses-parser.service';
 import { InboundEmail } from '../../src/entities/inbound-email.entity';
 import { ESCALATED_OPTIONS } from '../../src/config/escalated.config';
 
@@ -43,6 +44,7 @@ describe('InboundEmailController', () => {
         { provide: InboundRouterService, useValue: router },
         { provide: PostmarkInboundParser, useValue: parser },
         { provide: MailgunInboundParser, useValue: { parse: jest.fn() } },
+        { provide: SESInboundParser, useValue: { parse: jest.fn() } },
         { provide: getRepositoryToken(InboundEmail), useValue: inboundRepo },
         {
           provide: ESCALATED_OPTIONS,
@@ -118,6 +120,7 @@ describe('InboundEmailController', () => {
         { provide: InboundRouterService, useValue: router },
         { provide: PostmarkInboundParser, useValue: parser },
         { provide: MailgunInboundParser, useValue: mailgunParser },
+        { provide: SESInboundParser, useValue: { parse: jest.fn() } },
         { provide: getRepositoryToken(InboundEmail), useValue: inboundRepo },
         {
           provide: ESCALATED_OPTIONS,
