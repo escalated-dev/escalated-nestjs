@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type {
-  InboundEmailParser,
-  ParsedInboundEmail,
-} from './inbound-parser.interface';
+import type { InboundEmailParser, ParsedInboundEmail } from './inbound-parser.interface';
 
 interface PostmarkHeader {
   Name: string;
