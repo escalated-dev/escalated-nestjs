@@ -13,6 +13,7 @@ import {
   TicketStatusChangedEvent,
 } from '../events/escalated.events';
 import { WorkflowEngineService } from './workflow-engine.service';
+import { WebhookService } from './webhook.service';
 
 export interface WorkflowAction {
   type: string;
@@ -23,10 +24,10 @@ export interface WorkflowAction {
  * Performs the side-effects dictated by a matched Workflow. Distinct from
  * WorkflowEngineService (which only evaluates conditions).
  *
- * Action catalog (this commit): change_priority, add_tag, remove_tag,
- * change_status, set_department, assign_agent, add_note. Additional actions
- * (send_webhook, add_follower, delay, assign_round_robin) are scheduled for
- * a follow-up.
+ * Action catalog: change_priority, add_tag, remove_tag, change_status,
+ * set_department, assign_agent, add_note, insert_canned_reply,
+ * send_webhook. Additional actions (add_follower, delay,
+ * assign_round_robin) are scheduled for a follow-up.
  */
 @Injectable()
 export class WorkflowExecutorService {
@@ -40,6 +41,7 @@ export class WorkflowExecutorService {
     @InjectRepository(Reply) private readonly replyRepo: Repository<Reply>,
     private readonly eventEmitter: EventEmitter2,
     private readonly engine: WorkflowEngineService,
+    private readonly webhooks: WebhookService,
   ) {}
 
   async execute(ticket: Ticket, actions: WorkflowAction[]): Promise<void> {
@@ -66,6 +68,8 @@ export class WorkflowExecutorService {
         return this.addNote(ticket, action.value ?? '');
       case 'insert_canned_reply':
         return this.insertCannedReply(ticket, action.value ?? '');
+      case 'send_webhook':
+        return this.sendWebhook(ticket, action.value ?? '');
       default:
         throw new Error(`Unknown workflow action: ${action.type}`);
     }
@@ -200,5 +204,36 @@ export class WorkflowExecutorService {
       type: 'reply',
       isInternal: false,
     });
+  }
+
+  /**
+   * Dispatches an HTTP webhook via the existing WebhookService. The
+   * {@code value} argument is the webhook id to fire. Tolerates
+   * missing / unknown webhook ids (logs a warning and continues) so
+   * a stale workflow doesn't halt the rest of the batch. The
+   * underlying WebhookService handles HMAC signing + retries.
+   */
+  private async sendWebhook(ticket: Ticket, value: string): Promise<void> {
+    const webhookId = Number(value);
+    if (!Number.isFinite(webhookId) || webhookId <= 0) {
+      this.logger.warn(
+        `send_webhook: invalid webhook id "${value}" — skipping`,
+      );
+      return;
+    }
+
+    let webhook;
+    try {
+      webhook = await this.webhooks.findById(webhookId);
+    } catch (err) {
+      this.logger.warn(
+        `send_webhook: webhook #${webhookId} not found (${
+          (err as Error).message
+        }) — skipping`,
+      );
+      return;
+    }
+
+    await this.webhooks.dispatch(webhook, 'workflow.triggered', { ticket });
   }
 }

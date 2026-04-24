@@ -8,6 +8,7 @@ import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { Reply } from '../../src/entities/reply.entity';
 import { WorkflowExecutorService } from '../../src/services/workflow-executor.service';
 import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
+import { WebhookService } from '../../src/services/webhook.service';
 import { buildTicket } from '../factories';
 
 describe('WorkflowExecutorService', () => {
@@ -18,6 +19,7 @@ describe('WorkflowExecutorService', () => {
   let activityRepo: any;
   let replyRepo: any;
   let eventEmitter: { emit: jest.Mock };
+  let webhooks: { findById: jest.Mock; dispatch: jest.Mock };
 
   beforeEach(async () => {
     ticketRepo = {
@@ -39,6 +41,10 @@ describe('WorkflowExecutorService', () => {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
     };
     eventEmitter = { emit: jest.fn() };
+    webhooks = {
+      findById: jest.fn(),
+      dispatch: jest.fn().mockResolvedValue({ id: 1 }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,6 +56,7 @@ describe('WorkflowExecutorService', () => {
         { provide: getRepositoryToken(TicketActivity), useValue: activityRepo },
         { provide: getRepositoryToken(Reply), useValue: replyRepo },
         { provide: EventEmitter2, useValue: eventEmitter },
+        { provide: WebhookService, useValue: webhooks },
       ],
     }).compile();
 
@@ -247,6 +254,42 @@ describe('WorkflowExecutorService', () => {
       await expect(executor.execute(ticket, [{ type: 'nonsense' }])).rejects.toThrow(
         /Unknown workflow action/,
       );
+    });
+  });
+
+  describe('send_webhook', () => {
+    it('looks up the webhook by id and dispatches with the ticket payload', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      const webhook = { id: 7, url: 'https://host.example/hook' };
+      webhooks.findById.mockResolvedValue(webhook);
+
+      await executor.execute(ticket, [{ type: 'send_webhook', value: '7' }]);
+
+      expect(webhooks.findById).toHaveBeenCalledWith(7);
+      expect(webhooks.dispatch).toHaveBeenCalledWith(
+        webhook,
+        'workflow.triggered',
+        { ticket },
+      );
+    });
+
+    it('skips silently when webhook id is not numeric', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+
+      await executor.execute(ticket, [{ type: 'send_webhook', value: 'not-a-number' }]);
+
+      expect(webhooks.findById).not.toHaveBeenCalled();
+      expect(webhooks.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('skips silently when the webhook is not found', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      webhooks.findById.mockRejectedValue(new Error('Webhook not found'));
+
+      await executor.execute(ticket, [{ type: 'send_webhook', value: '99' }]);
+
+      expect(webhooks.findById).toHaveBeenCalledWith(99);
+      expect(webhooks.dispatch).not.toHaveBeenCalled();
     });
   });
 });
