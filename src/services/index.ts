@@ -25,3 +25,4 @@ export { BusinessScheduleService } from './business-schedule.service';
 export { ChatSessionService } from './chat-session.service';
 export { ChatRoutingService } from './chat-routing.service';
 export { AttachmentService } from './attachment.service';
+export { ContactService } from './contact.service';
