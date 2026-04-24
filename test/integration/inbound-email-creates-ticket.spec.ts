@@ -24,9 +24,12 @@ describe('integration: inbound email → Contact → Ticket → event', () => {
   let controller: InboundEmailController;
   let eventEmitter: EventEmitter2;
   let contactRepo: { findOne: jest.Mock; save: jest.Mock; create: jest.Mock };
-  let ticketRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let ticketRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock; update: jest.Mock };
+  let replyRepo: { create: jest.Mock; save: jest.Mock; findOne: jest.Mock; createQueryBuilder: jest.Mock };
   let inboundRepo: { save: jest.Mock };
+  let existingTickets: Map<number, Ticket>;
   let createdTicket: Ticket | null;
+  let createdReply: Reply | null;
   let createdContact: Contact | null;
 
   // Minimal Postmark fixture — the parser accepts the "real" provider shape.
@@ -42,7 +45,9 @@ describe('integration: inbound email → Contact → Ticket → event', () => {
   };
 
   beforeEach(async () => {
+    existingTickets = new Map();
     createdTicket = null;
+    createdReply = null;
     createdContact = null;
 
     // Contact repo: not found by email, so findOrCreateByEmail creates one.
@@ -55,20 +60,39 @@ describe('integration: inbound email → Contact → Ticket → event', () => {
       }),
     };
 
-    // Ticket repo: resolution lookups find nothing (new ticket), but a
-    // `findOne({ where: { id: 101 } })` after save returns the created row
-    // — that's how TicketService.create reloads at the end.
+    // Ticket repo: resolution lookups find whatever's been pre-seeded via
+    // `existingTickets`, and `findOne({ where: { id: 101 } })` after save
+    // returns the created row — that's how TicketService.create reloads at
+    // the end.
     ticketRepo = {
       findOne: jest.fn(async (query: { where?: { id?: number } }) => {
-        if (createdTicket && query?.where?.id === createdTicket.id) {
-          return createdTicket;
-        }
-        return null;
+        const id = query?.where?.id;
+        if (id === undefined) return null;
+        if (createdTicket && id === createdTicket.id) return createdTicket;
+        return existingTickets.get(id) ?? null;
       }),
       create: jest.fn((data) => ({ ...data, id: 101, referenceNumber: 'TK-INT-1' }) as Ticket),
       save: jest.fn(async (t) => {
         createdTicket = Object.assign(Object.create(Ticket.prototype), t, { id: 101 });
         return createdTicket;
+      }),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
+
+    replyRepo = {
+      create: jest.fn((data) => ({ ...data, id: 42 }) as Reply),
+      save: jest.fn(async (r) => {
+        createdReply = Object.assign(Object.create(Reply.prototype), r, { id: 42 });
+        return createdReply;
+      }),
+      findOne: jest.fn().mockResolvedValue(null),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([]),
       }),
     };
 
@@ -97,21 +121,7 @@ describe('integration: inbound email → Contact → Ticket → event', () => {
           provide: getRepositoryToken(TicketActivity),
           useValue: { save: jest.fn().mockResolvedValue({}) },
         },
-        {
-          provide: getRepositoryToken(Reply),
-          useValue: {
-            save: jest.fn(),
-            findOne: jest.fn().mockResolvedValue(null),
-            createQueryBuilder: jest.fn().mockReturnValue({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-            }),
-          },
-        },
+        { provide: getRepositoryToken(Reply), useValue: replyRepo },
         {
           provide: getRepositoryToken(AgentProfile),
           useValue: { find: jest.fn().mockResolvedValue([]) },
@@ -199,5 +209,79 @@ describe('integration: inbound email → Contact → Ticket → event', () => {
     expect(inboundRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ outcome: 'ignored' }),
     );
+  });
+
+  it('matches a canonical In-Reply-To to an existing ticket and adds a reply', async () => {
+    // Seed a ticket that the inbound Message-ID will resolve to via
+    // MessageIdUtil.parseTicketIdFromMessageId('<ticket-55@...>') → 55.
+    existingTickets.set(
+      55,
+      Object.assign(Object.create(Ticket.prototype), {
+        id: 55,
+        referenceNumber: 'TK-55',
+        requesterId: 0,
+        firstRespondedAt: null,
+      }) as Ticket,
+    );
+
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    eventEmitter.onAny((event, payload) => {
+      emitted.push({ event: String(event), payload });
+    });
+
+    const replyPayload = {
+      ...postmarkPayload,
+      Subject: 'Re: My laptop is on fire',
+      TextBody: 'Thanks for the quick response — here is more detail.',
+      HtmlBody: null,
+      MessageID: 'external-reply-xyz@mail.alice.com',
+      Headers: [
+        { Name: 'Message-ID', Value: '<external-reply-xyz@mail.alice.com>' },
+        { Name: 'In-Reply-To', Value: '<ticket-55@reply.example.com>' },
+        { Name: 'References', Value: '<ticket-55@reply.example.com>' },
+      ],
+    };
+
+    const result = await controller.receive(replyPayload);
+
+    // Controller reports the reply-added outcome.
+    expect(result.ok).toBe(true);
+    expect(result.outcome).toBe('reply_added');
+
+    // No new ticket created; the reply was appended to #55.
+    expect(ticketRepo.save).not.toHaveBeenCalled();
+    expect(replyRepo.save).toHaveBeenCalledTimes(1);
+    expect(replyRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ticketId: 55,
+        body: 'Thanks for the quick response — here is more detail.',
+        type: 'reply',
+        isInternal: false,
+      }),
+    );
+
+    // Contact was still upserted for the replying sender.
+    expect(contactRepo.findOne).toHaveBeenCalledWith({
+      where: { email: 'alice@example.com' },
+    });
+
+    // Audit row records the matched ticket + reply ids.
+    expect(inboundRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outcome: 'reply_added',
+        matchedTicketId: 55,
+        createdReplyId: 42,
+      }),
+    );
+
+    // escalated.ticket.reply_created fires (bus the EmailListener watches
+    // to send the agent-side reply notification).
+    const replyCreated = emitted.find(
+      (e) => e.event === 'escalated.ticket.reply_created',
+    );
+    expect(replyCreated).toBeDefined();
+    expect(replyCreated?.payload).toMatchObject({
+      reply: expect.objectContaining({ id: 42, ticketId: 55 }),
+    });
   });
 });
