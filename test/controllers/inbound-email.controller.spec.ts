@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { InboundEmailController } from '../../src/controllers/inbound-email.controller';
 import { InboundRouterService } from '../../src/services/email/inbound-router.service';
 import { PostmarkInboundParser } from '../../src/services/email/postmark-parser.service';
+import { MailgunInboundParser } from '../../src/services/email/mailgun-parser.service';
 import { InboundEmail } from '../../src/entities/inbound-email.entity';
 import { ESCALATED_OPTIONS } from '../../src/config/escalated.config';
 
@@ -41,6 +42,7 @@ describe('InboundEmailController', () => {
       providers: [
         { provide: InboundRouterService, useValue: router },
         { provide: PostmarkInboundParser, useValue: parser },
+        { provide: MailgunInboundParser, useValue: { parse: jest.fn() } },
         { provide: getRepositoryToken(InboundEmail), useValue: inboundRepo },
         {
           provide: ESCALATED_OPTIONS,
@@ -95,5 +97,49 @@ describe('InboundEmailController', () => {
 
     expect(inboundRepo.save).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'ignored' }));
     expect(response).toEqual({ ok: true, outcome: 'ignored' });
+  });
+
+  it('picks the Mailgun parser when options.inbound.provider is mailgun', async () => {
+    const mailgunParser = { parse: jest.fn().mockReturnValue({
+      from: 'alice@x.com',
+      fromName: 'Alice',
+      to: 'support@x.com',
+      subject: 'hi',
+      textBody: 'body',
+      htmlBody: null,
+      messageId: null,
+      inReplyTo: null,
+      references: [],
+    }) };
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [InboundEmailController],
+      providers: [
+        { provide: InboundRouterService, useValue: router },
+        { provide: PostmarkInboundParser, useValue: parser },
+        { provide: MailgunInboundParser, useValue: mailgunParser },
+        { provide: getRepositoryToken(InboundEmail), useValue: inboundRepo },
+        {
+          provide: ESCALATED_OPTIONS,
+          useValue: {
+            inbound: {
+              provider: 'mailgun',
+              replyDomain: 'x',
+              replySecret: 'y',
+              webhookSecret: 'z',
+            },
+          },
+        },
+      ],
+    }).compile();
+    const mailgunController = module.get(InboundEmailController);
+
+    await mailgunController.receive({ sender: 'alice@x.com' });
+
+    expect(mailgunParser.parse).toHaveBeenCalled();
+    expect(parser.parse).not.toHaveBeenCalled();
+    expect(inboundRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'mailgun' }),
+    );
   });
 });
