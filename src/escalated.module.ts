@@ -47,6 +47,8 @@ import {
   ChatSession,
   ChatRoutingRule,
   Contact,
+  Workflow,
+  WorkflowLog,
 } from './entities';
 
 // Services
@@ -79,6 +81,7 @@ import {
   ChatRoutingService,
   AttachmentService,
   ContactService,
+  WorkflowEngineService,
 } from './services';
 
 // Controllers
@@ -154,6 +157,8 @@ const entities = [
   ChatSession,
   ChatRoutingRule,
   Contact,
+  Workflow,
+  WorkflowLog,
 ];
 
 const services = [
@@ -185,6 +190,7 @@ const services = [
   ChatRoutingService,
   AttachmentService,
   ContactService,
+  WorkflowEngineService,
 ];
 
 const controllers = [
