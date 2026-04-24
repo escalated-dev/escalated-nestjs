@@ -1,7 +1,13 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
-import { buildMessageId, buildReplyTo } from './message-id';
+import {
+  ESCALATED_OPTIONS,
+  type EscalatedModuleOptions,
+} from '../../config/escalated.config';
+import {
+  buildMessageId,
+  buildReplyTo,
+} from './message-id';
 import {
   renderTicketCreated,
   renderReplyPosted,
@@ -154,7 +160,10 @@ export class EmailService {
     // HMAC. The host app verifies and links on account creation.
     const secret = this.inboundSecret() ?? 'escalated-signup';
     const token = buildReplyTo(input.contact.id, secret, 'signup').split('@')[0];
-    const signupUrl = policy.signupUrlTemplate.replace('{token}', encodeURIComponent(token));
+    const signupUrl = policy.signupUrlTemplate.replace(
+      '{token}',
+      encodeURIComponent(token),
+    );
 
     const rendered = renderSignupInvite({
       ticket: input.ticket,
