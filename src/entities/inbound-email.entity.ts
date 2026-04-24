@@ -1,6 +1,16 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
-export type InboundEmailOutcome = 'reply_added' | 'ticket_created' | 'ignored' | 'error';
+export type InboundEmailOutcome =
+  | 'reply_added'
+  | 'ticket_created'
+  | 'ignored'
+  | 'error';
 
 /**
  * Audit log for every inbound email webhook call, successful or not.
