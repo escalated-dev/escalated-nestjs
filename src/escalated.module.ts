@@ -50,6 +50,7 @@ import {
   Contact,
   Workflow,
   WorkflowLog,
+  DeferredWorkflowJob,
   InboundEmail,
 } from './entities';
 
@@ -170,6 +171,7 @@ const entities = [
   Contact,
   Workflow,
   WorkflowLog,
+  DeferredWorkflowJob,
   InboundEmail,
 ];
 

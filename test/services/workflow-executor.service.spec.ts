@@ -6,6 +6,7 @@ import { TicketStatus } from '../../src/entities/ticket-status.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { Reply } from '../../src/entities/reply.entity';
+import { DeferredWorkflowJob } from '../../src/entities/deferred-workflow-job.entity';
 import { WorkflowExecutorService } from '../../src/services/workflow-executor.service';
 import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
 import { buildTicket } from '../factories';
@@ -17,6 +18,7 @@ describe('WorkflowExecutorService', () => {
   let tagRepo: any;
   let activityRepo: any;
   let replyRepo: any;
+  let deferredRepo: any;
   let eventEmitter: { emit: jest.Mock };
 
   beforeEach(async () => {
@@ -38,6 +40,11 @@ describe('WorkflowExecutorService', () => {
     replyRepo = {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
     };
+    deferredRepo = {
+      save: jest.fn(async (x) => ({ id: 1, ...x })),
+      find: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
     eventEmitter = { emit: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -49,6 +56,7 @@ describe('WorkflowExecutorService', () => {
         { provide: getRepositoryToken(Tag), useValue: tagRepo },
         { provide: getRepositoryToken(TicketActivity), useValue: activityRepo },
         { provide: getRepositoryToken(Reply), useValue: replyRepo },
+        { provide: getRepositoryToken(DeferredWorkflowJob), useValue: deferredRepo },
         { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
@@ -246,6 +254,110 @@ describe('WorkflowExecutorService', () => {
       const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
       await expect(executor.execute(ticket, [{ type: 'nonsense' }])).rejects.toThrow(
         /Unknown workflow action/,
+      );
+    });
+  });
+
+  describe('delay', () => {
+    it('pauses execution and persists remaining actions to the queue', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      const before = Date.now();
+
+      await executor.execute(ticket, [
+        { type: 'change_priority', value: 'high' },
+        { type: 'delay', value: '60' },
+        { type: 'set_department', value: '4' },
+        { type: 'add_note', value: 'after wait' },
+      ]);
+
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, { priority: 'high' });
+      expect(ticketRepo.update).not.toHaveBeenCalledWith(10, { departmentId: 4 });
+      expect(replyRepo.save).not.toHaveBeenCalled();
+
+      expect(deferredRepo.save).toHaveBeenCalledTimes(1);
+      const saved = deferredRepo.save.mock.calls[0][0];
+      expect(saved.ticketId).toBe(10);
+      expect(saved.status).toBe('pending');
+      expect(saved.remainingActions).toEqual([
+        { type: 'set_department', value: '4' },
+        { type: 'add_note', value: 'after wait' },
+      ]);
+      expect(saved.runAt.getTime()).toBeGreaterThanOrEqual(before + 60_000 - 500);
+    });
+
+    it('skips invalid delay values and does not run further actions', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+
+      await executor.execute(ticket, [
+        { type: 'delay', value: 'nonsense' },
+        { type: 'change_priority', value: 'high' },
+      ]);
+
+      expect(deferredRepo.save).not.toHaveBeenCalled();
+      expect(ticketRepo.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('runDueDeferredJobs', () => {
+    it('resumes remaining actions and marks the job done', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      deferredRepo.find.mockResolvedValue([
+        {
+          id: 99,
+          ticketId: 10,
+          remainingActions: [{ type: 'change_priority', value: 'urgent' }],
+          runAt: new Date(Date.now() - 1000),
+          status: 'pending',
+        },
+      ]);
+      ticketRepo.findOne.mockResolvedValue(ticket);
+
+      await executor.runDueDeferredJobs();
+
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, { priority: 'urgent' });
+      expect(deferredRepo.update).toHaveBeenCalledWith(99, { status: 'done' });
+    });
+
+    it('marks the job failed when the ticket has been deleted', async () => {
+      deferredRepo.find.mockResolvedValue([
+        {
+          id: 99,
+          ticketId: 10,
+          remainingActions: [],
+          runAt: new Date(Date.now() - 1000),
+          status: 'pending',
+        },
+      ]);
+      ticketRepo.findOne.mockResolvedValue(null);
+
+      await executor.runDueDeferredJobs();
+
+      expect(deferredRepo.update).toHaveBeenCalledWith(
+        99,
+        expect.objectContaining({ status: 'failed' }),
+      );
+    });
+
+    it('captures exceptions and marks the job failed with lastError', async () => {
+      deferredRepo.find.mockResolvedValue([
+        {
+          id: 99,
+          ticketId: 10,
+          remainingActions: [{ type: 'nonsense' }],
+          runAt: new Date(Date.now() - 1000),
+          status: 'pending',
+        },
+      ]);
+      ticketRepo.findOne.mockResolvedValue(buildTicket({ id: 10 }));
+
+      await executor.runDueDeferredJobs();
+
+      expect(deferredRepo.update).toHaveBeenCalledWith(
+        99,
+        expect.objectContaining({
+          status: 'failed',
+          lastError: expect.stringMatching(/Unknown workflow action/),
+        }),
       );
     });
   });

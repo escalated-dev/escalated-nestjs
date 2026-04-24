@@ -1,12 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { Tag } from '../entities/tag.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { Reply } from '../entities/reply.entity';
+import { DeferredWorkflowJob } from '../entities/deferred-workflow-job.entity';
 import {
   ESCALATED_EVENTS,
   TicketAssignedEvent,
@@ -23,10 +25,12 @@ export interface WorkflowAction {
  * Performs the side-effects dictated by a matched Workflow. Distinct from
  * WorkflowEngineService (which only evaluates conditions).
  *
- * Action catalog (this commit): change_priority, add_tag, remove_tag,
- * change_status, set_department, assign_agent, add_note. Additional actions
- * (send_webhook, add_follower, delay, assign_round_robin) are scheduled for
- * a follow-up.
+ * Action catalog: change_priority, add_tag, remove_tag, change_status,
+ * set_department, assign_agent, add_note, insert_canned_reply, delay.
+ *
+ * `delay` splits a run into two halves: everything before the delay runs
+ * inline, everything after is persisted as a DeferredWorkflowJob and
+ * picked up by {@link runDueDeferredJobs} once the wait expires.
  */
 @Injectable()
 export class WorkflowExecutorService {
@@ -38,12 +42,20 @@ export class WorkflowExecutorService {
     @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
     @InjectRepository(TicketActivity) private readonly activityRepo: Repository<TicketActivity>,
     @InjectRepository(Reply) private readonly replyRepo: Repository<Reply>,
+    @InjectRepository(DeferredWorkflowJob)
+    private readonly deferredRepo: Repository<DeferredWorkflowJob>,
     private readonly eventEmitter: EventEmitter2,
     private readonly engine: WorkflowEngineService,
   ) {}
 
   async execute(ticket: Ticket, actions: WorkflowAction[]): Promise<void> {
-    for (const action of actions) {
+    for (let i = 0; i < actions.length; i++) {
+      const action = actions[i];
+      if (action.type === 'delay') {
+        const remaining = actions.slice(i + 1);
+        await this.scheduleDelay(ticket, action.value ?? '', remaining);
+        return;
+      }
       await this.dispatch(ticket, action);
     }
   }
@@ -200,5 +212,63 @@ export class WorkflowExecutorService {
       type: 'reply',
       isInternal: false,
     });
+  }
+
+  private async scheduleDelay(
+    ticket: Ticket,
+    value: string,
+    remainingActions: WorkflowAction[],
+  ): Promise<void> {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+      this.logger.warn(`delay: invalid seconds value "${value}", skipping remaining actions`);
+      return;
+    }
+    const runAt = new Date(Date.now() + seconds * 1000);
+    await this.deferredRepo.save({
+      ticketId: ticket.id,
+      remainingActions,
+      runAt,
+      status: 'pending',
+    });
+  }
+
+  /**
+   * Poll for deferred jobs whose wait has elapsed and resume their
+   * remainingActions. Flips status to `done` on success, `failed` (with
+   * lastError populated) on exception, so rows are audit-retained and
+   * never re-picked up.
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async runDueDeferredJobs(): Promise<void> {
+    let dueJobs: DeferredWorkflowJob[];
+    try {
+      dueJobs = await this.deferredRepo.find({
+        where: { status: 'pending', runAt: LessThanOrEqual(new Date()) },
+      });
+    } catch (error) {
+      this.logger.error('Error querying deferred workflow jobs', error as Error);
+      return;
+    }
+    for (const job of dueJobs) {
+      try {
+        const ticket = await this.ticketRepo.findOne({ where: { id: job.ticketId } });
+        if (!ticket) {
+          await this.deferredRepo.update(job.id, {
+            status: 'failed',
+            lastError: `Ticket #${job.ticketId} not found`,
+          });
+          continue;
+        }
+        await this.execute(ticket, job.remainingActions as WorkflowAction[]);
+        await this.deferredRepo.update(job.id, { status: 'done' });
+      } catch (error) {
+        this.logger.error(`Deferred job #${job.id} failed`, error as Error);
+        await this.deferredRepo.update(job.id, {
+          status: 'failed',
+          lastError: (error as Error)?.message ?? 'unknown error',
+        });
+      }
+    }
   }
 }
