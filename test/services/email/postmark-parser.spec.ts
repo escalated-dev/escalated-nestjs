@@ -12,9 +12,7 @@ describe('PostmarkInboundParser', () => {
       TextBody: 'Help pls',
       HtmlBody: '<p>Help pls</p>',
       MessageID: 'abc123@postmark',
-      Headers: [
-        { Name: 'Message-ID', Value: '<inbound-abc123@mail.example.com>' },
-      ],
+      Headers: [{ Name: 'Message-ID', Value: '<inbound-abc123@mail.example.com>' }],
     };
 
     const parsed = parser.parse(payload);

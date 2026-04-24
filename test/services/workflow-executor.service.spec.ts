@@ -110,9 +110,7 @@ describe('WorkflowExecutorService', () => {
 
       await executor.execute(ticket, [{ type: 'remove_tag', value: 'vip' }]);
 
-      expect(ticketRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ tags: [] }),
-      );
+      expect(ticketRepo.save).toHaveBeenCalledWith(expect.objectContaining({ tags: [] }));
     });
   });
 
@@ -246,9 +244,9 @@ describe('WorkflowExecutorService', () => {
 
     it('throws on unknown action type', async () => {
       const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
-      await expect(
-        executor.execute(ticket, [{ type: 'nonsense' }]),
-      ).rejects.toThrow(/Unknown workflow action/);
+      await expect(executor.execute(ticket, [{ type: 'nonsense' }])).rejects.toThrow(
+        /Unknown workflow action/,
+      );
     });
   });
 });

@@ -83,9 +83,7 @@ describe('ContactService', () => {
 
       const result = await service.findOrCreateByEmail('alice@example.com', 'Alice');
 
-      expect(contactRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'Alice' }),
-      );
+      expect(contactRepo.save).toHaveBeenCalledWith(expect.objectContaining({ name: 'Alice' }));
       expect(result.name).toBe('Alice');
     });
 

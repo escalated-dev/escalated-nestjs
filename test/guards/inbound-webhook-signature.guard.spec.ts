@@ -18,9 +18,9 @@ describe('InboundWebhookSignatureGuard', () => {
         webhookSecret: 'hunter2',
       },
     } as any);
-    await expect(
-      g.canActivate(ctx({ 'x-escalated-inbound-secret': 'hunter2' })),
-    ).resolves.toBe(true);
+    await expect(g.canActivate(ctx({ 'x-escalated-inbound-secret': 'hunter2' }))).resolves.toBe(
+      true,
+    );
   });
 
   it('rejects when the header is missing', async () => {
@@ -34,15 +34,15 @@ describe('InboundWebhookSignatureGuard', () => {
     const g = new InboundWebhookSignatureGuard({
       inbound: { replyDomain: 'x', replySecret: 'y', webhookSecret: 'hunter2' },
     } as any);
-    await expect(
-      g.canActivate(ctx({ 'x-escalated-inbound-secret': 'wrong' })),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(g.canActivate(ctx({ 'x-escalated-inbound-secret': 'wrong' }))).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 
   it('rejects when no inbound config is present at all', async () => {
     const g = new InboundWebhookSignatureGuard({} as any);
-    await expect(
-      g.canActivate(ctx({ 'x-escalated-inbound-secret': 'anything' })),
-    ).rejects.toThrow(UnauthorizedException);
+    await expect(g.canActivate(ctx({ 'x-escalated-inbound-secret': 'anything' }))).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 });

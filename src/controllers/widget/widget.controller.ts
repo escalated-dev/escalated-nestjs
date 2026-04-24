@@ -20,14 +20,8 @@ import { ContactService } from '../../services/contact.service';
 import { SettingsService } from '../../services/settings.service';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
-import {
-  ESCALATED_OPTIONS,
-  type EscalatedModuleOptions,
-} from '../../config/escalated.config';
-import {
-  ESCALATED_EVENTS,
-  TicketSignupInviteEvent,
-} from '../../events/escalated.events';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalated.events';
 
 /**
  * Shape accepted by POST /escalated/widget/tickets. Either path is valid:

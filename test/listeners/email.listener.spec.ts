@@ -147,9 +147,7 @@ describe('EmailListener', () => {
         name: 'Alice',
       });
 
-      await listener.onSignupInvite(
-        new TicketSignupInviteEvent(1, 42, 'alice@example.com'),
-      );
+      await listener.onSignupInvite(new TicketSignupInviteEvent(1, 42, 'alice@example.com'));
 
       expect(emailService.sendSignupInvite).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -51,9 +51,7 @@ export class EmailListener {
         guestAccessToken: ticket.guestAccessToken,
       });
     } catch (err) {
-      this.logger.warn(
-        `ticket.created email failed for ticket #${ticket.id}: ${this.msg(err)}`,
-      );
+      this.logger.warn(`ticket.created email failed for ticket #${ticket.id}: ${this.msg(err)}`);
     }
   }
 
@@ -91,9 +89,7 @@ export class EmailListener {
         guestAccessToken: ticket.guestAccessToken,
       });
     } catch (err) {
-      this.logger.warn(
-        `reply.created email failed for ticket #${ticket.id}: ${this.msg(err)}`,
-      );
+      this.logger.warn(`reply.created email failed for ticket #${ticket.id}: ${this.msg(err)}`);
     }
   }
 
