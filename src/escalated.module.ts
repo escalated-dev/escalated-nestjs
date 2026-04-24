@@ -107,6 +107,7 @@ import { WidgetChatController } from './controllers/widget/chat.controller';
 import { ApiTokenGuard } from './guards/api-token.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { GuestAccessGuard } from './guards/guest-access.guard';
+import { PublicSubmitThrottleGuard } from './guards/public-submit-throttle.guard';
 
 // Interceptors
 import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
@@ -243,6 +244,7 @@ export class EscalatedModule {
         ApiTokenGuard,
         PermissionsGuard,
         GuestAccessGuard,
+        PublicSubmitThrottleGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
       ],

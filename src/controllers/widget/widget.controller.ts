@@ -18,6 +18,7 @@ import { KnowledgeBaseService } from '../../services/knowledge-base.service';
 import { SatisfactionRatingService } from '../../services/satisfaction-rating.service';
 import { ContactService } from '../../services/contact.service';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
+import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
 import {
   ESCALATED_OPTIONS,
   type EscalatedModuleOptions,
@@ -71,6 +72,7 @@ export class WidgetController {
   }
 
   @Post('tickets')
+  @UseGuards(PublicSubmitThrottleGuard)
   async createTicket(@Body() body: WidgetCreateTicketBody) {
     let contactId: number | null = null;
     let requesterId: number;
