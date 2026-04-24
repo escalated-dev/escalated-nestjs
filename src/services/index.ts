@@ -31,4 +31,5 @@ export { WorkflowExecutorService } from './workflow-executor.service';
 export { WorkflowRunnerService } from './workflow-runner.service';
 export { EmailService } from './email/email.service';
 export { PostmarkInboundParser } from './email/postmark-parser.service';
+export { MailgunInboundParser } from './email/mailgun-parser.service';
 export { InboundRouterService } from './email/inbound-router.service';

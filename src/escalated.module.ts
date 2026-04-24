@@ -88,6 +88,7 @@ import {
   WorkflowRunnerService,
   EmailService,
   PostmarkInboundParser,
+  MailgunInboundParser,
   InboundRouterService,
 } from './services';
 
@@ -207,6 +208,7 @@ const services = [
   WorkflowRunnerService,
   EmailService,
   PostmarkInboundParser,
+  MailgunInboundParser,
   InboundRouterService,
 ];
 
