@@ -87,9 +87,13 @@ import {
   WorkflowExecutorService,
   WorkflowRunnerService,
   EmailService,
+  PostmarkInboundParser,
+  InboundRouterService,
 } from './services';
 
 import { WorkflowListener, EmailListener } from './listeners';
+import { InboundEmailController } from './controllers/inbound-email.controller';
+import { InboundWebhookSignatureGuard } from './guards/inbound-webhook-signature.guard';
 
 // Controllers
 import { AgentTicketController } from './controllers/agent/ticket.controller';
@@ -202,6 +206,8 @@ const services = [
   WorkflowExecutorService,
   WorkflowRunnerService,
   EmailService,
+  PostmarkInboundParser,
+  InboundRouterService,
 ];
 
 const controllers = [
@@ -225,6 +231,7 @@ const controllers = [
   AgentChatController,
   WidgetChatController,
   AttachmentController,
+  InboundEmailController,
 ];
 
 @Module({})
@@ -270,6 +277,7 @@ export class EscalatedModule {
         PermissionsGuard,
         GuestAccessGuard,
         PublicSubmitThrottleGuard,
+        InboundWebhookSignatureGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
         WorkflowListener,

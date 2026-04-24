@@ -44,14 +44,7 @@ describe('InboundEmailController', () => {
         { provide: getRepositoryToken(InboundEmail), useValue: inboundRepo },
         {
           provide: ESCALATED_OPTIONS,
-          useValue: {
-            inbound: {
-              provider: 'postmark',
-              replyDomain: 'x',
-              replySecret: 'y',
-              webhookSecret: 'z',
-            },
-          },
+          useValue: { inbound: { provider: 'postmark', replyDomain: 'x', replySecret: 'y', webhookSecret: 'z' } },
         },
       ],
     }).compile();
@@ -93,7 +86,9 @@ describe('InboundEmailController', () => {
 
     const response = await controller.receive({});
 
-    expect(inboundRepo.save).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'ignored' }));
+    expect(inboundRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'ignored' }),
+    );
     expect(response).toEqual({ ok: true, outcome: 'ignored' });
   });
 });
