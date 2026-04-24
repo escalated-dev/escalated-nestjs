@@ -83,7 +83,10 @@ import {
   ContactService,
   WorkflowEngineService,
   WorkflowExecutorService,
+  WorkflowRunnerService,
 } from './services';
+
+import { WorkflowListener } from './listeners';
 
 // Controllers
 import { AgentTicketController } from './controllers/agent/ticket.controller';
@@ -193,6 +196,7 @@ const services = [
   ContactService,
   WorkflowEngineService,
   WorkflowExecutorService,
+  WorkflowRunnerService,
 ];
 
 const controllers = [
@@ -255,6 +259,7 @@ export class EscalatedModule {
         PublicSubmitThrottleGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
+        WorkflowListener,
       ],
       exports: [...services, optionsProvider, TypeOrmModule],
     };
