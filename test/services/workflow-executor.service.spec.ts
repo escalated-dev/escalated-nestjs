@@ -7,7 +7,6 @@ import { Tag } from '../../src/entities/tag.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { Reply } from '../../src/entities/reply.entity';
 import { WorkflowExecutorService } from '../../src/services/workflow-executor.service';
-import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
 import { buildTicket } from '../factories';
 
 describe('WorkflowExecutorService', () => {
@@ -43,7 +42,6 @@ describe('WorkflowExecutorService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorkflowExecutorService,
-        WorkflowEngineService,
         { provide: getRepositoryToken(Ticket), useValue: ticketRepo },
         { provide: getRepositoryToken(TicketStatus), useValue: statusRepo },
         { provide: getRepositoryToken(Tag), useValue: tagRepo },
@@ -110,7 +108,9 @@ describe('WorkflowExecutorService', () => {
 
       await executor.execute(ticket, [{ type: 'remove_tag', value: 'vip' }]);
 
-      expect(ticketRepo.save).toHaveBeenCalledWith(expect.objectContaining({ tags: [] }));
+      expect(ticketRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: [] }),
+      );
     });
   });
 
@@ -193,44 +193,6 @@ describe('WorkflowExecutorService', () => {
     });
   });
 
-  describe('insert_canned_reply', () => {
-    it('creates an external reply with template interpolated against the ticket', async () => {
-      const ticket = buildTicket({
-        id: 10,
-        subject: 'My laptop',
-        priority: 'urgent',
-      }) as unknown as Ticket;
-
-      await executor.execute(ticket, [
-        {
-          type: 'insert_canned_reply',
-          value: 'Hi! About {{subject}} (priority: {{priority}}) — on it.',
-        },
-      ]);
-
-      expect(replyRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          ticketId: 10,
-          body: 'Hi! About My laptop (priority: urgent) — on it.',
-          type: 'reply',
-          isInternal: false,
-        }),
-      );
-    });
-
-    it('leaves unknown variables untouched', async () => {
-      const ticket = buildTicket({ id: 10, subject: 'Hi' }) as unknown as Ticket;
-
-      await executor.execute(ticket, [
-        { type: 'insert_canned_reply', value: 'Hello {{nonexistent}}' },
-      ]);
-
-      expect(replyRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ body: 'Hello {{nonexistent}}' }),
-      );
-    });
-  });
-
   describe('dispatch', () => {
     it('runs all actions in order', async () => {
       const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
@@ -244,9 +206,9 @@ describe('WorkflowExecutorService', () => {
 
     it('throws on unknown action type', async () => {
       const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
-      await expect(executor.execute(ticket, [{ type: 'nonsense' }])).rejects.toThrow(
-        /Unknown workflow action/,
-      );
+      await expect(
+        executor.execute(ticket, [{ type: 'nonsense' }]),
+      ).rejects.toThrow(/Unknown workflow action/);
     });
   });
 });

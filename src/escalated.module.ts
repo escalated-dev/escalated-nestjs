@@ -82,6 +82,7 @@ import {
   AttachmentService,
   ContactService,
   WorkflowEngineService,
+  WorkflowExecutorService,
 } from './services';
 
 // Controllers
@@ -191,6 +192,7 @@ const services = [
   AttachmentService,
   ContactService,
   WorkflowEngineService,
+  WorkflowExecutorService,
 ];
 
 const controllers = [
