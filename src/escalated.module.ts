@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { MailerModule } from '@nestjs-modules/mailer';
 
 import {
   EscalatedModuleOptions,
@@ -47,11 +46,7 @@ import {
   KbArticle,
   ChatSession,
   ChatRoutingRule,
-  Workflow,
-  WorkflowLog,
-  Automation,
   Contact,
-  InboundEmail,
 } from './entities';
 
 // Services
@@ -83,19 +78,7 @@ import {
   ChatSessionService,
   ChatRoutingService,
   AttachmentService,
-  AutomationService,
-  ContactService,
-  WorkflowEngineService,
-  WorkflowExecutorService,
-  WorkflowRunnerService,
-  EmailService,
-  PostmarkInboundParser,
-  InboundRouterService,
 } from './services';
-
-import { WorkflowListener, EmailListener } from './listeners';
-import { InboundEmailController } from './controllers/inbound-email.controller';
-import { InboundWebhookSignatureGuard } from './guards/inbound-webhook-signature.guard';
 
 // Controllers
 import { AgentTicketController } from './controllers/agent/ticket.controller';
@@ -110,7 +93,6 @@ import { AdminWebhookController } from './controllers/admin/webhook.controller';
 import { AdminApiTokenController } from './controllers/admin/api-token.controller';
 import { AdminImportController } from './controllers/admin/import.controller';
 import { AdminMacroController } from './controllers/admin/macro.controller';
-import { AdminAutomationController } from './controllers/admin/automation.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
@@ -124,7 +106,6 @@ import { WidgetChatController } from './controllers/widget/chat.controller';
 import { ApiTokenGuard } from './guards/api-token.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { GuestAccessGuard } from './guards/guest-access.guard';
-import { PublicSubmitThrottleGuard } from './guards/public-submit-throttle.guard';
 
 // Interceptors
 import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
@@ -170,11 +151,7 @@ const entities = [
   KbArticle,
   ChatSession,
   ChatRoutingRule,
-  Workflow,
-  WorkflowLog,
-  Automation,
   Contact,
-  InboundEmail,
 ];
 
 const services = [
@@ -205,14 +182,6 @@ const services = [
   ChatSessionService,
   ChatRoutingService,
   AttachmentService,
-  AutomationService,
-  ContactService,
-  WorkflowEngineService,
-  WorkflowExecutorService,
-  WorkflowRunnerService,
-  EmailService,
-  PostmarkInboundParser,
-  InboundRouterService,
 ];
 
 const controllers = [
@@ -236,8 +205,6 @@ const controllers = [
   AgentChatController,
   WidgetChatController,
   AttachmentController,
-  InboundEmailController,
-  AdminAutomationController,
 ];
 
 @Module({})
@@ -265,14 +232,6 @@ export class EscalatedModule {
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),
         ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
-        ...(mergedOptions.mail
-          ? [
-              MailerModule.forRoot({
-                transport: mergedOptions.mail.transport as never,
-                defaults: { from: mergedOptions.mail.from },
-              }),
-            ]
-          : []),
       ],
       controllers: conditionalControllers,
       providers: [
@@ -282,12 +241,8 @@ export class EscalatedModule {
         ApiTokenGuard,
         PermissionsGuard,
         GuestAccessGuard,
-        PublicSubmitThrottleGuard,
-        InboundWebhookSignatureGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
-        WorkflowListener,
-        EmailListener,
       ],
       exports: [...services, optionsProvider, TypeOrmModule],
     };
