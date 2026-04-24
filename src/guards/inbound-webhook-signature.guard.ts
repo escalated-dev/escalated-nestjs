@@ -6,7 +6,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { timingSafeEqual } from 'crypto';
-import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
+import {
+  ESCALATED_OPTIONS,
+  type EscalatedModuleOptions,
+} from '../config/escalated.config';
 
 /**
  * Verifies the inbound email webhook by a shared-secret header.

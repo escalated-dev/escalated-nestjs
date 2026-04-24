@@ -1,11 +1,20 @@
-import { Body, Controller, Inject, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Inject,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InboundRouterService } from '../services/email/inbound-router.service';
 import { PostmarkInboundParser } from '../services/email/postmark-parser.service';
 import { InboundEmail } from '../entities/inbound-email.entity';
 import { InboundWebhookSignatureGuard } from '../guards/inbound-webhook-signature.guard';
-import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
+import {
+  ESCALATED_OPTIONS,
+  type EscalatedModuleOptions,
+} from '../config/escalated.config';
 
 @Controller('escalated/webhook/email')
 @UseGuards(InboundWebhookSignatureGuard)
