@@ -73,9 +73,7 @@ describe('InboundRouterService', () => {
   describe('priority 1: In-Reply-To matches our Message-ID', () => {
     it('adds a reply on the referenced ticket', async () => {
       ticketRepo.findOne.mockResolvedValue({ id: 55, contactId: 42 });
-      const result = await router.route(
-        parsed({ inReplyTo: '<ticket-55@reply.example.com>' }),
-      );
+      const result = await router.route(parsed({ inReplyTo: '<ticket-55@reply.example.com>' }));
 
       expect(result.outcome).toBe('reply_added');
       expect(result.matchedTicketId).toBe(55);
@@ -107,15 +105,10 @@ describe('InboundRouterService', () => {
     it('adds a reply when the signature verifies', async () => {
       // Build a valid signed reply-to for ticket 88 with the same secret
       const { createHmac } = await import('crypto');
-      const sig = createHmac('sha256', 'hunter2')
-        .update('88')
-        .digest('hex')
-        .slice(0, 8);
+      const sig = createHmac('sha256', 'hunter2').update('88').digest('hex').slice(0, 8);
       ticketRepo.findOne.mockResolvedValue({ id: 88 });
 
-      const result = await router.route(
-        parsed({ to: `reply+88.${sig}@reply.example.com` }),
-      );
+      const result = await router.route(parsed({ to: `reply+88.${sig}@reply.example.com` }));
 
       expect(result.outcome).toBe('reply_added');
       expect(result.matchedTicketId).toBe(88);
