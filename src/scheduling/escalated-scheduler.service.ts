@@ -6,6 +6,7 @@ import { SlaService } from '../services/sla.service';
 import { EscalationService } from '../services/escalation.service';
 import { WebhookService } from '../services/webhook.service';
 import { ChatSessionService } from '../services/chat-session.service';
+import { AutomationService } from '../services/automation.service';
 import { Ticket } from '../entities/ticket.entity';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class EscalatedSchedulerService {
     private readonly escalationService: EscalationService,
     private readonly webhookService: WebhookService,
     private readonly chatSessionService: ChatSessionService,
+    private readonly automationService: AutomationService,
     @InjectRepository(Ticket)
     private readonly ticketRepo: Repository<Ticket>,
   ) {}
@@ -79,6 +81,19 @@ export class EscalatedSchedulerService {
       await this.chatSessionService.cleanupIdleSessions(30);
     } catch (error) {
       this.logger.error('Error cleaning up idle chat sessions', error);
+    }
+  }
+
+  /** Run all active time-based automations every 5 minutes */
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async runAutomations(): Promise<void> {
+    try {
+      const affected = await this.automationService.run();
+      if (affected > 0) {
+        this.logger.log(`Automations applied actions to ${affected} ticket(s)`);
+      }
+    } catch (error) {
+      this.logger.error('Error running automations', error);
     }
   }
 }
