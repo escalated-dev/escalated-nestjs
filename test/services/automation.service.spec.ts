@@ -129,9 +129,7 @@ describe('AutomationService', () => {
     });
 
     it('only scans non-resolved/closed tickets via timestamp checks', async () => {
-      automationRepo.find.mockResolvedValue([
-        { id: 1, name: 'x', conditions: [], actions: [] },
-      ]);
+      automationRepo.find.mockResolvedValue([{ id: 1, name: 'x', conditions: [], actions: [] }]);
 
       await service.run();
 
