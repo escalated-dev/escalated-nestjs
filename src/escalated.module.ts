@@ -47,9 +47,10 @@ import {
   KbArticle,
   ChatSession,
   ChatRoutingRule,
-  Contact,
   Workflow,
   WorkflowLog,
+  Automation,
+  Contact,
   InboundEmail,
 } from './entities';
 
@@ -82,6 +83,7 @@ import {
   ChatSessionService,
   ChatRoutingService,
   AttachmentService,
+  AutomationService,
   ContactService,
   WorkflowEngineService,
   WorkflowExecutorService,
@@ -108,6 +110,7 @@ import { AdminWebhookController } from './controllers/admin/webhook.controller';
 import { AdminApiTokenController } from './controllers/admin/api-token.controller';
 import { AdminImportController } from './controllers/admin/import.controller';
 import { AdminMacroController } from './controllers/admin/macro.controller';
+import { AdminAutomationController } from './controllers/admin/automation.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
@@ -167,9 +170,10 @@ const entities = [
   KbArticle,
   ChatSession,
   ChatRoutingRule,
-  Contact,
   Workflow,
   WorkflowLog,
+  Automation,
+  Contact,
   InboundEmail,
 ];
 
@@ -201,6 +205,7 @@ const services = [
   ChatSessionService,
   ChatRoutingService,
   AttachmentService,
+  AutomationService,
   ContactService,
   WorkflowEngineService,
   WorkflowExecutorService,
@@ -232,6 +237,7 @@ const controllers = [
   WidgetChatController,
   AttachmentController,
   InboundEmailController,
+  AdminAutomationController,
 ];
 
 @Module({})

@@ -34,5 +34,6 @@ export { ChatSession } from './chat-session.entity';
 export { ChatRoutingRule } from './chat-routing-rule.entity';
 export { Workflow } from './workflow.entity';
 export { WorkflowLog } from './workflow-log.entity';
+export { Automation } from './automation.entity';
 export { Contact } from './contact.entity';
 export { InboundEmail } from './inbound-email.entity';

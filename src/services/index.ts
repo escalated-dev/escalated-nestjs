@@ -25,6 +25,7 @@ export { BusinessScheduleService } from './business-schedule.service';
 export { ChatSessionService } from './chat-session.service';
 export { ChatRoutingService } from './chat-routing.service';
 export { AttachmentService } from './attachment.service';
+export { AutomationService } from './automation.service';
 export { ContactService } from './contact.service';
 export { WorkflowEngineService } from './workflow-engine.service';
 export { WorkflowExecutorService } from './workflow-executor.service';
