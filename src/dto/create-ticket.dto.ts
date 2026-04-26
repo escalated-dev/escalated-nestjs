@@ -29,6 +29,10 @@ export class CreateTicketDto {
   statusId?: number;
 
   @IsOptional()
+  @IsInt()
+  contactId?: number | null;
+
+  @IsOptional()
   @IsArray()
   @IsInt({ each: true })
   tagIds?: number[];

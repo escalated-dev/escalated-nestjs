@@ -39,6 +39,8 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 - **Ticket Snooze** -- Snooze with automatic wake-up via cron
 - **Saved Views** -- Personal and shared filtered views
 - **Widget API** -- Public endpoints for embeddable support widget with rate limiting
+- **Public Ticket System** -- Unauthenticated submission via widget form or inbound email, Contact-based identity with email dedupe, configurable guest policy, signed Reply-To for threaded email conversations
+- **Workflow Engine** -- Admin-configured rules fire on ticket/reply events (conditions + actions: assign, tag, set priority/status/department, insert canned reply, etc.); evaluation logs per execution
 - **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
 - **Capacity Management** -- Per-agent ticket limits with real-time tracking
 - **Skill-based Routing** -- Assign tickets based on agent skills and availability
@@ -112,6 +114,61 @@ export class AppModule {}
 | `agentGuard`          | `class`    | --            | Custom guard for agent routes           |
 | `customerGuard`       | `class`    | --            | Custom guard for customer routes        |
 | `userResolver`        | `function` | --            | Extract user from request               |
+| `mail`                | `object`   | --            | Outbound email config (see below)       |
+| `inbound`             | `object`   | --            | Inbound email config (see below)        |
+| `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |
+
+#### Outbound email (`mail`)
+
+```typescript
+EscalatedModule.forRoot({
+  mail: {
+    from: 'support@example.com',
+    transport: {
+      host: 'smtp.example.com',
+      port: 587,
+      auth: { user: 'x', pass: 'y' },
+    },
+  },
+});
+```
+
+When `mail` is absent, the `MailerModule` is not registered and `EmailService` silently no-ops — modules boot cleanly without a transport.
+
+#### Inbound email (`inbound`)
+
+```typescript
+EscalatedModule.forRoot({
+  inbound: {
+    replyDomain: 'reply.example.com',   // domain in our Message-ID + Reply-To
+    replySecret: '32-byte-hex-secret',  // HMAC key for signed reply-to
+    webhookSecret: 'shared-secret',     // X-Escalated-Inbound-Secret header value
+    provider: 'postmark',               // parser adapter
+  },
+});
+```
+
+Webhook endpoint: `POST /escalated/webhook/email/inbound`. Guard requires `X-Escalated-Inbound-Secret` header to match `webhookSecret` (constant-time compare).
+
+#### Guest policy (`guestPolicy`)
+
+Controls the identity assigned to a ticket submitted via the public form or inbound email.
+
+```typescript
+// Default: no host-app user, contact carries identity
+{ mode: 'unassigned' }
+
+// Assign all guest tickets to a shared "guest" user in the host app
+{ mode: 'guest_user', guestUserId: 42 }
+
+// Ticket stays unassigned until the guest accepts a signup invite
+{ mode: 'prompt_signup', signupUrlTemplate: 'https://app.example.com/signup?token={token}' }
+```
+
+Admins can override at runtime via `PUT /escalated/admin/settings`:
+```json
+{ "key": "guest_policy", "type": "json", "value": { "mode": "guest_user", "guestUserId": 99 } }
+```
 
 ### 3. Database migration
 

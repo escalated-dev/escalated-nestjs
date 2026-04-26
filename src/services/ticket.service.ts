@@ -171,6 +171,7 @@ export class TicketService {
       departmentId: dto.departmentId,
       assigneeId: dto.assigneeId,
       requesterId,
+      contactId: dto.contactId ?? null,
       guestAccessToken: uuidv4(),
     });
 

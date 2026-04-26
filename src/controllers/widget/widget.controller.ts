@@ -1,19 +1,44 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
+  Inject,
   Param,
+  ParseIntPipe,
+  Post,
   Query,
   Req,
   UseGuards,
-  ParseIntPipe,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketService } from '../../services/ticket.service';
 import { ReplyService } from '../../services/reply.service';
 import { KnowledgeBaseService } from '../../services/knowledge-base.service';
 import { SatisfactionRatingService } from '../../services/satisfaction-rating.service';
+import { ContactService } from '../../services/contact.service';
+import { SettingsService } from '../../services/settings.service';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
+import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalated.events';
+
+/**
+ * Shape accepted by POST /escalated/widget/tickets. Either path is valid:
+ *   1. Public path — supply `email` (and optionally `name`). A Contact is
+ *      resolved/created and used as the ticket's `contactId`. `requesterId`
+ *      is determined by the configured guest policy.
+ *   2. Legacy path — supply `requesterId` for tickets created by an already-
+ *      authenticated host-app user. No Contact is created.
+ */
+interface WidgetCreateTicketBody {
+  email?: string;
+  name?: string;
+  requesterId?: number;
+  subject: string;
+  description: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+}
 
 @Controller('escalated/widget')
 export class WidgetController {
@@ -22,19 +47,71 @@ export class WidgetController {
     private readonly replyService: ReplyService,
     private readonly kbService: KnowledgeBaseService,
     private readonly satisfactionService: SatisfactionRatingService,
+    private readonly contactService: ContactService,
+    private readonly settingsService: SettingsService,
+    private readonly eventEmitter: EventEmitter2,
+    @Inject(ESCALATED_OPTIONS)
+    private readonly options: EscalatedModuleOptions,
   ) {}
 
+  /**
+   * Resolve the effective guest policy: settings store overrides module
+   * option, so admins can change policy at runtime without redeploy.
+   */
+  private async resolveGuestPolicy(): Promise<EscalatedModuleOptions['guestPolicy']> {
+    const stored = await this.settingsService.getTyped<
+      EscalatedModuleOptions['guestPolicy'] | null
+    >('guest_policy', null);
+    return stored ?? this.options.guestPolicy;
+  }
+
+  private requesterIdForPolicy(policy: EscalatedModuleOptions['guestPolicy']): number {
+    if (!policy) return 0;
+    switch (policy.mode) {
+      case 'guest_user':
+        return policy.guestUserId;
+      case 'unassigned':
+      case 'prompt_signup':
+      default:
+        return 0;
+    }
+  }
+
   @Post('tickets')
-  async createTicket(@Body() body: any) {
+  @UseGuards(PublicSubmitThrottleGuard)
+  async createTicket(@Body() body: WidgetCreateTicketBody) {
+    let contactId: number | null = null;
+    let requesterId: number;
+
+    const policy = await this.resolveGuestPolicy();
+
+    if (body.email) {
+      const contact = await this.contactService.findOrCreateByEmail(body.email, body.name);
+      contactId = contact.id;
+      requesterId = this.requesterIdForPolicy(policy);
+    } else if (typeof body.requesterId === 'number') {
+      requesterId = body.requesterId;
+    } else {
+      throw new BadRequestException('Either email or requesterId is required');
+    }
+
     const ticket = await this.ticketService.create(
       {
         subject: body.subject,
         description: body.description,
         priority: body.priority || 'medium',
         channel: 'widget',
+        contactId,
       },
-      body.requesterId || 0,
+      requesterId,
     );
+
+    if (body.email && contactId !== null && policy?.mode === 'prompt_signup') {
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.SIGNUP_INVITE,
+        new TicketSignupInviteEvent(ticket.id, contactId, body.email),
+      );
+    }
 
     return {
       ticket,

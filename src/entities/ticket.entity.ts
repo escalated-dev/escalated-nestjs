@@ -54,6 +54,10 @@ export class Ticket {
   @Column({ type: 'int' })
   requesterId: number;
 
+  // Optional link to a Contact (first-class identity for guests / email submitters)
+  @Column({ type: 'int', nullable: true })
+  contactId: number | null;
+
   // Assigned agent - generic user ID from host app
   @Column({ type: 'int', nullable: true })
   assigneeId: number;

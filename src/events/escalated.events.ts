@@ -69,6 +69,18 @@ export class WebhookEvent {
   ) {}
 }
 
+/**
+ * Emitted when a public submission is created under `prompt_signup` guest
+ * policy. An email listener turns this into a signup invitation email.
+ */
+export class TicketSignupInviteEvent {
+  constructor(
+    public readonly ticketId: number,
+    public readonly contactId: number,
+    public readonly email: string,
+  ) {}
+}
+
 export const ESCALATED_EVENTS = {
   TICKET_CREATED: 'escalated.ticket.created',
   TICKET_UPDATED: 'escalated.ticket.updated',
@@ -83,4 +95,5 @@ export const ESCALATED_EVENTS = {
   CHAT_ACCEPTED: 'escalated.chat.accepted',
   CHAT_MESSAGE: 'escalated.chat.message',
   CHAT_ENDED: 'escalated.chat.ended',
+  SIGNUP_INVITE: 'escalated.signup.invite',
 } as const;
