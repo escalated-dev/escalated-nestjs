@@ -14,7 +14,7 @@ describe('ChatSessionService', () => {
   let chatSessionRepo: any;
   let ticketService: any;
   let replyService: any;
-  let routingService: ChatRoutingService;
+  let _routingService: ChatRoutingService;
   let eventEmitter: EventEmitter2;
 
   const mockSession = {
@@ -84,7 +84,7 @@ describe('ChatSessionService', () => {
     chatSessionRepo = module.get(getRepositoryToken(ChatSession));
     ticketService = module.get(TicketService);
     replyService = module.get(ReplyService);
-    routingService = module.get(ChatRoutingService);
+    _routingService = module.get(ChatRoutingService);
     eventEmitter = module.get(EventEmitter2);
   });
 
@@ -111,7 +111,7 @@ describe('ChatSessionService', () => {
       const activeSession = { ...mockSession, status: 'active', agentId: 42 };
       chatSessionRepo.save.mockResolvedValue(activeSession);
 
-      const result = await service.accept(1, 42);
+      await service.accept(1, 42);
 
       expect(chatSessionRepo.save).toHaveBeenCalled();
       expect(eventEmitter.emit).toHaveBeenCalledWith(
@@ -139,7 +139,7 @@ describe('ChatSessionService', () => {
         status: 'active',
       });
 
-      const reply = await service.sendMessage(1, 'Hello', undefined, 'visitor');
+      await service.sendMessage(1, 'Hello', undefined, 'visitor');
 
       expect(replyService.create).toHaveBeenCalledWith(1, { body: 'Hello', type: 'reply' }, 0);
       expect(eventEmitter.emit).toHaveBeenCalledWith(
@@ -169,7 +169,7 @@ describe('ChatSessionService', () => {
       };
       chatSessionRepo.save.mockResolvedValue(endedSession);
 
-      const result = await service.end(1);
+      await service.end(1);
 
       expect(chatSessionRepo.save).toHaveBeenCalled();
       expect(eventEmitter.emit).toHaveBeenCalledWith(
