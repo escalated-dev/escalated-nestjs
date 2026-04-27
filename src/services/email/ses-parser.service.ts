@@ -42,9 +42,7 @@ export class SESSubscriptionConfirmationError extends Error {
     public readonly subscribeUrl: string,
     public readonly token: string,
   ) {
-    super(
-      `SES subscription confirmation for topic ${topicArn}; GET ${subscribeUrl} to confirm.`,
-    );
+    super(`SES subscription confirmation for topic ${topicArn}; GET ${subscribeUrl} to confirm.`);
     this.name = 'SESSubscriptionConfirmationError';
   }
 }
@@ -149,9 +147,7 @@ function parseFirstAddressList(list: string[] | undefined): [string, string | nu
   return [raw, null];
 }
 
-function extractHeaders(
-  entries: Array<{ name?: string; value?: string }>,
-): Record<string, string> {
+function extractHeaders(entries: Array<{ name?: string; value?: string }>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const entry of entries) {
     if (typeof entry.name === 'string' && typeof entry.value === 'string' && entry.name) {
@@ -275,7 +271,5 @@ function decodeBody(body: string, transferEnc: string): string {
 function decodeQuotedPrintable(body: string): string {
   return body
     .replace(/=\r?\n/g, '')
-    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex: string) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    );
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
 }

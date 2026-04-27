@@ -13,7 +13,10 @@ import { LocalFileAttachmentStorage } from '../../../src/services/email/local-fi
 import { Attachment } from '../../../src/entities/attachment.entity';
 
 function makeFetch(
-  handler: (url: string, init?: RequestInit) => { status: number; body: string; headers?: Record<string, string> },
+  handler: (
+    url: string,
+    init?: RequestInit,
+  ) => { status: number; body: string; headers?: Record<string, string> },
 ): typeof fetch {
   return (async (url: string, init?: RequestInit) => {
     const { status, body, headers } = handler(url, init);
@@ -60,12 +63,14 @@ describe('AttachmentDownloader', () => {
     };
   });
 
-  function build(options: { maxBytes?: number; basicAuth?: { username: string; password: string }; fetch?: typeof fetch } = {}) {
-    return new AttachmentDownloader(
-      attachmentRepo as any,
-      storage,
-      options,
-    );
+  function build(
+    options: {
+      maxBytes?: number;
+      basicAuth?: { username: string; password: string };
+      fetch?: typeof fetch;
+    } = {},
+  ) {
+    return new AttachmentDownloader(attachmentRepo as any, storage, options);
   }
 
   const pending = (overrides: Partial<PendingAttachment> = {}): PendingAttachment => ({
@@ -77,7 +82,11 @@ describe('AttachmentDownloader', () => {
 
   it('downloads, stores, and persists an attachment on the happy path', async () => {
     const downloader = build({
-      fetch: makeFetch(() => ({ status: 200, body: 'hello pdf', headers: { 'content-type': 'application/pdf' } })),
+      fetch: makeFetch(() => ({
+        status: 200,
+        body: 'hello pdf',
+        headers: { 'content-type': 'application/pdf' },
+      })),
     });
 
     const a = await downloader.download(pending(), 42, null);
@@ -140,9 +149,9 @@ describe('AttachmentDownloader', () => {
   it('throws on a missing download URL', async () => {
     const downloader = build();
 
-    await expect(
-      downloader.download(pending({ downloadUrl: '' }), 1, null),
-    ).rejects.toThrow(/has no download URL/);
+    await expect(downloader.download(pending({ downloadUrl: '' }), 1, null)).rejects.toThrow(
+      /has no download URL/,
+    );
   });
 
   it('falls back to response Content-Type when pending contentType is empty', async () => {

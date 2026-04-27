@@ -102,17 +102,19 @@ describe('InboundEmailController', () => {
   });
 
   it('picks the Mailgun parser when options.inbound.provider is mailgun', async () => {
-    const mailgunParser = { parse: jest.fn().mockReturnValue({
-      from: 'alice@x.com',
-      fromName: 'Alice',
-      to: 'support@x.com',
-      subject: 'hi',
-      textBody: 'body',
-      htmlBody: null,
-      messageId: null,
-      inReplyTo: null,
-      references: [],
-    }) };
+    const mailgunParser = {
+      parse: jest.fn().mockReturnValue({
+        from: 'alice@x.com',
+        fromName: 'Alice',
+        to: 'support@x.com',
+        subject: 'hi',
+        textBody: 'body',
+        htmlBody: null,
+        messageId: null,
+        inReplyTo: null,
+        references: [],
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InboundEmailController],
@@ -141,8 +143,6 @@ describe('InboundEmailController', () => {
 
     expect(mailgunParser.parse).toHaveBeenCalled();
     expect(parser.parse).not.toHaveBeenCalled();
-    expect(inboundRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'mailgun' }),
-    );
+    expect(inboundRepo.save).toHaveBeenCalledWith(expect.objectContaining({ provider: 'mailgun' }));
   });
 });

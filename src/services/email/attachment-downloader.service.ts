@@ -66,9 +66,7 @@ export class AttachmentTooLargeError extends Error {
     public readonly actualBytes: number,
     public readonly maxBytes: number,
   ) {
-    super(
-      `Attachment '${attachmentName}' is ${actualBytes} bytes, exceeds limit ${maxBytes}.`,
-    );
+    super(`Attachment '${attachmentName}' is ${actualBytes} bytes, exceeds limit ${maxBytes}.`);
     this.name = 'AttachmentTooLargeError';
   }
 }
@@ -157,9 +155,8 @@ export class AttachmentDownloader {
       throw new AttachmentTooLargeError(pending.name, body.length, this.options.maxBytes);
     }
 
-    const contentType = pending.contentType
-      || response.headers.get('content-type')
-      || 'application/octet-stream';
+    const contentType =
+      pending.contentType || response.headers.get('content-type') || 'application/octet-stream';
     const filename = AttachmentDownloader.safeFilename(pending.name);
 
     const path = await this.storage.put(filename, body, contentType);
@@ -174,9 +171,7 @@ export class AttachmentDownloader {
     });
     const saved = await this.attachmentRepo.save(attachment);
 
-    this.logger.log(
-      `Persisted ${filename} (${body.length} bytes) for ticket #${ticketId}`,
-    );
+    this.logger.log(`Persisted ${filename} (${body.length} bytes) for ticket #${ticketId}`);
 
     return saved;
   }
@@ -197,9 +192,7 @@ export class AttachmentDownloader {
         const persisted = await this.download(p, ticketId, replyId);
         results.push({ pending: p, persisted, error: null });
       } catch (err) {
-        this.logger.warn(
-          `Failed to download ${p.downloadUrl}: ${(err as Error).message}`,
-        );
+        this.logger.warn(`Failed to download ${p.downloadUrl}: ${(err as Error).message}`);
         results.push({ pending: p, persisted: null, error: err as Error });
       }
     }

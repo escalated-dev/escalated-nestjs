@@ -118,9 +118,7 @@ describe('parser equivalence across Postmark / Mailgun / SES', () => {
       expect(`${name}:from=${msg.from}`).toBe(`${name}:from=${sample.fromEmail}`);
       expect(`${name}:to=${msg.to}`).toBe(`${name}:to=${sample.toEmail}`);
       expect(`${name}:subject=${msg.subject}`).toBe(`${name}:subject=${sample.subject}`);
-      expect(`${name}:inReplyTo=${msg.inReplyTo}`).toBe(
-        `${name}:inReplyTo=${sample.inReplyTo}`,
-      );
+      expect(`${name}:inReplyTo=${msg.inReplyTo}`).toBe(`${name}:inReplyTo=${sample.inReplyTo}`);
       expect(`${name}:references=${msg.references.join(' ')}`).toBe(
         `${name}:references=${sample.references}`,
       );
