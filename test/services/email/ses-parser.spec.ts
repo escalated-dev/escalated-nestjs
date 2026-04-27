@@ -11,8 +11,7 @@ describe('SESInboundParser', () => {
       const envelope = {
         Type: 'SubscriptionConfirmation',
         TopicArn: 'arn:aws:sns:us-east-1:123:escalated-inbound',
-        SubscribeURL:
-          'https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription&Token=x',
+        SubscribeURL: 'https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription&Token=x',
         Token: 'abc',
       };
 
@@ -64,10 +63,7 @@ describe('SESInboundParser', () => {
       expect(parsed.subject).toBe('[ESC-42] Re: Help');
       expect(parsed.messageId).toBe('<external-xyz@mail.alice.com>');
       expect(parsed.inReplyTo).toBe('<ticket-42@support.example.com>');
-      expect(parsed.references).toEqual([
-        '<ticket-42@support.example.com>',
-        '<prev@mail.com>',
-      ]);
+      expect(parsed.references).toEqual(['<ticket-42@support.example.com>', '<prev@mail.com>']);
     });
 
     it('decodes plain text body from base64 MIME content', () => {
@@ -186,9 +182,7 @@ describe('SESInboundParser', () => {
 
   describe('error handling', () => {
     it('throws for unknown envelope types', () => {
-      expect(() => parser.parse({ Type: 'UnknownType' })).toThrow(
-        /Unsupported SNS envelope type/,
-      );
+      expect(() => parser.parse({ Type: 'UnknownType' })).toThrow(/Unsupported SNS envelope type/);
     });
 
     it('throws when Message field is missing', () => {
@@ -196,9 +190,9 @@ describe('SESInboundParser', () => {
     });
 
     it('throws for malformed Message JSON', () => {
-      expect(() =>
-        parser.parse({ Type: 'Notification', Message: 'not json at all' }),
-      ).toThrow(/not valid JSON/);
+      expect(() => parser.parse({ Type: 'Notification', Message: 'not json at all' })).toThrow(
+        /not valid JSON/,
+      );
     });
   });
 });

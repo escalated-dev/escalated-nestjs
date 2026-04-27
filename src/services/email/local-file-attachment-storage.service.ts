@@ -26,9 +26,12 @@ export class LocalFileAttachmentStorage implements AttachmentStorage {
 
     const now = new Date();
     const stamp =
-      now.toISOString().replace(/[-:TZ.]/g, '').slice(0, 17)
-      + '-'
-      + Math.floor(Math.random() * 1_000_000).toString(36);
+      now
+        .toISOString()
+        .replace(/[-:TZ.]/g, '')
+        .slice(0, 17) +
+      '-' +
+      Math.floor(Math.random() * 1_000_000).toString(36);
     const storedName = `${stamp}-${filename}`;
     const fullPath = join(this.root, storedName);
 
