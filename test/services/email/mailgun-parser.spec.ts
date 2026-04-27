@@ -36,8 +36,7 @@ describe('MailgunInboundParser', () => {
       'body-plain': 'thx',
       'Message-Id': '<m1@mailgun>',
       'In-Reply-To': '<ticket-55@reply.example.com>',
-      References:
-        '<ticket-55@reply.example.com> <ticket-55-reply-3@reply.example.com>',
+      References: '<ticket-55@reply.example.com> <ticket-55-reply-3@reply.example.com>',
     };
 
     const parsed = parser.parse(payload);
