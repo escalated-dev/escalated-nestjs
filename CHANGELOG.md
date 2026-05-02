@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Centralized translations
+
+- Translations now consumed from the central `@escalated-dev/locale` npm package via `nestjs-i18n`. New `EscalatedI18nModule` configures a chained `ChainedI18nLoader` that merges, in order: central package → `src/i18n/overrides/` → optional host-app path (`EscalatedModuleOptions.i18nOverridesPath`). Later sources win key-by-key. New options: `fallbackLanguage` (default `'en'`), `i18nOverridesPath`. **Blocked on `@escalated-dev/locale` v0.1.0 publish.**
+
 ### Added — Public ticket system
 
 Zendesk-style public ticketing: non-authenticated users can submit tickets via form or inbound email, be routed automatically by admin-configured Workflows, and receive threaded outbound email.
