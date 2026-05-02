@@ -47,6 +47,7 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 - **CSAT Ratings** -- Post-resolution satisfaction surveys with token-based submission
 - **2FA (TOTP)** -- Two-factor authentication for agents via `otplib`
 - **Guest Access** -- Token-based ticket access without authentication
+- **Internationalization** -- Translations sourced from the central [`@escalated-dev/locale`](https://github.com/escalated-dev/escalated-locale) package via `nestjs-i18n`, with a chained overlay loader for plugin-local and host-app overrides (see `src/i18n/overrides/README.md`)
 
 ## Requirements
 
