@@ -94,6 +94,20 @@ export interface EscalatedModuleOptions {
 
   /** Widget allowed origins (CORS) */
   widgetOrigins?: string[];
+
+  /**
+   * Fallback language for i18n when none is detected from the request
+   * (default: `'en'`). The full set of supported languages comes from
+   * the central `@escalated-dev/locale` package.
+   */
+  fallbackLanguage?: string;
+
+  /**
+   * Absolute path to a host-app override directory for translations.
+   * Files placed here win over both the central package and the
+   * in-repo overrides, namespaced by `<lang>/<namespace>.json`.
+   */
+  i18nOverridesPath?: string;
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
@@ -109,4 +123,5 @@ export const defaultOptions: EscalatedModuleOptions = {
   allowedFileTypes: ['image/*', 'application/pdf', 'text/*', '.doc', '.docx', '.xls', '.xlsx'],
   webhookMaxRetries: 3,
   widgetOrigins: ['*'],
+  fallbackLanguage: 'en',
 };

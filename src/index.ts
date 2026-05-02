@@ -21,3 +21,6 @@ export * from './events/escalated.events';
 
 // Interceptors
 export { AuditLogInterceptor, AuditAction } from './interceptors/audit-log.interceptor';
+
+// i18n
+export { EscalatedI18nModule, EscalatedI18nOptions, ChainedI18nLoader } from './i18n';

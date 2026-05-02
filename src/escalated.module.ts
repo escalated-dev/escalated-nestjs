@@ -10,6 +10,7 @@ import {
   ESCALATED_OPTIONS,
   defaultOptions,
 } from './config/escalated.config';
+import { EscalatedI18nModule } from './i18n';
 
 // Entities
 import {
@@ -263,6 +264,10 @@ export class EscalatedModule {
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),
         ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+        EscalatedI18nModule.forRoot({
+          fallbackLanguage: mergedOptions.fallbackLanguage,
+          hostOverridesPath: mergedOptions.i18nOverridesPath,
+        }),
         ...(mergedOptions.mail
           ? [
               MailerModule.forRoot({
