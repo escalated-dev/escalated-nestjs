@@ -35,7 +35,7 @@ export class ChainedI18nLoader extends I18nLoader {
     this.sourceRoots = options?.sourceRoots ?? [];
   }
 
-  languages(): Promise<string[]> | Observable<string[]> {
+  async languages(): Promise<string[] | Observable<string[]>> {
     const seen = new Set<string>();
     for (const root of this.sourceRoots) {
       if (!root || !fs.existsSync(root)) continue;
@@ -46,7 +46,7 @@ export class ChainedI18nLoader extends I18nLoader {
     return of([...seen]);
   }
 
-  load(): Promise<I18nTranslation> | Observable<I18nTranslation> {
+  async load(): Promise<I18nTranslation | Observable<I18nTranslation>> {
     const result: I18nTranslation = {};
 
     for (const root of this.sourceRoots) {
