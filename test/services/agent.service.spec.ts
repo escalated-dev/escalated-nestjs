@@ -4,6 +4,7 @@ import { AgentService } from '../../src/services/agent.service';
 import { AgentProfile } from '../../src/entities/agent-profile.entity';
 import { AgentCapacity } from '../../src/entities/agent-capacity.entity';
 import { Skill } from '../../src/entities/skill.entity';
+import { AgentSkill } from '../../src/entities/agent-skill.entity';
 import { Ticket } from '../../src/entities/ticket.entity';
 
 describe('AgentService', () => {
@@ -66,6 +67,15 @@ describe('AgentService', () => {
           provide: getRepositoryToken(Skill),
           useValue: {
             findBy: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: getRepositoryToken(AgentSkill),
+          useValue: {
+            find: jest.fn().mockResolvedValue([]),
+            create: jest.fn((row) => row),
+            save: jest.fn().mockResolvedValue([]),
+            delete: jest.fn().mockResolvedValue({ affected: 0 }),
           },
         },
         {

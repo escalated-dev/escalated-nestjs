@@ -7,7 +7,6 @@ import {
   ManyToMany,
   JoinTable,
 } from 'typeorm';
-import { Skill } from './skill.entity';
 import { Department } from './department.entity';
 
 @Entity('escalated_agent_profiles')
@@ -46,13 +45,8 @@ export class AgentProfile {
   @Column({ type: 'simple-json', nullable: true })
   twoFactorRecoveryCodes: string[];
 
-  @ManyToMany(() => Skill)
-  @JoinTable({
-    name: 'escalated_agent_skills',
-    joinColumn: { name: 'agentProfileId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'skillId', referencedColumnName: 'id' },
-  })
-  skills: Skill[];
+  // Skills are linked via the AgentSkill entity (escalated_agent_skills)
+  // by userId, not agentProfileId. See AgentSkill for the proficiency column.
 
   @ManyToMany(() => Department)
   @JoinTable({

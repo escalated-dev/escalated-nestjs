@@ -1,4 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+} from 'typeorm';
+import { Tag } from './tag.entity';
+import { Department } from './department.entity';
+import { AgentSkill } from './agent-skill.entity';
 
 @Entity('escalated_skills')
 export class Skill {
@@ -14,6 +26,30 @@ export class Skill {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @ManyToMany(() => Tag)
+  @JoinTable({
+    name: 'escalated_skill_routing_tags',
+    joinColumn: { name: 'skillId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
+  })
+  routingTags: Tag[];
+
+  @ManyToMany(() => Department)
+  @JoinTable({
+    name: 'escalated_skill_routing_departments',
+    joinColumn: { name: 'skillId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'departmentId', referencedColumnName: 'id' },
+  })
+  routingDepartments: Department[];
+
+  @OneToMany(() => AgentSkill, (agentSkill) => agentSkill.skill, {
+    cascade: ['insert', 'update'],
+  })
+  agentSkills: AgentSkill[];
+
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

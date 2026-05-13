@@ -30,6 +30,7 @@ import {
   AgentProfile,
   AgentCapacity,
   Skill,
+  AgentSkill,
   CannedResponse,
   Macro,
   SideConversation,
@@ -111,6 +112,7 @@ import { AdminWebhookController } from './controllers/admin/webhook.controller';
 import { AdminApiTokenController } from './controllers/admin/api-token.controller';
 import { AdminImportController } from './controllers/admin/import.controller';
 import { AdminMacroController } from './controllers/admin/macro.controller';
+import { AdminSkillController } from './controllers/admin/skill.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
@@ -152,6 +154,7 @@ const entities = [
   AgentProfile,
   AgentCapacity,
   Skill,
+  AgentSkill,
   CannedResponse,
   Macro,
   SideConversation,
@@ -228,6 +231,7 @@ const controllers = [
   AdminApiTokenController,
   AdminImportController,
   AdminMacroController,
+  AdminSkillController,
   AdminKnowledgeBaseController,
   AdminTwoFactorController,
   CustomerTicketController,

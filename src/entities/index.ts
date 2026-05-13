@@ -14,6 +14,7 @@ export { Holiday } from './holiday.entity';
 export { AgentProfile } from './agent-profile.entity';
 export { AgentCapacity } from './agent-capacity.entity';
 export { Skill } from './skill.entity';
+export { AgentSkill } from './agent-skill.entity';
 export { CannedResponse } from './canned-response.entity';
 export { Macro } from './macro.entity';
 export { SideConversation } from './side-conversation.entity';
