@@ -66,9 +66,7 @@ describe('SkillService', () => {
         {
           provide: getRepositoryToken(AgentProfile),
           useValue: {
-            find: jest
-              .fn()
-              .mockResolvedValue([{ userId: 42, displayName: 'Agent Smith' }]),
+            find: jest.fn().mockResolvedValue([{ userId: 42, displayName: 'Agent Smith' }]),
           },
         },
       ],
@@ -129,9 +127,7 @@ describe('SkillService', () => {
 
     expect(context.availableTags).toEqual([{ id: 1, name: 'bug' }]);
     expect(context.availableDepartments).toEqual([{ id: 1, name: 'Support' }]);
-    expect(context.availableAgents).toEqual([
-      { id: 42, name: 'Agent Smith', email: '' },
-    ]);
+    expect(context.availableAgents).toEqual([{ id: 42, name: 'Agent Smith', email: '' }]);
   });
 
   it('create slugifies the name when no slug is provided', async () => {
