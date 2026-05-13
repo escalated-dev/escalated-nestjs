@@ -4,7 +4,13 @@ import { Repository, In } from 'typeorm';
 import { AgentProfile } from '../entities/agent-profile.entity';
 import { AgentCapacity } from '../entities/agent-capacity.entity';
 import { Skill } from '../entities/skill.entity';
+import { AgentSkill } from '../entities/agent-skill.entity';
 import { Ticket } from '../entities/ticket.entity';
+
+export interface AgentSkillAssignment {
+  skillId: number;
+  proficiency?: number;
+}
 
 @Injectable()
 export class AgentService {
@@ -15,13 +21,15 @@ export class AgentService {
     private readonly capacityRepo: Repository<AgentCapacity>,
     @InjectRepository(Skill)
     private readonly skillRepo: Repository<Skill>,
+    @InjectRepository(AgentSkill)
+    private readonly agentSkillRepo: Repository<AgentSkill>,
     @InjectRepository(Ticket)
     private readonly ticketRepo: Repository<Ticket>,
   ) {}
 
   async findAll(): Promise<AgentProfile[]> {
     return this.profileRepo.find({
-      relations: ['skills', 'departments'],
+      relations: ['departments'],
       order: { displayName: 'ASC' },
     });
   }
@@ -29,7 +37,7 @@ export class AgentService {
   async findById(id: number): Promise<AgentProfile> {
     const profile = await this.profileRepo.findOne({
       where: { id },
-      relations: ['skills', 'departments'],
+      relations: ['departments'],
     });
     if (!profile) throw new NotFoundException(`Agent profile #${id} not found`);
     return profile;
@@ -38,10 +46,17 @@ export class AgentService {
   async findByUserId(userId: number): Promise<AgentProfile> {
     const profile = await this.profileRepo.findOne({
       where: { userId },
-      relations: ['skills', 'departments'],
+      relations: ['departments'],
     });
     if (!profile) throw new NotFoundException(`Agent profile for user #${userId} not found`);
     return profile;
+  }
+
+  async getSkillsForUser(userId: number): Promise<AgentSkill[]> {
+    return this.agentSkillRepo.find({
+      where: { userId },
+      relations: ['skill'],
+    });
   }
 
   async create(data: Partial<AgentProfile>): Promise<AgentProfile> {
@@ -66,15 +81,45 @@ export class AgentService {
 
   async delete(id: number): Promise<void> {
     const profile = await this.findById(id);
+    await this.agentSkillRepo.delete({ userId: profile.userId });
     await this.profileRepo.remove(profile);
   }
 
-  async setSkills(agentId: number, skillIds: number[]): Promise<AgentProfile> {
+  /**
+   * Replace the agent's skill set. Accepts plain skill IDs (uses default
+   * proficiency 3) or `{ skillId, proficiency }` entries.
+   */
+  async setSkills(
+    agentId: number,
+    skills: number[] | AgentSkillAssignment[],
+  ): Promise<AgentSkill[]> {
     const profile = await this.findById(agentId);
-    const skills = await this.skillRepo.findBy({ id: In(skillIds) });
-    profile.skills = skills;
-    await this.profileRepo.save(profile);
-    return this.findById(agentId);
+
+    const assignments: AgentSkillAssignment[] = skills.map((entry) =>
+      typeof entry === 'number' ? { skillId: entry } : entry,
+    );
+
+    // Confirm every referenced skill exists before touching the join table
+    const skillIds = assignments.map((a) => a.skillId);
+    if (skillIds.length) {
+      const found = await this.skillRepo.findBy({ id: In(skillIds) });
+      if (found.length !== new Set(skillIds).size) {
+        throw new NotFoundException(`One or more skills not found`);
+      }
+    }
+
+    await this.agentSkillRepo.delete({ userId: profile.userId });
+
+    if (!assignments.length) return [];
+
+    const rows = assignments.map((a) =>
+      this.agentSkillRepo.create({
+        userId: profile.userId,
+        skillId: a.skillId,
+        proficiency: a.proficiency ?? 3,
+      }),
+    );
+    return this.agentSkillRepo.save(rows);
   }
 
   // Capacity management
@@ -124,7 +169,6 @@ export class AgentService {
   ): Promise<AgentProfile | null> {
     const qb = this.profileRepo
       .createQueryBuilder('agent')
-      .leftJoinAndSelect('agent.skills', 'skills')
       .leftJoinAndSelect('agent.departments', 'departments')
       .leftJoin('escalated_agent_capacities', 'capacity', 'capacity.agentProfileId = agent.id')
       .where('agent.isActive = :isActive', { isActive: true })
@@ -135,7 +179,13 @@ export class AgentService {
     }
 
     if (requiredSkillIds?.length) {
-      qb.andWhere('skills.id IN (:...skillIds)', { skillIds: requiredSkillIds });
+      // Match agents whose userId has at least one of the required skills
+      qb.innerJoin(
+        AgentSkill,
+        'agentSkill',
+        'agentSkill.userId = agent.userId AND agentSkill.skillId IN (:...skillIds)',
+        { skillIds: requiredSkillIds },
+      );
     }
 
     // Respect capacity limits
