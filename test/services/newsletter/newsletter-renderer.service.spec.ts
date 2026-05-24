@@ -4,7 +4,9 @@ import type { EscalatedModuleOptions } from '../../../src/config/escalated.confi
 import type { NewsletterDelivery } from '../../../src/entities/newsletter';
 import { Contact } from '../../../src/entities/contact.entity';
 
-function buildOptions(overrides: Partial<EscalatedModuleOptions['newsletters']> = {}): EscalatedModuleOptions {
+function buildOptions(
+  overrides: Partial<EscalatedModuleOptions['newsletters']> = {},
+): EscalatedModuleOptions {
   return {
     appUrl: 'http://localhost',
     appName: 'Acme Support',
@@ -18,11 +20,13 @@ function buildOptions(overrides: Partial<EscalatedModuleOptions['newsletters']> 
   };
 }
 
-function buildDelivery(opts: {
-  bodyMarkdown?: string;
-  contactName?: string | null;
-  contactEmail?: string;
-} = {}): NewsletterDelivery {
+function buildDelivery(
+  opts: {
+    bodyMarkdown?: string;
+    contactName?: string | null;
+    contactEmail?: string;
+  } = {},
+): NewsletterDelivery {
   const contact = new Contact();
   contact.id = 1;
   contact.email = opts.contactEmail ?? 'maria@example.com';

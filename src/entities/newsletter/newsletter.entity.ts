@@ -13,13 +13,7 @@ import { NewsletterList } from './newsletter-list.entity';
 import { NewsletterTemplate } from './newsletter-template.entity';
 import { NewsletterDelivery } from './newsletter-delivery.entity';
 
-export type NewsletterStatus =
-  | 'draft'
-  | 'scheduled'
-  | 'sending'
-  | 'sent'
-  | 'paused'
-  | 'failed';
+export type NewsletterStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'failed';
 
 @Entity('escalated_newsletters')
 @Index(['status', 'scheduled_at'])

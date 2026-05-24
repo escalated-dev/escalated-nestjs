@@ -3,10 +3,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import Handlebars from 'handlebars';
 import MarkdownIt from 'markdown-it';
-import {
-  ESCALATED_OPTIONS,
-  type EscalatedModuleOptions,
-} from '../../config/escalated.config';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import { Contact } from '../../entities/contact.entity';
 import { NewsletterDelivery } from '../../entities/newsletter';
 
@@ -88,9 +85,7 @@ export class NewsletterRendererService {
     const cached = this.templateCache.get(slug);
     if (cached) return cached(data);
     const candidate = join(ctx.themesDir, `${slug}.hbs`);
-    const path = existsSync(candidate)
-      ? candidate
-      : join(ctx.themesDir, 'default.hbs');
+    const path = existsSync(candidate) ? candidate : join(ctx.themesDir, 'default.hbs');
     const source = readFileSync(path, 'utf8');
     const compiled = Handlebars.compile(source, { noEscape: false });
     this.templateCache.set(slug, compiled);
@@ -117,7 +112,7 @@ export class NewsletterRendererService {
     ctx: RenderContext,
   ): string {
     if (path === 'contact.name') return String(contact.name ?? '');
-    if (path === 'contact.first_name') return (String(contact.name ?? '').split(' ')[0] ?? '');
+    if (path === 'contact.first_name') return String(contact.name ?? '').split(' ')[0] ?? '';
     if (path === 'contact.email') return String(contact.email);
     if (path === 'unsubscribe_url') return this.unsubscribeUrl(delivery, ctx);
     if (path === 'view_in_browser_url') return this.viewInBrowserUrl(delivery, ctx);
@@ -132,22 +127,25 @@ export class NewsletterRendererService {
   private rewriteLinks(html: string, delivery: NewsletterDelivery, ctx: RenderContext): string {
     const unsubPrefix = this.unsubscribeUrl(delivery, ctx);
     const viewPrefix = this.viewInBrowserUrl(delivery, ctx);
-    return html.replace(/(<a\s[^>]*\bhref=)(["'])(.*?)\2/gi, (match, prefix, quote, href: string) => {
-      if (!href || href.startsWith('#')) return match;
-      const scheme = (href.split(':')[0] ?? '').toLowerCase();
-      if (!NewsletterRendererService.ALLOWED_SCHEMES.includes(scheme)) {
-        return `${prefix}${quote}#${quote}`;
-      }
-      if (scheme === 'mailto' || scheme === 'tel') return match;
-      if (href.startsWith(unsubPrefix) || href.startsWith(viewPrefix)) return match;
-      const encoded = Buffer.from(href, 'utf8')
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const tracked = `${ctx.baseUrl}/escalated/n/c/${delivery.tracking_token}?u=${encoded}`;
-      return `${prefix}${quote}${tracked}${quote}`;
-    });
+    return html.replace(
+      /(<a\s[^>]*\bhref=)(["'])(.*?)\2/gi,
+      (match, prefix, quote, href: string) => {
+        if (!href || href.startsWith('#')) return match;
+        const scheme = (href.split(':')[0] ?? '').toLowerCase();
+        if (!NewsletterRendererService.ALLOWED_SCHEMES.includes(scheme)) {
+          return `${prefix}${quote}#${quote}`;
+        }
+        if (scheme === 'mailto' || scheme === 'tel') return match;
+        if (href.startsWith(unsubPrefix) || href.startsWith(viewPrefix)) return match;
+        const encoded = Buffer.from(href, 'utf8')
+          .toString('base64')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+        const tracked = `${ctx.baseUrl}/escalated/n/c/${delivery.tracking_token}?u=${encoded}`;
+        return `${prefix}${quote}${tracked}${quote}`;
+      },
+    );
   }
 
   private injectPixel(html: string, delivery: NewsletterDelivery, ctx: RenderContext): string {

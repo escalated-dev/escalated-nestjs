@@ -2,14 +2,8 @@ import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, Repository } from 'typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
-import {
-  ESCALATED_OPTIONS,
-  type EscalatedModuleOptions,
-} from '../../config/escalated.config';
-import {
-  Newsletter,
-  NewsletterDelivery,
-} from '../../entities/newsletter';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import { Newsletter, NewsletterDelivery } from '../../entities/newsletter';
 import { NewsletterRendererService } from './newsletter-renderer.service';
 
 @Injectable()
@@ -167,9 +161,7 @@ export class NewsletterDispatcherService {
       });
       if (total > 0 && bounced / total >= rate) {
         await this.newsletters.update(n.id, { status: 'paused' });
-        this.logger.warn(
-          `Newsletter ${n.id} auto-paused: ${bounced}/${total} bounced`,
-        );
+        this.logger.warn(`Newsletter ${n.id} auto-paused: ${bounced}/${total} bounced`);
       }
     }
   }

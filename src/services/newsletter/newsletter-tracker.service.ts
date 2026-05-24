@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  Newsletter,
-  NewsletterDelivery,
-} from '../../entities/newsletter';
+import { Newsletter, NewsletterDelivery } from '../../entities/newsletter';
 import { BounceSuppressionStoreService } from './bounce-suppression-store.service';
 
 @Injectable()

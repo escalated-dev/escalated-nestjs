@@ -3,10 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { Contact } from '../../entities/contact.entity';
-import {
-  Newsletter,
-  NewsletterDelivery,
-} from '../../entities/newsletter';
+import { Newsletter, NewsletterDelivery } from '../../entities/newsletter';
 import { ContactSegmentResolverService } from './contact-segment-resolver.service';
 import { BounceSuppressionStoreService } from './bounce-suppression-store.service';
 
