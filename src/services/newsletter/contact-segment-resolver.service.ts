@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Contact } from '../../entities/contact.entity';
 import { NewsletterList, NewsletterListMember } from '../../entities/newsletter';
 
