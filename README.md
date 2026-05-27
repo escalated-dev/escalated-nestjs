@@ -17,6 +17,8 @@
 
 # @escalated-dev/escalated-nestjs
 
+**Website:** [escalated.dev](https://escalated.dev)
+
 Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
 
 ## Features
