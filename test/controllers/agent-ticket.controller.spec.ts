@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AgentTicketController } from '../../src/controllers/agent/ticket.controller';
 import { TicketService } from '../../src/services/ticket.service';
 import { ReplyService } from '../../src/services/reply.service';
+import { TicketActionRegistry } from '../../src/services/ticket-action-registry.service';
+import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
 import { AuditLogInterceptor } from '../../src/interceptors/audit-log.interceptor';
 import { Reflector } from '@nestjs/core';
 
@@ -9,6 +12,8 @@ describe('AgentTicketController', () => {
   let controller: AgentTicketController;
   let ticketService: any;
   let _replyService: any;
+  let ticketActions: TicketActionRegistry;
+  let eventEmitter: any;
 
   const mockTicket = {
     id: 1,
@@ -58,6 +63,14 @@ describe('AgentTicketController', () => {
             getAllAndOverride: jest.fn(),
           },
         },
+        {
+          provide: TicketActionRegistry,
+          useValue: new TicketActionRegistry(),
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
+        },
       ],
     })
       .overrideInterceptor(AuditLogInterceptor)
@@ -67,6 +80,8 @@ describe('AgentTicketController', () => {
     controller = module.get<AgentTicketController>(AgentTicketController);
     ticketService = module.get(TicketService);
     _replyService = module.get(ReplyService);
+    ticketActions = module.get(TicketActionRegistry);
+    eventEmitter = module.get(EventEmitter2);
   });
 
   it('should be defined', () => {
@@ -87,6 +102,58 @@ describe('AgentTicketController', () => {
       expect(result.ticket).toMatchObject(mockTicket);
       expect(result.replies).toBeDefined();
       expect(result.activities).toBeDefined();
+    });
+
+    it('exposes configured custom actions', async () => {
+      ticketActions.register({
+        key: 'sync-crm',
+        label: 'Sync CRM',
+        variant: 'primary',
+        confirmation: 'Sync this ticket to the CRM?',
+        metadata: { icon: 'refresh-cw' },
+      });
+
+      const result: any = await controller.show(1, { user: { id: 1 } });
+
+      expect(result.customActions).toHaveLength(1);
+      expect(result.customActions[0]).toMatchObject({
+        key: 'sync-crm',
+        label: 'Sync CRM',
+        variant: 'primary',
+        confirmation: 'Sync this ticket to the CRM?',
+        disabled: false,
+        method: 'post',
+        url: '/escalated/agent/tickets/1/actions/sync-crm',
+      });
+    });
+  });
+
+  describe('customAction', () => {
+    it('dispatches the custom action event for a configured action', async () => {
+      ticketActions.register({ key: 'sync-crm', label: 'Sync CRM' });
+
+      const req = { user: { id: 7 } };
+      const result = await controller.customAction(1, 'sync-crm', { force: true }, req);
+
+      expect(result).toEqual({ message: 'Custom action dispatched.', action: 'sync-crm' });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        ESCALATED_EVENTS.TICKET_CUSTOM_ACTION_TRIGGERED,
+        expect.objectContaining({ action: 'sync-crm', userId: 7, payload: { force: true } }),
+      );
+    });
+
+    it('returns 404 for an unknown action', async () => {
+      const req = { user: { id: 1 } };
+      await expect(controller.customAction(1, 'nope', {}, req)).rejects.toThrow(/not found/);
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 for a disabled action', async () => {
+      ticketActions.register({ key: 'sync-crm', label: 'Sync CRM', enabled: false });
+
+      const req = { user: { id: 1 } };
+      await expect(controller.customAction(1, 'sync-crm', {}, req)).rejects.toThrow(/not enabled/);
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
   });
 

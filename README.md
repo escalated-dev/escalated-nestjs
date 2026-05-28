@@ -120,6 +120,7 @@ export class AppModule {}
 | `mail`                | `object`   | --            | Outbound email config (see below)       |
 | `inbound`             | `object`   | --            | Inbound email config (see below)        |
 | `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |
+| `ticketActions`       | `object`   | `{actions:[]}`| Custom agent ticket actions (see below) |
 
 #### Outbound email (`mail`)
 
@@ -196,6 +197,7 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 | PUT    | `/tickets/:id`                          | Update ticket             |
 | DELETE | `/tickets/:id`                          | Delete ticket             |
 | POST   | `/tickets/:id/replies`                  | Add reply                 |
+| POST   | `/tickets/:id/actions/:actionKey`       | Trigger custom action     |
 | POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
 | POST   | `/tickets/:id/split`                    | Split ticket              |
 | POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
@@ -297,7 +299,60 @@ export class NotificationService {
 }
 ```
 
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
+Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`, `TICKET_CUSTOM_ACTION_TRIGGERED`.
+
+## Custom Ticket Actions
+
+Host applications can add custom buttons to the agent ticket screen and handle
+clicks with normal event listeners. Register actions when importing the module:
+
+```typescript
+EscalatedModule.forRoot({
+  ticketActions: {
+    actions: [
+      {
+        key: 'sync-crm',
+        label: 'Sync CRM',
+        variant: 'primary',
+        confirmation: 'Sync this ticket to the CRM?',
+        metadata: { icon: 'refresh-cw' },
+      },
+    ],
+  },
+});
+```
+
+`label`, `visible`, `enabled`, `confirmation`, and `metadata` may each be a
+value or a `(ticket, user) => value` function for dynamic behavior. For richer
+logic you can instead provide an object implementing the `TicketAction`
+interface (`key()`, `label()`, `visible()`, `enabled()`, `variant()`,
+`confirmation()`, `metadata()`).
+
+The agent ticket show response exposes the visible actions as `customActions`
+(each with a `url` and `method`). When the agent triggers one
+(`POST /escalated/agent/tickets/:id/actions/:actionKey`), Escalated dispatches
+`TicketCustomActionTriggered`:
+
+```typescript
+import { OnEvent } from '@nestjs/event-emitter';
+import {
+  ESCALATED_EVENTS,
+  TicketCustomActionTriggeredEvent,
+} from '@escalated-dev/escalated-nestjs';
+
+@Injectable()
+export class CrmSyncListener {
+  @OnEvent(ESCALATED_EVENTS.TICKET_CUSTOM_ACTION_TRIGGERED)
+  handle(event: TicketCustomActionTriggeredEvent) {
+    if (event.action !== 'sync-crm') return;
+    // event.ticket, event.userId, event.payload, event.metadata
+  }
+}
+```
+
+The event exposes `ticket`, `action`, `userId`, `payload`, and `metadata`.
+Escalated also records an internal note on the ticket whenever an action fires,
+for auditability.
 
 ## Real-time Updates
 
