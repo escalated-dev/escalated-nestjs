@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ReplyService } from '../services/reply.service';
-import {
-  ESCALATED_EVENTS,
-  TicketCustomActionTriggeredEvent,
-} from '../events/escalated.events';
+import { ESCALATED_EVENTS, TicketCustomActionTriggeredEvent } from '../events/escalated.events';
 
 /**
  * Records an internal note on the ticket whenever a custom action is triggered,
