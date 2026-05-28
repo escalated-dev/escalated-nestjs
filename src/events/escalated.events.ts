@@ -81,6 +81,20 @@ export class TicketSignupInviteEvent {
   ) {}
 }
 
+/**
+ * Emitted when an agent triggers a host-configured custom ticket action.
+ * Host applications listen for this to run their own work (CRM sync, etc.).
+ */
+export class TicketCustomActionTriggeredEvent {
+  constructor(
+    public readonly ticket: any,
+    public readonly action: string,
+    public readonly userId: number,
+    public readonly payload: Record<string, any> = {},
+    public readonly metadata: Record<string, any> = {},
+  ) {}
+}
+
 export const ESCALATED_EVENTS = {
   TICKET_CREATED: 'escalated.ticket.created',
   TICKET_UPDATED: 'escalated.ticket.updated',
@@ -96,4 +110,5 @@ export const ESCALATED_EVENTS = {
   CHAT_MESSAGE: 'escalated.chat.message',
   CHAT_ENDED: 'escalated.chat.ended',
   SIGNUP_INVITE: 'escalated.signup.invite',
+  TICKET_CUSTOM_ACTION_TRIGGERED: 'escalated.ticket.custom_action_triggered',
 } as const;

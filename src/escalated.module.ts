@@ -95,7 +95,12 @@ import {
   InboundRouterService,
 } from './services';
 
-import { WorkflowListener, EmailListener } from './listeners';
+import {
+  WorkflowListener,
+  EmailListener,
+  RecordCustomActionInternalNoteListener,
+} from './listeners';
+import { TicketActionRegistry } from './services/ticket-action-registry.service';
 import { InboundEmailController } from './controllers/inbound-email.controller';
 import { InboundWebhookSignatureGuard } from './guards/inbound-webhook-signature.guard';
 
@@ -253,6 +258,20 @@ export class EscalatedModule {
       useValue: mergedOptions,
     };
 
+    // Build the ticket action registry from config at bootstrap, mirroring the
+    // singleton registration used by the other host frameworks.
+    const ticketActionRegistryProvider: Provider = {
+      provide: TicketActionRegistry,
+      useFactory: (opts: EscalatedModuleOptions) => {
+        const registry = new TicketActionRegistry();
+        for (const action of opts.ticketActions?.actions ?? []) {
+          registry.register(action);
+        }
+        return registry;
+      },
+      inject: [ESCALATED_OPTIONS],
+    };
+
     const conditionalProviders: Provider[] = [];
     const conditionalControllers: any[] = [...controllers];
 
@@ -284,6 +303,7 @@ export class EscalatedModule {
       controllers: conditionalControllers,
       providers: [
         optionsProvider,
+        ticketActionRegistryProvider,
         ...services,
         ...conditionalProviders,
         ApiTokenGuard,
@@ -295,8 +315,9 @@ export class EscalatedModule {
         EscalatedSchedulerService,
         WorkflowListener,
         EmailListener,
+        RecordCustomActionInternalNoteListener,
       ],
-      exports: [...services, optionsProvider, TypeOrmModule],
+      exports: [...services, optionsProvider, ticketActionRegistryProvider, TypeOrmModule],
     };
   }
 }

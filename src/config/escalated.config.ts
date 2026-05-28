@@ -1,3 +1,5 @@
+import { TicketAction, TicketActionConfig } from '../contracts/ticket-action.interface';
+
 export interface EscalatedModuleOptions {
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
   routePrefix?: string;
@@ -108,6 +110,16 @@ export interface EscalatedModuleOptions {
    * in-repo overrides, namespaced by `<lang>/<namespace>.json`.
    */
   i18nOverridesPath?: string;
+
+  /**
+   * Host-defined custom ticket actions. Each visible action renders as a button
+   * on the agent ticket screen and, when clicked, dispatches the
+   * `TicketCustomActionTriggered` event. Actions may be objects implementing
+   * the `TicketAction` interface or plain `TicketActionConfig` objects.
+   */
+  ticketActions?: {
+    actions?: (TicketAction | TicketActionConfig)[];
+  };
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
@@ -124,4 +136,7 @@ export const defaultOptions: EscalatedModuleOptions = {
   webhookMaxRetries: 3,
   widgetOrigins: ['*'],
   fallbackLanguage: 'en',
+  ticketActions: {
+    actions: [],
+  },
 };
