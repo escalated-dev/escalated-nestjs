@@ -90,7 +90,11 @@ export class WidgetController {
       const contact = await this.contactService.findOrCreateByEmail(body.email, body.name);
       contactId = contact.id;
       requesterId = this.requesterIdForPolicy(policy);
-    } else if (body.requesterId !== undefined && body.requesterId !== null && body.requesterId !== '') {
+    } else if (
+      body.requesterId !== undefined &&
+      body.requesterId !== null &&
+      body.requesterId !== ''
+    ) {
       requesterId = body.requesterId;
     } else {
       throw new BadRequestException('Either email or requesterId is required');
