@@ -11,6 +11,7 @@ import { Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { ESCALATED_EVENTS } from '../events/escalated.events';
+import { UserId } from '../config/user-id-column';
 
 @WebSocketGateway({
   namespace: '/escalated',
@@ -50,7 +51,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('join:agent')
   handleJoinAgent(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { agentId: number },
+    @MessageBody() data: { agentId: UserId },
   ): void {
     client.join(`agent:${data.agentId}`);
   }

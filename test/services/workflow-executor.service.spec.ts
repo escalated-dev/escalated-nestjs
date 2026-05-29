@@ -119,7 +119,7 @@ describe('WorkflowExecutorService', () => {
       const ticket = buildTicket({ id: 10, assigneeId: null }) as unknown as Ticket;
       await executor.execute(ticket, [{ type: 'assign_agent', value: '5' }]);
 
-      expect(ticketRepo.update).toHaveBeenCalledWith(10, { assigneeId: 5 });
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, { assigneeId: '5' });
       expect(activityRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
           ticketId: 10,

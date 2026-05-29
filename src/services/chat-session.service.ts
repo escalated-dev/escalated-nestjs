@@ -7,6 +7,7 @@ import { TicketService } from './ticket.service';
 import { ReplyService } from './reply.service';
 import { ChatRoutingService } from './chat-routing.service';
 import { ESCALATED_EVENTS } from '../events/escalated.events';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class ChatSessionService {
@@ -61,7 +62,7 @@ export class ChatSessionService {
   /**
    * Agent accepts a waiting chat session.
    */
-  async accept(sessionId: number, agentId: number): Promise<ChatSession> {
+  async accept(sessionId: number, agentId: UserId): Promise<ChatSession> {
     const session = await this.findById(sessionId);
 
     if (session.status !== 'waiting') {
@@ -88,7 +89,7 @@ export class ChatSessionService {
   async sendMessage(
     sessionId: number,
     body: string,
-    authorId?: number,
+    authorId?: UserId,
     _authorType: string = 'visitor',
   ): Promise<any> {
     const session = await this.findById(sessionId);
@@ -117,7 +118,7 @@ export class ChatSessionService {
   /**
    * End a chat session. The underlying ticket is resolved.
    */
-  async end(sessionId: number, causerId?: number): Promise<ChatSession> {
+  async end(sessionId: number, causerId?: UserId): Promise<ChatSession> {
     const session = await this.findById(sessionId);
 
     if (session.status === 'ended') {
@@ -156,7 +157,7 @@ export class ChatSessionService {
     });
   }
 
-  async getActiveSessionsForAgent(agentId: number): Promise<ChatSession[]> {
+  async getActiveSessionsForAgent(agentId: UserId): Promise<ChatSession[]> {
     return this.chatSessionRepo.find({
       where: { agentId, status: 'active' },
       order: { lastActivityAt: 'DESC' },

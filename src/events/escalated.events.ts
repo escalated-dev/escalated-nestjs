@@ -1,7 +1,9 @@
+import { UserId } from '../config/user-id-column';
+
 export class TicketCreatedEvent {
   constructor(
     public readonly ticket: any,
-    public readonly userId: number,
+    public readonly userId: UserId,
   ) {}
 }
 
@@ -9,16 +11,16 @@ export class TicketUpdatedEvent {
   constructor(
     public readonly ticket: any,
     public readonly changes: Record<string, any>,
-    public readonly userId: number,
+    public readonly userId: UserId,
   ) {}
 }
 
 export class TicketAssignedEvent {
   constructor(
     public readonly ticket: any,
-    public readonly previousAssigneeId: number | null,
-    public readonly newAssigneeId: number,
-    public readonly userId: number,
+    public readonly previousAssigneeId: UserId | null,
+    public readonly newAssigneeId: UserId,
+    public readonly userId: UserId,
   ) {}
 }
 
@@ -27,7 +29,7 @@ export class TicketStatusChangedEvent {
     public readonly ticket: any,
     public readonly previousStatusId: number,
     public readonly newStatusId: number,
-    public readonly userId: number,
+    public readonly userId: UserId,
   ) {}
 }
 
@@ -35,7 +37,7 @@ export class TicketReplyCreatedEvent {
   constructor(
     public readonly reply: any,
     public readonly ticket: any,
-    public readonly userId: number,
+    public readonly userId: UserId,
   ) {}
 }
 
@@ -43,7 +45,7 @@ export class TicketMergedEvent {
   constructor(
     public readonly sourceTicket: any,
     public readonly targetTicket: any,
-    public readonly userId: number,
+    public readonly userId: UserId,
   ) {}
 }
 
@@ -51,7 +53,7 @@ export class TicketSplitEvent {
   constructor(
     public readonly originalTicket: any,
     public readonly newTicket: any,
-    public readonly userId: number,
+    public readonly userId: UserId,
   ) {}
 }
 
@@ -89,7 +91,7 @@ export class TicketCustomActionTriggeredEvent {
   constructor(
     public readonly ticket: any,
     public readonly action: string,
-    public readonly userId: number,
+    public readonly userId: UserId,
     public readonly payload: Record<string, any> = {},
     public readonly metadata: Record<string, any> = {},
   ) {}

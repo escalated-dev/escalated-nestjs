@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_satisfaction_ratings')
 export class SatisfactionRating {
@@ -21,11 +22,11 @@ export class SatisfactionRating {
   @Column()
   ticketId: number;
 
-  @Column({ type: 'int' })
-  customerId: number;
+  @Column(userIdColumn())
+  customerId: UserId;
 
-  @Column({ type: 'int', nullable: true })
-  agentId: number;
+  @Column(userIdColumn({ nullable: true }))
+  agentId: UserId | null;
 
   @Column({ type: 'int' })
   rating: number; // 1-5

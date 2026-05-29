@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { SideConversationReply } from './side-conversation-reply.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_side_conversations')
 export class SideConversation {
@@ -26,11 +27,11 @@ export class SideConversation {
   @Column({ length: 500 })
   subject: string;
 
-  @Column({ type: 'int' })
-  createdBy: number;
+  @Column(userIdColumn())
+  createdBy: UserId;
 
   @Column({ type: 'simple-json', nullable: true })
-  participants: number[]; // user IDs
+  participants: UserId[]; // user IDs
 
   @Column({ length: 20, default: 'open' })
   status: string; // open, closed

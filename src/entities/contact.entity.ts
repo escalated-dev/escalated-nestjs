@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 /**
  * A Contact is the first-class identity for a ticket requester that does NOT
@@ -29,8 +30,8 @@ export class Contact {
   name: string | null;
 
   /** Links this contact to a host-app user once they create an account. */
-  @Column({ type: 'int', nullable: true })
-  userId: number | null;
+  @Column(userIdColumn({ nullable: true }))
+  userId: UserId | null;
 
   @Column({ type: 'simple-json', default: '{}' })
   metadata: Record<string, unknown>;

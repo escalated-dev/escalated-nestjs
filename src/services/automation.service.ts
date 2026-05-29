@@ -5,6 +5,7 @@ import { Automation } from '../entities/automation.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { Tag } from '../entities/tag.entity';
 import { Reply } from '../entities/reply.entity';
+import { UserId } from '../config/user-id-column';
 
 /**
  * AutomationService — admin time-based rules engine.
@@ -177,7 +178,7 @@ export class AutomationService {
             await this.ticketRepo.update(ticket.id, { priority: String(value) });
             break;
           case 'assign':
-            await this.ticketRepo.update(ticket.id, { assigneeId: Number(value) });
+            await this.ticketRepo.update(ticket.id, { assigneeId: value as UserId });
             break;
           case 'add_tag': {
             const tag = await this.tagRepo.findOne({ where: { name: String(value) } });

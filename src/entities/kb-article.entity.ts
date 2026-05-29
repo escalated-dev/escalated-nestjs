@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { KbCategory } from './kb-category.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_kb_articles')
 export class KbArticle {
@@ -33,8 +34,8 @@ export class KbArticle {
   @Column({ type: 'int', nullable: true })
   categoryId: number;
 
-  @Column({ type: 'int', nullable: true })
-  authorId: number;
+  @Column(userIdColumn({ nullable: true }))
+  authorId: UserId | null;
 
   @Column({ length: 20, default: 'draft' })
   status: string; // draft, published, archived

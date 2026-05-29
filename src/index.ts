@@ -2,7 +2,15 @@
 export { EscalatedModule } from './escalated.module';
 
 // Config
-export { EscalatedModuleOptions, ESCALATED_OPTIONS } from './config/escalated.config';
+export {
+  EscalatedModuleOptions,
+  ESCALATED_OPTIONS,
+  userKeyType,
+  userIdColumn,
+  userIdColumnType,
+  UserId,
+  UserKeyType,
+} from './config';
 
 // Entities
 export * from './entities';

@@ -21,6 +21,7 @@ import { SettingsService } from '../../services/settings.service';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import { UserId } from '../../config/user-id-column';
 import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalated.events';
 
 /**
@@ -34,7 +35,7 @@ import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalate
 interface WidgetCreateTicketBody {
   email?: string;
   name?: string;
-  requesterId?: number;
+  requesterId?: UserId;
   subject: string;
   description: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
@@ -65,7 +66,7 @@ export class WidgetController {
     return stored ?? this.options.guestPolicy;
   }
 
-  private requesterIdForPolicy(policy: EscalatedModuleOptions['guestPolicy']): number {
+  private requesterIdForPolicy(policy: EscalatedModuleOptions['guestPolicy']): UserId {
     if (!policy) return 0;
     switch (policy.mode) {
       case 'guest_user':
@@ -81,7 +82,7 @@ export class WidgetController {
   @UseGuards(PublicSubmitThrottleGuard)
   async createTicket(@Body() body: WidgetCreateTicketBody) {
     let contactId: number | null = null;
-    let requesterId: number;
+    let requesterId: UserId;
 
     const policy = await this.resolveGuestPolicy();
 
@@ -89,7 +90,7 @@ export class WidgetController {
       const contact = await this.contactService.findOrCreateByEmail(body.email, body.name);
       contactId = contact.id;
       requesterId = this.requesterIdForPolicy(policy);
-    } else if (typeof body.requesterId === 'number') {
+    } else if (body.requesterId !== undefined && body.requesterId !== null && body.requesterId !== '') {
       requesterId = body.requesterId;
     } else {
       throw new BadRequestException('Either email or requesterId is required');

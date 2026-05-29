@@ -1,8 +1,8 @@
 import { IsInt, Min, Max } from 'class-validator';
+import { UserId } from '../../config/user-id-column';
 
 export class AgentSkillEntryDto {
-  @IsInt()
-  userId: number;
+  userId: UserId;
 
   @IsInt()
   @Min(1)

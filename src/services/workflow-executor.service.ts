@@ -13,6 +13,7 @@ import {
   TicketStatusChangedEvent,
 } from '../events/escalated.events';
 import { WorkflowEngineService } from './workflow-engine.service';
+import { UserId } from '../config/user-id-column';
 
 export interface WorkflowAction {
   type: string;
@@ -149,8 +150,8 @@ export class WorkflowExecutorService {
   }
 
   private async assignAgent(ticket: Ticket, value: string): Promise<void> {
-    const assigneeId = Number(value);
-    if (!Number.isFinite(assigneeId) || assigneeId <= 0) return;
+    const assigneeId: UserId = value.trim();
+    if (!assigneeId || assigneeId === '0') return;
     const previousAssigneeId = ticket.assigneeId ?? null;
     await this.ticketRepo.update(ticket.id, { assigneeId });
     await this.activityRepo.save({

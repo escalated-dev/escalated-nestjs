@@ -6,6 +6,7 @@ import { AgentCapacity } from '../entities/agent-capacity.entity';
 import { Skill } from '../entities/skill.entity';
 import { AgentSkill } from '../entities/agent-skill.entity';
 import { Ticket } from '../entities/ticket.entity';
+import { UserId } from '../config/user-id-column';
 
 export interface AgentSkillAssignment {
   skillId: number;
@@ -43,7 +44,7 @@ export class AgentService {
     return profile;
   }
 
-  async findByUserId(userId: number): Promise<AgentProfile> {
+  async findByUserId(userId: UserId): Promise<AgentProfile> {
     const profile = await this.profileRepo.findOne({
       where: { userId },
       relations: ['departments'],
@@ -52,7 +53,7 @@ export class AgentService {
     return profile;
   }
 
-  async getSkillsForUser(userId: number): Promise<AgentSkill[]> {
+  async getSkillsForUser(userId: UserId): Promise<AgentSkill[]> {
     return this.agentSkillRepo.find({
       where: { userId },
       relations: ['skill'],

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Macro } from '../entities/macro.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { Reply } from '../entities/reply.entity';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class MacroService {
@@ -16,7 +17,7 @@ export class MacroService {
     private readonly replyRepo: Repository<Reply>,
   ) {}
 
-  async findAll(userId?: number): Promise<Macro[]> {
+  async findAll(userId?: UserId): Promise<Macro[]> {
     const qb = this.macroRepo
       .createQueryBuilder('macro')
       .where('macro.isActive = :isActive', { isActive: true })
@@ -51,7 +52,7 @@ export class MacroService {
     await this.macroRepo.remove(macro);
   }
 
-  async execute(macroId: number, ticketId: number, userId: number): Promise<Ticket> {
+  async execute(macroId: number, ticketId: number, userId: UserId): Promise<Ticket> {
     const macro = await this.findById(macroId);
     const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
     if (!ticket) throw new NotFoundException(`Ticket #${ticketId} not found`);
@@ -69,7 +70,7 @@ export class MacroService {
   private async executeAction(
     ticket: Ticket,
     action: Record<string, any>,
-    userId: number,
+    userId: UserId,
   ): Promise<void> {
     switch (action.type) {
       case 'set_status':

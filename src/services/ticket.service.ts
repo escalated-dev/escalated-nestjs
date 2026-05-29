@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuidv4 } from 'uuid';
+import { UserId } from '../config/user-id-column';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
@@ -66,7 +67,7 @@ export class TicketService {
     const ticketIds = tickets.map((t) => t.id);
 
     // --- last reply per ticket (most recent non-internal reply) -----------
-    const lastReplies: { ticketId: number; createdAt: Date; userId: number }[] =
+    const lastReplies: { ticketId: number; createdAt: Date; userId: UserId }[] =
       await this.replyRepo
         .createQueryBuilder('reply')
         .select('reply.ticketId', 'ticketId')
@@ -77,7 +78,7 @@ export class TicketService {
         .getRawMany();
 
     // For author name we need the actual reply row so we can look up the user
-    const lastReplyMap = new Map<number, { createdAt: Date; userId: number }>();
+    const lastReplyMap = new Map<number, { createdAt: Date; userId: UserId }>();
     if (lastReplies.length > 0) {
       // Fetch the actual reply rows for the max timestamps
       for (const lr of lastReplies) {
@@ -96,7 +97,7 @@ export class TicketService {
     }
 
     // --- collect unique user IDs we need to resolve ---------------------
-    const userIds = new Set<number>();
+    const userIds = new Set<UserId>();
     for (const t of tickets) {
       userIds.add(t.requesterId);
     }
@@ -109,7 +110,7 @@ export class TicketService {
       where: { userId: In([...userIds]) },
       select: ['userId', 'displayName'],
     });
-    const profileMap = new Map<number, AgentProfile>();
+    const profileMap = new Map<UserId, AgentProfile>();
     for (const p of agentProfiles) {
       profileMap.set(p.userId, p);
     }
@@ -153,7 +154,7 @@ export class TicketService {
     return enriched;
   }
 
-  async create(dto: CreateTicketDto, requesterId: number): Promise<Ticket> {
+  async create(dto: CreateTicketDto, requesterId: UserId): Promise<Ticket> {
     // Get default status if not provided
     let statusId = dto.statusId;
     if (!statusId) {
@@ -279,7 +280,7 @@ export class TicketService {
     return { data, total };
   }
 
-  async update(id: number, dto: UpdateTicketDto, userId: number): Promise<Ticket> {
+  async update(id: number, dto: UpdateTicketDto, userId: UserId): Promise<Ticket> {
     const ticket = await this.findById(id);
     const changes: Record<string, any> = {};
 
@@ -407,7 +408,7 @@ export class TicketService {
     return this.findById(id);
   }
 
-  async merge(sourceId: number, targetId: number, userId: number): Promise<Ticket> {
+  async merge(sourceId: number, targetId: number, userId: UserId): Promise<Ticket> {
     if (sourceId === targetId) {
       throw new BadRequestException('Cannot merge a ticket into itself');
     }
@@ -444,7 +445,7 @@ export class TicketService {
     return this.findById(targetId);
   }
 
-  async split(ticketId: number, replyIds: number[], userId: number): Promise<Ticket> {
+  async split(ticketId: number, replyIds: number[], userId: UserId): Promise<Ticket> {
     const original = await this.findById(ticketId);
 
     const newTicket = await this.create(
@@ -541,7 +542,7 @@ export class TicketService {
   /**
    * Count how many tickets the given requester has submitted.
    */
-  async getRequesterTicketCount(requesterId: number): Promise<number> {
+  async getRequesterTicketCount(requesterId: UserId): Promise<number> {
     return this.ticketRepo.count({ where: { requesterId } });
   }
 

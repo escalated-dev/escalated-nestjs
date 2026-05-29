@@ -7,6 +7,7 @@ import {
   MaxLength,
   IsDateString,
 } from 'class-validator';
+import { UserId } from '../config/user-id-column';
 
 export class UpdateTicketDto {
   @IsOptional()
@@ -27,8 +28,7 @@ export class UpdateTicketDto {
   departmentId?: number;
 
   @IsOptional()
-  @IsInt()
-  assigneeId?: number;
+  assigneeId?: UserId;
 
   @IsOptional()
   @IsInt()

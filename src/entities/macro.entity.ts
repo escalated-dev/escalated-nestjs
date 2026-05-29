@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_macros')
 export class Macro {
@@ -24,8 +25,8 @@ export class Macro {
   @Column({ length: 50, default: 'shared' })
   scope: string; // shared, personal
 
-  @Column({ type: 'int', nullable: true })
-  createdBy: number;
+  @Column(userIdColumn({ nullable: true }))
+  createdBy: UserId | null;
 
   @Column({ default: true })
   isActive: boolean;
