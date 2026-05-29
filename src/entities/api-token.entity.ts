@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_api_tokens')
 export class ApiToken {
@@ -17,8 +18,8 @@ export class ApiToken {
   @Column({ length: 255, unique: true })
   token: string;
 
-  @Column({ type: 'int' })
-  userId: number;
+  @Column(userIdColumn())
+  userId: UserId;
 
   @Column({ type: 'simple-json', nullable: true })
   abilities: string[]; // ['tickets:read', 'tickets:write', ...]

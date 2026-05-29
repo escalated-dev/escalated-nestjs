@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_canned_responses')
 export class CannedResponse {
@@ -23,8 +24,8 @@ export class CannedResponse {
   @Column({ length: 50, default: 'shared' })
   scope: string; // shared, personal
 
-  @Column({ type: 'int', nullable: true })
-  createdBy: number;
+  @Column(userIdColumn({ nullable: true }))
+  createdBy: UserId | null;
 
   @Column({ type: 'int', nullable: true })
   departmentId: number;

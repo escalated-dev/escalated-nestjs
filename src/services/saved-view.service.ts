@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SavedView } from '../entities/saved-view.entity';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class SavedViewService {
@@ -44,7 +45,7 @@ export class SavedViewService {
     await this.viewRepo.remove(view);
   }
 
-  async setDefault(id: number, userId: number): Promise<SavedView> {
+  async setDefault(id: number, userId: UserId): Promise<SavedView> {
     // Unset previous default for this user
     await this.viewRepo.update({ userId, isDefault: true }, { isDefault: false });
     await this.viewRepo.update(id, { isDefault: true });

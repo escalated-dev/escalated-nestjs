@@ -10,6 +10,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Skill } from './skill.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_agent_skills')
 @Unique(['userId', 'skillId'])
@@ -18,8 +19,8 @@ export class AgentSkill {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int' })
-  userId: number;
+  @Column(userIdColumn())
+  userId: UserId;
 
   @Column({ type: 'int' })
   skillId: number;

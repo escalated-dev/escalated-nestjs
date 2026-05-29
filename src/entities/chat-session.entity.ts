@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { Department } from './department.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_chat_sessions')
 @Index(['ticketId'])
@@ -28,8 +29,8 @@ export class ChatSession {
   @Column({ length: 255, nullable: true })
   visitorEmail: string;
 
-  @Column({ type: 'int', nullable: true })
-  agentId: number;
+  @Column(userIdColumn({ nullable: true }))
+  agentId: UserId | null;
 
   @Column({ type: 'int', nullable: true })
   departmentId: number;

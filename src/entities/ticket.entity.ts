@@ -14,6 +14,7 @@ import {
 import { TicketStatus } from './ticket-status.entity';
 import { Department } from './department.entity';
 import { Tag } from './tag.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_tickets')
 @Index(['referenceNumber'], { unique: true })
@@ -51,16 +52,16 @@ export class Ticket {
   departmentId: number;
 
   // Requester (customer) - generic user ID from host app
-  @Column({ type: 'int' })
-  requesterId: number;
+  @Column(userIdColumn())
+  requesterId: UserId;
 
   // Optional link to a Contact (first-class identity for guests / email submitters)
   @Column({ type: 'int', nullable: true })
   contactId: number | null;
 
   // Assigned agent - generic user ID from host app
-  @Column({ type: 'int', nullable: true })
-  assigneeId: number;
+  @Column(userIdColumn({ nullable: true }))
+  assigneeId: UserId | null;
 
   @ManyToMany(() => Tag)
   @JoinTable({

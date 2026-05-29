@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
 import { Attachment } from './attachment.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_replies')
 export class Reply {
@@ -23,8 +24,8 @@ export class Reply {
   @Column()
   ticketId: number;
 
-  @Column({ type: 'int' })
-  userId: number;
+  @Column(userIdColumn())
+  userId: UserId;
 
   @Column({ type: 'text' })
   body: string;

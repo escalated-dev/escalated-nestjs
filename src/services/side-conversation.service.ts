@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SideConversation } from '../entities/side-conversation.entity';
 import { SideConversationReply } from '../entities/side-conversation-reply.entity';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class SideConversationService {
@@ -33,8 +34,8 @@ export class SideConversationService {
   async create(data: {
     ticketId: number;
     subject: string;
-    createdBy: number;
-    participants?: number[];
+    createdBy: UserId;
+    participants?: UserId[];
     body: string;
   }): Promise<SideConversation> {
     const conv = await this.sideConvRepo.save({
@@ -56,7 +57,7 @@ export class SideConversationService {
 
   async addReply(
     sideConversationId: number,
-    userId: number,
+    userId: UserId,
     body: string,
   ): Promise<SideConversationReply> {
     await this.findById(sideConversationId);

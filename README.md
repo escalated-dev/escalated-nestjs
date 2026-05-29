@@ -174,6 +174,28 @@ Admins can override at runtime via `PUT /escalated/admin/settings`:
 { "key": "guest_policy", "type": "json", "value": { "mode": "guest_user", "guestUserId": 99 } }
 ```
 
+#### Host user key type (UUID / string users)
+
+Escalated stores references to your host app's users (ticket requester,
+assignee, reply author, etc.). By default those columns are integers, matching
+a classic auto-incrementing user primary key. If your host app's user table
+uses a **UUID or other string primary key**, set `ESCALATED_USER_KEY_TYPE`
+before the app bootstraps so the TypeORM entity columns are created as
+`varchar(255)` instead of `int`:
+
+```bash
+# .env — one of: int (default) | bigint | uuid | string
+ESCALATED_USER_KEY_TYPE=uuid
+```
+
+This is read from the environment (not the module options) because TypeORM
+column decorators are evaluated at class-load time, before
+`EscalatedModule.forRoot()` runs. Existing integer-keyed installs need no
+change — the default (`int`) produces exactly the same schema as before.
+`uuid` and `string` both map to a portable `varchar(255)` that can hold a UUID
+or a stringified integer id. All Escalated APIs accept a host user id as either
+a `number` or a `string` (`UserId`).
+
 ### 3. Database migration
 
 With `synchronize: true`, TypeORM auto-creates tables. For production, generate migrations:

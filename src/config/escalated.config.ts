@@ -1,4 +1,5 @@
 import { TicketAction, TicketActionConfig } from '../contracts/ticket-action.interface';
+import { UserId } from './user-id-column';
 
 export interface EscalatedModuleOptions {
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
@@ -8,7 +9,7 @@ export interface EscalatedModuleOptions {
   userEntity?: any;
 
   /** Function to resolve user from request */
-  userResolver?: (req: any) => { id: number; name?: string; email?: string } | null;
+  userResolver?: (req: any) => { id: UserId; name?: string; email?: string } | null;
 
   /** Guard class for admin routes */
   adminGuard?: any;
@@ -76,7 +77,7 @@ export interface EscalatedModuleOptions {
    */
   guestPolicy?:
     | { mode: 'unassigned' }
-    | { mode: 'guest_user'; guestUserId: number }
+    | { mode: 'guest_user'; guestUserId: UserId }
     | { mode: 'prompt_signup'; signupUrlTemplate?: string };
 
   /** App name for branding */

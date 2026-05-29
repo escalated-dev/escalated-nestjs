@@ -8,14 +8,15 @@ import {
   JoinTable,
 } from 'typeorm';
 import { Department } from './department.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_agent_profiles')
 export class AgentProfile {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', unique: true })
-  userId: number;
+  @Column(userIdColumn({ unique: true }))
+  userId: UserId;
 
   @Column({ length: 255, nullable: true })
   displayName: string;

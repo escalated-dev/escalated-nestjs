@@ -4,6 +4,7 @@ import { Repository, Between } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { SatisfactionRating } from '../entities/satisfaction-rating.entity';
 import { Ticket } from '../entities/ticket.entity';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class SatisfactionRatingService {
@@ -16,7 +17,7 @@ export class SatisfactionRatingService {
 
   async create(data: {
     ticketId: number;
-    customerId: number;
+    customerId: UserId;
     rating: number;
     comment?: string;
     ratingToken?: string;
@@ -86,7 +87,7 @@ export class SatisfactionRatingService {
     return { average: Math.round(average * 100) / 100, total, distribution };
   }
 
-  async getAgentStats(agentId: number): Promise<{ average: number; total: number }> {
+  async getAgentStats(agentId: UserId): Promise<{ average: number; total: number }> {
     const ratings = await this.ratingRepo.find({ where: { agentId } });
     const total = ratings.length;
     const average = total > 0 ? ratings.reduce((sum, r) => sum + r.rating, 0) / total : 0;

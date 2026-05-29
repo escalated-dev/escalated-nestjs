@@ -6,6 +6,7 @@ import { Reply } from '../entities/reply.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { CreateReplyDto } from '../dto/create-reply.dto';
+import { UserId } from '../config/user-id-column';
 import { ESCALATED_EVENTS, TicketReplyCreatedEvent } from '../events/escalated.events';
 
 @Injectable()
@@ -20,7 +21,7 @@ export class ReplyService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create(ticketId: number, dto: CreateReplyDto, userId: number): Promise<Reply> {
+  async create(ticketId: number, dto: CreateReplyDto, userId: UserId): Promise<Reply> {
     const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
     if (!ticket) {
       throw new NotFoundException(`Ticket #${ticketId} not found`);

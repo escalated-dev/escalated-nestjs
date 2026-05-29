@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_audit_logs')
 @Index(['entityType', 'entityId'])
@@ -6,8 +7,8 @@ export class AuditLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: true })
-  userId: number;
+  @Column(userIdColumn({ nullable: true }))
+  userId: UserId | null;
 
   @Column({ length: 100 })
   action: string; // create, update, delete, login, etc.

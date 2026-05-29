@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatRoutingRule } from '../entities/chat-routing-rule.entity';
+import { UserId } from '../config/user-id-column';
 
 export interface RouteResult {
   departmentId: number | null;
-  agentId: number | null;
+  agentId: UserId | null;
 }
 
 @Injectable()
