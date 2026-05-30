@@ -48,6 +48,7 @@ export class NewsletterRendererService {
       body,
       unsubscribe_url: this.unsubscribeUrl(delivery, ctx),
       view_in_browser_url: this.viewInBrowserUrl(delivery, ctx),
+      tracking_pixel: ctx.trackingEnabled ? this.pixelHtml(delivery, ctx) : '',
       brand: ctx.brand,
     });
 
@@ -148,9 +149,13 @@ export class NewsletterRendererService {
     );
   }
 
-  private injectPixel(html: string, delivery: NewsletterDelivery, ctx: RenderContext): string {
+  private pixelHtml(delivery: NewsletterDelivery, ctx: RenderContext): string {
     const url = `${ctx.baseUrl}/escalated/n/o/${delivery.tracking_token}.gif`;
-    const pixel = `<img src="${this.escape(url)}" width="1" height="1" alt="" />`;
+    return `<img src="${this.escape(url)}" width="1" height="1" alt="" />`;
+  }
+
+  private injectPixel(html: string, delivery: NewsletterDelivery, ctx: RenderContext): string {
+    const pixel = this.pixelHtml(delivery, ctx);
     if (html.includes('</body>')) {
       return html.replace('</body>', `${pixel}</body>`);
     }
