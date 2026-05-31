@@ -1,10 +1,5 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 /**
  * Join row between a Ticket and a host-app user that's "following" it —
@@ -28,8 +23,10 @@ export class TicketFollower {
   @Column({ type: 'int' })
   ticketId: number;
 
-  @Column({ type: 'int' })
-  userId: number;
+  // Host user key — int by default, but uuid/string for non-integer-keyed
+  // hosts (matches Reply.userId and the rest of the package).
+  @Column(userIdColumn())
+  userId: UserId;
 
   @CreateDateColumn()
   createdAt: Date;

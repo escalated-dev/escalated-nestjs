@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `add_follower` workflow action
+
+- New `add_follower` workflow action subscribes a host-app user as a **follower** of the matched ticket — a notification target alongside the assignee and requester. Combined with a condition (e.g. `departmentId equals 5`), admins can auto-add followers to tickets in a given department without writing host code (resolves the request in escalated-dev discussion #88). The action's `value` is a host user key, parsed the same way as `assign_agent` (trimmed, stored as-is) so it is safe for integer- and uuid/string-keyed hosts alike. Idempotent: a user can't double-follow (unique `(ticketId, userId)`).
+- New **`TicketFollower`** entity / `escalated_ticket_followers` table — minimal join row `(ticketId, userId, createdAt)`; host apps wanting richer follower semantics (notification prefs, unsubscribe) can extend it.
+
 ### Added — Centralized translations
 
 - Translations now consumed from the central `@escalated-dev/locale` npm package via `nestjs-i18n`. New `EscalatedI18nModule` configures a chained `ChainedI18nLoader` that merges, in order: central package → `src/i18n/overrides/` → optional host-app path (`EscalatedModuleOptions.i18nOverridesPath`). Later sources win key-by-key. New options: `fallbackLanguage` (default `'en'`), `i18nOverridesPath`. **Blocked on `@escalated-dev/locale` v0.1.0 publish.**

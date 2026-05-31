@@ -209,13 +209,15 @@ export class WorkflowExecutorService {
   }
 
   /**
-   * Add a host-app user as a follower on the ticket. Idempotent: if
-   * the user is already following, this is a no-op (returns existing
-   * row). Skips silently when value isn't a positive integer.
+   * Add a host-app user as a follower on the ticket. Idempotent: if the
+   * user is already following, this is a no-op. The value is a host user
+   * key, treated the same way as assign_agent — trimmed and stored as-is
+   * so uuid/string-keyed hosts work alongside integer-keyed ones. Skips
+   * silently on an empty / "0" value.
    */
   private async addFollower(ticket: Ticket, value: string): Promise<void> {
-    const userId = Number(value);
-    if (!Number.isFinite(userId) || userId <= 0) {
+    const userId: UserId = (value ?? '').trim();
+    if (!userId || userId === '0') {
       this.logger.warn(`add_follower: invalid user id "${value}" — skipping`);
       return;
     }

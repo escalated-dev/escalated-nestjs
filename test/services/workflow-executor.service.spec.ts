@@ -265,24 +265,37 @@ describe('WorkflowExecutorService', () => {
       await executor.execute(ticket, [{ type: 'add_follower', value: '42' }]);
 
       expect(followerRepo.findOne).toHaveBeenCalledWith({
-        where: { ticketId: 10, userId: 42 },
+        where: { ticketId: 10, userId: '42' },
       });
-      expect(followerRepo.save).toHaveBeenCalledWith({ ticketId: 10, userId: 42 });
+      expect(followerRepo.save).toHaveBeenCalledWith({ ticketId: 10, userId: '42' });
+    });
+
+    it('accepts a uuid / string host user key', async () => {
+      const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
+      followerRepo.findOne.mockResolvedValue(null);
+
+      await executor.execute(ticket, [{ type: 'add_follower', value: '  6f1c2a9e-uuid  ' }]);
+
+      expect(followerRepo.save).toHaveBeenCalledWith({
+        ticketId: 10,
+        userId: '6f1c2a9e-uuid',
+      });
     });
 
     it('is idempotent — no-op when the follower already exists', async () => {
       const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
-      followerRepo.findOne.mockResolvedValue({ id: 7, ticketId: 10, userId: 42 });
+      followerRepo.findOne.mockResolvedValue({ id: 7, ticketId: 10, userId: '42' });
 
       await executor.execute(ticket, [{ type: 'add_follower', value: '42' }]);
 
       expect(followerRepo.save).not.toHaveBeenCalled();
     });
 
-    it('skips on non-numeric user id', async () => {
+    it('skips on an empty or "0" user id', async () => {
       const ticket = buildTicket({ id: 10 }) as unknown as Ticket;
 
-      await executor.execute(ticket, [{ type: 'add_follower', value: 'not-numeric' }]);
+      await executor.execute(ticket, [{ type: 'add_follower', value: '   ' }]);
+      await executor.execute(ticket, [{ type: 'add_follower', value: '0' }]);
 
       expect(followerRepo.findOne).not.toHaveBeenCalled();
       expect(followerRepo.save).not.toHaveBeenCalled();
