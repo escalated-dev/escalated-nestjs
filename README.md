@@ -54,7 +54,7 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 ## Requirements
 
 - Node.js 18+
-- NestJS 10+
+- NestJS 11+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 

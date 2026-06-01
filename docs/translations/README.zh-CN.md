@@ -49,7 +49,7 @@ NestJS 应用程序的嵌入式帮助台模块。即插即用的工单系统、S
 ## 要求
 
 - Node.js 18+
-- NestJS 10+
+- NestJS 11+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 
