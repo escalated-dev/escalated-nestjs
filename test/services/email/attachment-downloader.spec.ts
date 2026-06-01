@@ -1,5 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { mkdtempSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -10,7 +8,6 @@ import {
   type PendingAttachment,
 } from '../../../src/services/email/attachment-downloader.service';
 import { LocalFileAttachmentStorage } from '../../../src/services/email/local-file-attachment-storage.service';
-import { Attachment } from '../../../src/entities/attachment.entity';
 
 function makeFetch(
   handler: (
