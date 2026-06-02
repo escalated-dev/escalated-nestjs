@@ -12,6 +12,7 @@ import {
 import { NewsletterList } from './newsletter-list.entity';
 import { NewsletterTemplate } from './newsletter-template.entity';
 import { NewsletterDelivery } from './newsletter-delivery.entity';
+import { userIdColumn, UserId } from '../../config/user-id-column';
 
 export type NewsletterStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused' | 'failed';
 
@@ -57,11 +58,11 @@ export class Newsletter {
   sent_at: Date | null;
 
   @Index()
-  @Column({ type: 'int', nullable: true })
-  created_by: number | null;
+  @Column(userIdColumn({ nullable: true }))
+  created_by: UserId | null;
 
-  @Column({ type: 'int', nullable: true })
-  sent_by: number | null;
+  @Column(userIdColumn({ nullable: true }))
+  sent_by: UserId | null;
 
   @Column({ default: 0 })
   summary_total: number;
