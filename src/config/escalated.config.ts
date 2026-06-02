@@ -164,7 +164,6 @@ export interface EscalatedModuleOptions {
   ticketSubjects?: {
     types?: string[];
     resolver?: (type: string, id: string) => Promise<TicketSubject | null>;
-
   };
 }
 
@@ -197,6 +196,5 @@ export const defaultOptions: EscalatedModuleOptions = {
   },
   ticketSubjects: {
     types: [],
-
   },
 };
