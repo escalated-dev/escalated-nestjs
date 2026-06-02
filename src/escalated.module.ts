@@ -11,6 +11,7 @@ import {
   defaultOptions,
 } from './config/escalated.config';
 import { EscalatedI18nModule } from './i18n';
+import { NewsletterModule } from './services/newsletter/newsletter.module';
 
 // Entities
 import {
@@ -307,6 +308,10 @@ export class EscalatedModule {
               }),
             ]
           : []),
+        // Newsletter system (optional, disabled by default). When the flag is
+        // false the module isn't added to imports — entities don't register
+        // and services don't instantiate.
+        ...(mergedOptions.enableNewsletters ? [NewsletterModule] : []),
       ],
       controllers: conditionalControllers,
       providers: [

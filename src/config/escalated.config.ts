@@ -114,6 +114,39 @@ export interface EscalatedModuleOptions {
   i18nOverridesPath?: string;
 
   /**
+   * Newsletter system. Disabled by default. When `enableNewsletters` is
+   * false, the NewsletterModule is not imported, no entities are
+   * registered, and the scheduler tick does not run.
+   */
+  enableNewsletters?: boolean;
+
+  newsletters?: {
+    defaultFrom?: string;
+    defaultReplyTo?: string;
+    defaultTheme?: string;
+    /** Sends per minute. Default 60. */
+    rateLimitPerMinute?: number;
+    /** Deliveries pulled per dispatcher tick. Default 50. */
+    batchSize?: number;
+    /** When false, the renderer skips pixel injection and click rewriting. */
+    trackingEnabled?: boolean;
+    /** Bounce rate at which a campaign auto-pauses. Default 0.05 (5%). */
+    autoPauseBounceRate?: number;
+    /** Minimum deliveries before auto-pause kicks in. Default 100. */
+    autoPauseThreshold?: number;
+    /** Reclaim `queued` rows older than this. Default 10 minutes. */
+    claimTimeoutMinutes?: number;
+    /** Absolute path to a directory containing `<slug>.hbs` theme files. */
+    themesDir?: string;
+    brand?: {
+      name?: string;
+      accent?: string;
+      logoUrl?: string;
+      physicalAddress?: string;
+    };
+  };
+
+  /**
    * Host-defined custom ticket actions. Each visible action renders as a button
    * on the agent ticket screen and, when clicked, dispatches the
    * `TicketCustomActionTriggered` event. Actions may be objects implementing
@@ -148,6 +181,16 @@ export const defaultOptions: EscalatedModuleOptions = {
   webhookMaxRetries: 3,
   widgetOrigins: ['*'],
   fallbackLanguage: 'en',
+  enableNewsletters: false,
+  newsletters: {
+    defaultTheme: 'default',
+    rateLimitPerMinute: 60,
+    batchSize: 50,
+    trackingEnabled: true,
+    autoPauseBounceRate: 0.05,
+    autoPauseThreshold: 100,
+    claimTimeoutMinutes: 10,
+  },
   ticketActions: {
     actions: [],
   },
