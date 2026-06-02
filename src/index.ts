@@ -1,6 +1,9 @@
 // Module
 export { EscalatedModule } from './escalated.module';
 
+// Contracts
+export { TicketSubject } from './contracts/ticket-subject.interface';
+
 // Config
 export {
   EscalatedModuleOptions,

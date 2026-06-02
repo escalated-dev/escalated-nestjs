@@ -22,6 +22,7 @@ import {
   Tag,
   Department,
   TicketLink,
+  TicketSubjectLink,
   TicketFollower,
   SatisfactionRating,
   SlaPolicy,
@@ -77,6 +78,7 @@ import {
   SavedViewService,
   SettingsService,
   TicketLinkService,
+  TicketSubjectService,
   AuditLogService,
   DepartmentService,
   TagService,
@@ -111,6 +113,7 @@ import { AgentMacroController } from './controllers/agent/macro.controller';
 import { AgentSideConversationController } from './controllers/agent/side-conversation.controller';
 import { AgentSavedViewController } from './controllers/agent/saved-view.controller';
 import { AgentTicketLinkController } from './controllers/agent/ticket-link.controller';
+import { AgentTicketSubjectController } from './controllers/agent/ticket-subject.controller';
 import { AdminSlaController } from './controllers/admin/sla.controller';
 import { AdminAgentController } from './controllers/admin/agent.controller';
 import { AdminSettingsController } from './controllers/admin/settings.controller';
@@ -152,6 +155,7 @@ const entities = [
   Tag,
   Department,
   TicketLink,
+  TicketSubjectLink,
   TicketFollower,
   SatisfactionRating,
   SlaPolicy,
@@ -206,6 +210,7 @@ const services = [
   SavedViewService,
   SettingsService,
   TicketLinkService,
+  TicketSubjectService,
   AuditLogService,
   DepartmentService,
   TagService,
@@ -231,6 +236,7 @@ const controllers = [
   AgentSideConversationController,
   AgentSavedViewController,
   AgentTicketLinkController,
+  AgentTicketSubjectController,
   AdminSlaController,
   AdminAgentController,
   AdminSettingsController,

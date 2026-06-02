@@ -6,6 +6,7 @@ export { TicketActivity } from './ticket-activity.entity';
 export { Tag } from './tag.entity';
 export { Department } from './department.entity';
 export { TicketLink } from './ticket-link.entity';
+export { TicketSubjectLink } from './ticket-subject-link.entity';
 export { TicketFollower } from './ticket-follower.entity';
 export { SatisfactionRating } from './satisfaction-rating.entity';
 export { SlaPolicy } from './sla-policy.entity';

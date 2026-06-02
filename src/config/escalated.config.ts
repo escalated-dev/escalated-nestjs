@@ -1,4 +1,5 @@
 import { TicketAction, TicketActionConfig } from '../contracts/ticket-action.interface';
+import { TicketSubject } from '../contracts/ticket-subject.interface';
 import { UserId } from './user-id-column';
 
 export interface EscalatedModuleOptions {
@@ -121,6 +122,16 @@ export interface EscalatedModuleOptions {
   ticketActions?: {
     actions?: (TicketAction | TicketActionConfig)[];
   };
+
+  /**
+   * Host-app entities a ticket can be *about* (Project, Customer, asset, …).
+   * `types` is the allowlist for the agent API; `resolver` maps a stored
+   * type/id pair to a {@link TicketSubject} for serialization.
+   */
+  ticketSubjects?: {
+    types?: string[];
+    resolver?: (type: string, id: string) => Promise<TicketSubject | null>;
+  };
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
@@ -139,5 +150,8 @@ export const defaultOptions: EscalatedModuleOptions = {
   fallbackLanguage: 'en',
   ticketActions: {
     actions: [],
+  },
+  ticketSubjects: {
+    types: [],
   },
 };
