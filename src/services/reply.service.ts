@@ -5,6 +5,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Reply } from '../entities/reply.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
+import { AgentProfile } from '../entities/agent-profile.entity';
 import { CreateReplyDto } from '../dto/create-reply.dto';
 import { UserId } from '../config/user-id-column';
 import { ESCALATED_EVENTS, TicketReplyCreatedEvent } from '../events/escalated.events';
@@ -18,8 +19,26 @@ export class ReplyService {
     private readonly ticketRepo: Repository<Ticket>,
     @InjectRepository(TicketActivity)
     private readonly activityRepo: Repository<TicketActivity>,
+    @InjectRepository(AgentProfile)
+    private readonly agentProfileRepo: Repository<AgentProfile>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /**
+   * Resolve a human display name for a reply author, mirroring the
+   * AgentProfile.displayName lookup used by TicketService.enrichTickets so the
+   * real-time payload renders the same name the HTTP response would.
+   */
+  private async resolveAuthorName(userId: UserId): Promise<string> {
+    if (userId === null || userId === undefined) {
+      return null;
+    }
+    const profile = await this.agentProfileRepo.findOne({
+      where: { userId },
+      select: ['userId', 'displayName'],
+    });
+    return profile?.displayName ?? `User #${userId}`;
+  }
 
   async create(ticketId: number, dto: CreateReplyDto, userId: UserId): Promise<Reply> {
     const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
@@ -49,6 +68,14 @@ export class ReplyService {
       action: dto.isInternal ? 'internal_note_added' : 'reply_added',
       description: dto.isInternal ? 'Internal note added' : 'Reply added',
     });
+
+    // Attach a resolved author so the broadcast payload carries a display name
+    // (the Reply entity only stores the scalar userId). Without this, real-time
+    // consumers render "Unknown" until a full refetch enriches the reply.
+    const authorName = await this.resolveAuthorName(userId);
+    (saved as Reply & { author?: { id: UserId; name: string }; authorName?: string }).author =
+      userId === null || userId === undefined ? null : { id: userId, name: authorName };
+    (saved as Reply & { authorName?: string }).authorName = authorName;
 
     this.eventEmitter.emit(
       ESCALATED_EVENTS.TICKET_REPLY_CREATED,

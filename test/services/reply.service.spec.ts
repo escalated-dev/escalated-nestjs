@@ -5,12 +5,14 @@ import { ReplyService } from '../../src/services/reply.service';
 import { Reply } from '../../src/entities/reply.entity';
 import { Ticket } from '../../src/entities/ticket.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
+import { AgentProfile } from '../../src/entities/agent-profile.entity';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
 
 describe('ReplyService', () => {
   let service: ReplyService;
   let replyRepo: any;
   let ticketRepo: any;
+  let agentProfileRepo: any;
   let eventEmitter: EventEmitter2;
 
   const mockTicket = {
@@ -57,6 +59,12 @@ describe('ReplyService', () => {
           },
         },
         {
+          provide: getRepositoryToken(AgentProfile),
+          useValue: {
+            findOne: jest.fn().mockResolvedValue({ userId: 2, displayName: 'Dana Agent' }),
+          },
+        },
+        {
           provide: EventEmitter2,
           useValue: {
             emit: jest.fn(),
@@ -68,6 +76,7 @@ describe('ReplyService', () => {
     service = module.get<ReplyService>(ReplyService);
     replyRepo = module.get(getRepositoryToken(Reply));
     ticketRepo = module.get(getRepositoryToken(Ticket));
+    agentProfileRepo = module.get(getRepositoryToken(AgentProfile));
     eventEmitter = module.get(EventEmitter2);
   });
 
@@ -105,6 +114,25 @@ describe('ReplyService', () => {
     it('should throw for missing ticket', async () => {
       ticketRepo.findOne.mockResolvedValue(null);
       await expect(service.create(999, { body: 'Test' }, 1)).rejects.toThrow('not found');
+    });
+
+    it('attaches the resolved author to the broadcast reply payload', async () => {
+      await service.create(1, { body: 'On it!' }, 2);
+
+      expect(agentProfileRepo.findOne).toHaveBeenCalled();
+      const [, event] = (eventEmitter.emit as jest.Mock).mock.calls[0];
+      expect(event.reply.author).toEqual({ id: 2, name: 'Dana Agent' });
+      expect(event.reply.authorName).toBe('Dana Agent');
+    });
+
+    it('falls back to "User #id" when the author has no agent profile', async () => {
+      agentProfileRepo.findOne.mockResolvedValue(null);
+
+      await service.create(1, { body: 'Hello' }, 5);
+
+      const [, event] = (eventEmitter.emit as jest.Mock).mock.calls[0];
+      expect(event.reply.author).toEqual({ id: 5, name: 'User #5' });
+      expect(event.reply.authorName).toBe('User #5');
     });
   });
 
