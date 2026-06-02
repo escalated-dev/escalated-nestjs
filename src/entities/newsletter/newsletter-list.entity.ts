@@ -8,6 +8,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { NewsletterListMember } from './newsletter-list-member.entity';
+import { userIdColumn, UserId } from '../../config/user-id-column';
 
 @Entity('escalated_newsletter_lists')
 export class NewsletterList {
@@ -28,8 +29,8 @@ export class NewsletterList {
   filter_json: { rules: Array<{ field: string; op: string; value: unknown }> } | null;
 
   @Index()
-  @Column({ type: 'int', nullable: true })
-  created_by: number | null;
+  @Column(userIdColumn({ nullable: true }))
+  created_by: UserId | null;
 
   @CreateDateColumn()
   created_at: Date;

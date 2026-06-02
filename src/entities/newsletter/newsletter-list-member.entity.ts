@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { NewsletterList } from './newsletter-list.entity';
 import { Contact } from '../contact.entity';
+import { userIdColumn, UserId } from '../../config/user-id-column';
 
 @Entity('escalated_newsletter_list_members')
 @Unique(['list_id', 'contact_id'])
@@ -26,8 +27,8 @@ export class NewsletterListMember {
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   added_at: Date;
 
-  @Column({ type: 'int', nullable: true })
-  added_by: number | null;
+  @Column(userIdColumn({ nullable: true }))
+  added_by: UserId | null;
 
   @ManyToOne(() => NewsletterList, (l) => l.members, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'list_id' })

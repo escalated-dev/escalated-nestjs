@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { userIdColumn, UserId } from '../../config/user-id-column';
 
 @Entity('escalated_newsletter_templates')
 export class NewsletterTemplate {
@@ -29,8 +30,8 @@ export class NewsletterTemplate {
   merge_fields_schema: unknown | null;
 
   @Index()
-  @Column({ type: 'int', nullable: true })
-  created_by: number | null;
+  @Column(userIdColumn({ nullable: true }))
+  created_by: UserId | null;
 
   @CreateDateColumn()
   created_at: Date;
