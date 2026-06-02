@@ -9,6 +9,7 @@ import { AgentProfile } from '../entities/agent-profile.entity';
 import { CreateSkillDto } from '../dto/admin/create-skill.dto';
 import { UpdateSkillDto } from '../dto/admin/update-skill.dto';
 import { AgentSkillEntryDto } from '../dto/admin/agent-skill.dto';
+import { UserId } from '../config/user-id-column';
 
 export interface SkillListItem {
   id: number;
@@ -29,7 +30,7 @@ export interface SkillEditPayload {
   description: string | null;
   routingTagIds: number[];
   routingDepartmentIds: number[];
-  agents: Array<{ userId: number; proficiency: number }>;
+  agents: Array<{ userId: UserId; proficiency: number }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,7 +38,7 @@ export interface SkillEditPayload {
 export interface SkillFormContext {
   availableTags: Array<{ id: number; name: string }>;
   availableDepartments: Array<{ id: number; name: string }>;
-  availableAgents: Array<{ id: number; name: string; email: string }>;
+  availableAgents: Array<{ id: UserId; name: string; email: string }>;
 }
 
 @Injectable()

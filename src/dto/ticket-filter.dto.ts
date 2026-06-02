@@ -1,5 +1,6 @@
 import { IsOptional, IsInt, IsString, IsIn, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
+import { UserId } from '../config/user-id-column';
 
 export class TicketFilterDto {
   @IsOptional()
@@ -31,14 +32,10 @@ export class TicketFilterDto {
   departmentId?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  assigneeId?: number;
+  assigneeId?: UserId;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  requesterId?: number;
+  requesterId?: UserId;
 
   @IsOptional()
   @IsString()

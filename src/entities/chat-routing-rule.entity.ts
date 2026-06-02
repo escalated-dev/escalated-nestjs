@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Department } from './department.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_chat_routing_rules')
 export class ChatRoutingRule {
@@ -20,8 +21,8 @@ export class ChatRoutingRule {
   @Column({ type: 'int', nullable: true })
   departmentId: number;
 
-  @Column({ type: 'int', nullable: true })
-  agentId: number;
+  @Column(userIdColumn({ nullable: true }))
+  agentId: UserId | null;
 
   @Column({ type: 'text', nullable: true })
   conditions: string;

@@ -5,6 +5,7 @@ import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { Tag } from '../entities/tag.entity';
 import { Department } from '../entities/department.entity';
+import { UserId } from '../config/user-id-column';
 
 export interface ImportResult {
   total: number;
@@ -26,7 +27,7 @@ export class ImportService {
     private readonly departmentRepo: Repository<Department>,
   ) {}
 
-  async importTickets(data: any[], userId: number): Promise<ImportResult> {
+  async importTickets(data: any[], userId: UserId): Promise<ImportResult> {
     const result: ImportResult = { total: data.length, imported: 0, failed: 0, errors: [] };
 
     const defaultStatus = await this.statusRepo.findOne({ where: { isDefault: true } });

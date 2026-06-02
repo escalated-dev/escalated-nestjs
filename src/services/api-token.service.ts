@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { ApiToken } from '../entities/api-token.entity';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class ApiTokenService {
@@ -11,7 +12,7 @@ export class ApiTokenService {
     private readonly tokenRepo: Repository<ApiToken>,
   ) {}
 
-  async findAll(userId?: number): Promise<ApiToken[]> {
+  async findAll(userId?: UserId): Promise<ApiToken[]> {
     const where: any = {};
     if (userId) where.userId = userId;
     return this.tokenRepo.find({ where, order: { createdAt: 'DESC' } });
@@ -25,7 +26,7 @@ export class ApiTokenService {
 
   async create(data: {
     name: string;
-    userId: number;
+    userId: UserId;
     abilities?: string[];
     expiresAt?: Date;
   }): Promise<{ token: ApiToken; plainTextToken: string }> {

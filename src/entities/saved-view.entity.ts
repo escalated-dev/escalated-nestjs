@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_saved_views')
 export class SavedView {
@@ -14,8 +15,8 @@ export class SavedView {
   @Column({ length: 255 })
   name: string;
 
-  @Column({ type: 'int', nullable: true })
-  userId: number; // null = shared view
+  @Column(userIdColumn({ nullable: true }))
+  userId: UserId | null; // null = shared view
 
   @Column({ type: 'simple-json' })
   filters: Record<string, any>;

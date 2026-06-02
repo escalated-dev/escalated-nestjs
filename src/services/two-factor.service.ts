@@ -5,6 +5,7 @@ import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 import { AgentProfile } from '../entities/agent-profile.entity';
+import { UserId } from '../config/user-id-column';
 
 @Injectable()
 export class TwoFactorService {
@@ -14,7 +15,7 @@ export class TwoFactorService {
   ) {}
 
   async generateSecret(
-    userId: number,
+    userId: UserId,
     appName: string = 'Escalated',
   ): Promise<{
     secret: string;
@@ -42,7 +43,7 @@ export class TwoFactorService {
     return { secret, qrCodeUrl, recoveryCodes };
   }
 
-  async enable(userId: number, token: string): Promise<boolean> {
+  async enable(userId: UserId, token: string): Promise<boolean> {
     const profile = await this.agentProfileRepo.findOne({ where: { userId } });
     if (!profile || !profile.twoFactorSecret) {
       throw new BadRequestException('No 2FA secret found. Generate one first.');
@@ -64,7 +65,7 @@ export class TwoFactorService {
     return true;
   }
 
-  async verify(userId: number, token: string): Promise<boolean> {
+  async verify(userId: UserId, token: string): Promise<boolean> {
     const profile = await this.agentProfileRepo.findOne({ where: { userId } });
     if (!profile || !profile.twoFactorEnabled || !profile.twoFactorSecret) {
       throw new BadRequestException('2FA is not enabled');
@@ -90,7 +91,7 @@ export class TwoFactorService {
     return false;
   }
 
-  async disable(userId: number): Promise<void> {
+  async disable(userId: UserId): Promise<void> {
     const profile = await this.agentProfileRepo.findOne({ where: { userId } });
     if (!profile) throw new BadRequestException('Agent profile not found');
 
@@ -101,7 +102,7 @@ export class TwoFactorService {
     });
   }
 
-  async isEnabled(userId: number): Promise<boolean> {
+  async isEnabled(userId: UserId): Promise<boolean> {
     const profile = await this.agentProfileRepo.findOne({ where: { userId } });
     return profile?.twoFactorEnabled || false;
   }

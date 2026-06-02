@@ -1,3 +1,7 @@
+import { TicketAction, TicketActionConfig } from '../contracts/ticket-action.interface';
+import { TicketSubject } from '../contracts/ticket-subject.interface';
+import { UserId } from './user-id-column';
+
 export interface EscalatedModuleOptions {
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
   routePrefix?: string;
@@ -6,7 +10,7 @@ export interface EscalatedModuleOptions {
   userEntity?: any;
 
   /** Function to resolve user from request */
-  userResolver?: (req: any) => { id: number; name?: string; email?: string } | null;
+  userResolver?: (req: any) => { id: UserId; name?: string; email?: string } | null;
 
   /** Guard class for admin routes */
   adminGuard?: any;
@@ -74,7 +78,7 @@ export interface EscalatedModuleOptions {
    */
   guestPolicy?:
     | { mode: 'unassigned' }
-    | { mode: 'guest_user'; guestUserId: number }
+    | { mode: 'guest_user'; guestUserId: UserId }
     | { mode: 'prompt_signup'; signupUrlTemplate?: string };
 
   /** App name for branding */
@@ -141,6 +145,27 @@ export interface EscalatedModuleOptions {
       physicalAddress?: string;
     };
   };
+
+  /**
+   * Host-defined custom ticket actions. Each visible action renders as a button
+   * on the agent ticket screen and, when clicked, dispatches the
+   * `TicketCustomActionTriggered` event. Actions may be objects implementing
+   * the `TicketAction` interface or plain `TicketActionConfig` objects.
+   */
+  ticketActions?: {
+    actions?: (TicketAction | TicketActionConfig)[];
+  };
+
+  /**
+   * Host-app entities a ticket can be *about* (Project, Customer, asset, …).
+   * `types` is the allowlist for the agent API; `resolver` maps a stored
+   * type/id pair to a {@link TicketSubject} for serialization.
+   */
+  ticketSubjects?: {
+    types?: string[];
+    resolver?: (type: string, id: string) => Promise<TicketSubject | null>;
+
+  };
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
@@ -166,5 +191,12 @@ export const defaultOptions: EscalatedModuleOptions = {
     autoPauseBounceRate: 0.05,
     autoPauseThreshold: 100,
     claimTimeoutMinutes: 10,
+  },
+  ticketActions: {
+    actions: [],
+  },
+  ticketSubjects: {
+    types: [],
+
   },
 };

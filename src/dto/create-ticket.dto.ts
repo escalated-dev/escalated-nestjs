@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsInt, IsIn, IsArray, MaxLength } from 'class-validator';
+import { UserId } from '../config/user-id-column';
 
 export class CreateTicketDto {
   @IsString()
@@ -21,8 +22,7 @@ export class CreateTicketDto {
   departmentId?: number;
 
   @IsOptional()
-  @IsInt()
-  assigneeId?: number;
+  assigneeId?: UserId;
 
   @IsOptional()
   @IsInt()

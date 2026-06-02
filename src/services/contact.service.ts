@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact } from '../entities/contact.entity';
+import { UserId } from '../config/user-id-column';
 import { Ticket } from '../entities/ticket.entity';
 
 @Injectable()
@@ -46,7 +47,7 @@ export class ContactService {
     return this.contactRepo.findOne({ where: { id } });
   }
 
-  async linkToUser(contactId: number, userId: number): Promise<Contact> {
+  async linkToUser(contactId: number, userId: UserId): Promise<Contact> {
     const existing = await this.contactRepo.findOne({ where: { id: contactId } });
     if (!existing) {
       throw new NotFoundException(`Contact ${contactId} not found`);
@@ -60,7 +61,7 @@ export class ContactService {
    * tickets previously created under this contact. Called when a guest
    * accepts a signup invite and the host app creates their account.
    */
-  async promoteToUser(contactId: number, userId: number): Promise<Contact> {
+  async promoteToUser(contactId: number, userId: UserId): Promise<Contact> {
     const linked = await this.linkToUser(contactId, userId);
     await this.ticketRepo.update({ contactId }, { requesterId: userId });
     return linked;

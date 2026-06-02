@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Ticket } from './ticket.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_ticket_activities')
 export class TicketActivity {
@@ -20,8 +21,8 @@ export class TicketActivity {
   @Column()
   ticketId: number;
 
-  @Column({ type: 'int', nullable: true })
-  userId: number;
+  @Column(userIdColumn({ nullable: true }))
+  userId: UserId | null;
 
   @Column({ length: 100 })
   action: string; // created, assigned, status_changed, priority_changed, merged, split, etc.

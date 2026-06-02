@@ -17,6 +17,8 @@
 
 # @escalated-dev/escalated-nestjs
 
+**Website:** [escalated.dev](https://escalated.dev)
+
 Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
 
 ## Features
@@ -52,7 +54,7 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 ## Requirements
 
 - Node.js 18+
-- NestJS 10+
+- NestJS 11+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 
@@ -118,6 +120,8 @@ export class AppModule {}
 | `mail`                | `object`   | --            | Outbound email config (see below)       |
 | `inbound`             | `object`   | --            | Inbound email config (see below)        |
 | `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |
+| `ticketActions`       | `object`   | `{actions:[]}`| Custom agent ticket actions (see below) |
+| `ticketSubjects`      | `object`   | `{types:[]}`  | Host entities a ticket is about (see below) |
 
 #### Outbound email (`mail`)
 
@@ -171,6 +175,28 @@ Admins can override at runtime via `PUT /escalated/admin/settings`:
 { "key": "guest_policy", "type": "json", "value": { "mode": "guest_user", "guestUserId": 99 } }
 ```
 
+#### Host user key type (UUID / string users)
+
+Escalated stores references to your host app's users (ticket requester,
+assignee, reply author, etc.). By default those columns are integers, matching
+a classic auto-incrementing user primary key. If your host app's user table
+uses a **UUID or other string primary key**, set `ESCALATED_USER_KEY_TYPE`
+before the app bootstraps so the TypeORM entity columns are created as
+`varchar(255)` instead of `int`:
+
+```bash
+# .env — one of: int (default) | bigint | uuid | string
+ESCALATED_USER_KEY_TYPE=uuid
+```
+
+This is read from the environment (not the module options) because TypeORM
+column decorators are evaluated at class-load time, before
+`EscalatedModule.forRoot()` runs. Existing integer-keyed installs need no
+change — the default (`int`) produces exactly the same schema as before.
+`uuid` and `string` both map to a portable `varchar(255)` that can hold a UUID
+or a stringified integer id. All Escalated APIs accept a host user id as either
+a `number` or a `string` (`UserId`).
+
 ### 3. Database migration
 
 With `synchronize: true`, TypeORM auto-creates tables. For production, generate migrations:
@@ -194,6 +220,7 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 | PUT    | `/tickets/:id`                          | Update ticket             |
 | DELETE | `/tickets/:id`                          | Delete ticket             |
 | POST   | `/tickets/:id/replies`                  | Add reply                 |
+| POST   | `/tickets/:id/actions/:actionKey`       | Trigger custom action     |
 | POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
 | POST   | `/tickets/:id/split`                    | Split ticket              |
 | POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
@@ -295,7 +322,141 @@ export class NotificationService {
 }
 ```
 
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
+Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`, `TICKET_CUSTOM_ACTION_TRIGGERED`.
+
+## Ticket subjects
+
+A ticket has a **requester** (the person who raised it) and a **subject line**
+(free text). Sometimes a ticket is also *about* one or more host-app entities —
+a Project, a Customer, an asset — that are not people. Attach them as ticket
+**subjects** so agents see what the ticket concerns and can jump straight to it
+in your app.
+
+Implement the `TicketSubject` contract on any host model you want attachable:
+
+```typescript
+import { TicketSubject } from '@escalated-dev/escalated-nestjs';
+
+export class Project implements TicketSubject {
+  ticketSubjectTitle(): string {
+    return this.name;
+  }
+
+  ticketSubjectSubtitle(): string | null {
+    return `Project · ${this.customer.name}`;
+  }
+
+  ticketSubjectUrl(): string | null {
+    return `/projects/${this.id}`;
+  }
+
+  ticketSubjectColor(): string | null {
+    return '#2563eb';
+  }
+
+  ticketSubjectIcon(): string | null {
+    return 'folder';
+  }
+}
+```
+
+Register an allowlist and optional resolver when importing the module. NestJS
+does not own your host models — the resolver maps a stored `type` + `id` to a
+`TicketSubject` for API serialization:
+
+```typescript
+EscalatedModule.forRoot({
+  ticketSubjects: {
+    types: ['Project', 'Customer'],
+    resolver: async (type, id) => {
+      if (type === 'Project') return projectRepo.findOne({ where: { id } });
+      if (type === 'Customer') return customerRepo.findOne({ where: { id } });
+      return null;
+    },
+  },
+});
+```
+
+Each attached subject is serialized on the ticket as:
+
+```json
+{
+  "type": "Project",
+  "id": "7",
+  "role": "project",
+  "title": "Acme Redesign",
+  "subtitle": "Project · Acme",
+  "url": "/projects/7",
+  "color": "#2563eb",
+  "icon": "folder",
+  "missing": false
+}
+```
+
+`subjectId` is stored as a string so integer, UUID, or string-keyed host models
+all work. When the resolver is absent or returns null, `title` falls back to
+`type#id`, presentation fields are null, and `missing` is `true`.
+
+Agent API (types must be allowlisted):
+
+- `POST /escalated/agent/tickets/:id/subjects` — body `{ type, id, role? }`
+- `DELETE /escalated/agent/tickets/:id/subjects/:linkId`
+
+Programmatic attach via `TicketSubjectService` works for any type when the
+allowlist is empty; the agent API only accepts allowlisted types.
+
+## Custom Ticket Actions
+
+Host applications can add custom buttons to the agent ticket screen and handle
+clicks with normal event listeners. Register actions when importing the module:
+
+```typescript
+EscalatedModule.forRoot({
+  ticketActions: {
+    actions: [
+      {
+        key: 'sync-crm',
+        label: 'Sync CRM',
+        variant: 'primary',
+        confirmation: 'Sync this ticket to the CRM?',
+        metadata: { icon: 'refresh-cw' },
+      },
+    ],
+  },
+});
+```
+
+`label`, `visible`, `enabled`, `confirmation`, and `metadata` may each be a
+value or a `(ticket, user) => value` function for dynamic behavior. For richer
+logic you can instead provide an object implementing the `TicketAction`
+interface (`key()`, `label()`, `visible()`, `enabled()`, `variant()`,
+`confirmation()`, `metadata()`).
+
+The agent ticket show response exposes the visible actions as `customActions`
+(each with a `url` and `method`). When the agent triggers one
+(`POST /escalated/agent/tickets/:id/actions/:actionKey`), Escalated dispatches
+`TicketCustomActionTriggered`:
+
+```typescript
+import { OnEvent } from '@nestjs/event-emitter';
+import {
+  ESCALATED_EVENTS,
+  TicketCustomActionTriggeredEvent,
+} from '@escalated-dev/escalated-nestjs';
+
+@Injectable()
+export class CrmSyncListener {
+  @OnEvent(ESCALATED_EVENTS.TICKET_CUSTOM_ACTION_TRIGGERED)
+  handle(event: TicketCustomActionTriggeredEvent) {
+    if (event.action !== 'sync-crm') return;
+    // event.ticket, event.userId, event.payload, event.metadata
+  }
+}
+```
+
+The event exposes `ticket`, `action`, `userId`, `payload`, and `metadata`.
+Escalated also records an internal note on the ticket whenever an action fires,
+for auditability.
 
 ## Real-time Updates
 

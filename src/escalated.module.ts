@@ -23,6 +23,8 @@ import {
   Tag,
   Department,
   TicketLink,
+  TicketSubjectLink,
+  TicketFollower,
   SatisfactionRating,
   SlaPolicy,
   EscalationRule,
@@ -77,6 +79,7 @@ import {
   SavedViewService,
   SettingsService,
   TicketLinkService,
+  TicketSubjectService,
   AuditLogService,
   DepartmentService,
   TagService,
@@ -96,7 +99,12 @@ import {
   InboundRouterService,
 } from './services';
 
-import { WorkflowListener, EmailListener } from './listeners';
+import {
+  WorkflowListener,
+  EmailListener,
+  RecordCustomActionInternalNoteListener,
+} from './listeners';
+import { TicketActionRegistry } from './services/ticket-action-registry.service';
 import { InboundEmailController } from './controllers/inbound-email.controller';
 import { InboundWebhookSignatureGuard } from './guards/inbound-webhook-signature.guard';
 
@@ -106,6 +114,7 @@ import { AgentMacroController } from './controllers/agent/macro.controller';
 import { AgentSideConversationController } from './controllers/agent/side-conversation.controller';
 import { AgentSavedViewController } from './controllers/agent/saved-view.controller';
 import { AgentTicketLinkController } from './controllers/agent/ticket-link.controller';
+import { AgentTicketSubjectController } from './controllers/agent/ticket-subject.controller';
 import { AdminSlaController } from './controllers/admin/sla.controller';
 import { AdminAgentController } from './controllers/admin/agent.controller';
 import { AdminSettingsController } from './controllers/admin/settings.controller';
@@ -147,6 +156,8 @@ const entities = [
   Tag,
   Department,
   TicketLink,
+  TicketSubjectLink,
+  TicketFollower,
   SatisfactionRating,
   SlaPolicy,
   EscalationRule,
@@ -200,6 +211,7 @@ const services = [
   SavedViewService,
   SettingsService,
   TicketLinkService,
+  TicketSubjectService,
   AuditLogService,
   DepartmentService,
   TagService,
@@ -225,6 +237,7 @@ const controllers = [
   AgentSideConversationController,
   AgentSavedViewController,
   AgentTicketLinkController,
+  AgentTicketSubjectController,
   AdminSlaController,
   AdminAgentController,
   AdminSettingsController,
@@ -252,6 +265,20 @@ export class EscalatedModule {
     const optionsProvider: Provider = {
       provide: ESCALATED_OPTIONS,
       useValue: mergedOptions,
+    };
+
+    // Build the ticket action registry from config at bootstrap, mirroring the
+    // singleton registration used by the other host frameworks.
+    const ticketActionRegistryProvider: Provider = {
+      provide: TicketActionRegistry,
+      useFactory: (opts: EscalatedModuleOptions) => {
+        const registry = new TicketActionRegistry();
+        for (const action of opts.ticketActions?.actions ?? []) {
+          registry.register(action);
+        }
+        return registry;
+      },
+      inject: [ESCALATED_OPTIONS],
     };
 
     const conditionalProviders: Provider[] = [];
@@ -289,6 +316,7 @@ export class EscalatedModule {
       controllers: conditionalControllers,
       providers: [
         optionsProvider,
+        ticketActionRegistryProvider,
         ...services,
         ...conditionalProviders,
         ApiTokenGuard,
@@ -300,8 +328,9 @@ export class EscalatedModule {
         EscalatedSchedulerService,
         WorkflowListener,
         EmailListener,
+        RecordCustomActionInternalNoteListener,
       ],
-      exports: [...services, optionsProvider, TypeOrmModule],
+      exports: [...services, optionsProvider, ticketActionRegistryProvider, TypeOrmModule],
     };
   }
 }

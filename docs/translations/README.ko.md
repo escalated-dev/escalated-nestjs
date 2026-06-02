@@ -49,7 +49,7 @@ NestJS 애플리케이션을 위한 내장 헬프데스크 모듈. 드롭인 티
 ## 요구 사항
 
 - Node.js 18+
-- NestJS 10+
+- NestJS 11+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 

@@ -5,15 +5,18 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   ManyToMany,
   JoinTable,
   JoinColumn,
   Index,
   AfterLoad,
 } from 'typeorm';
+import { TicketSubjectLink } from './ticket-subject-link.entity';
 import { TicketStatus } from './ticket-status.entity';
 import { Department } from './department.entity';
 import { Tag } from './tag.entity';
+import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_tickets')
 @Index(['referenceNumber'], { unique: true })
@@ -51,16 +54,16 @@ export class Ticket {
   departmentId: number;
 
   // Requester (customer) - generic user ID from host app
-  @Column({ type: 'int' })
-  requesterId: number;
+  @Column(userIdColumn())
+  requesterId: UserId;
 
   // Optional link to a Contact (first-class identity for guests / email submitters)
   @Column({ type: 'int', nullable: true })
   contactId: number | null;
 
   // Assigned agent - generic user ID from host app
-  @Column({ type: 'int', nullable: true })
-  assigneeId: number;
+  @Column(userIdColumn({ nullable: true }))
+  assigneeId: UserId | null;
 
   @ManyToMany(() => Tag)
   @JoinTable({
@@ -69,6 +72,9 @@ export class Ticket {
     inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
   })
   tags: Tag[];
+
+  @OneToMany(() => TicketSubjectLink, (link) => link.ticket)
+  subjects: TicketSubjectLink[];
 
   // SLA tracking
   @Column({ type: 'int', nullable: true })
