@@ -61,14 +61,45 @@ export class AuditLogInterceptor implements NestInterceptor {
   }
 
   private sanitize(data: any): Record<string, any> {
-    if (!data) return {};
-    const sanitized = { ...data };
-    const sensitiveKeys = ['password', 'secret', 'token', 'twoFactorSecret'];
-    for (const key of sensitiveKeys) {
-      if (sanitized[key]) {
-        sanitized[key] = '***';
-      }
+    if (!data || typeof data !== 'object') return {};
+    return this.sanitizeValue(data, new WeakSet()) as Record<string, any>;
+  }
+
+  private sanitizeValue(value: any, seen: WeakSet<object>): any {
+    if (Array.isArray(value)) {
+      if (seen.has(value)) return '[Circular]';
+      seen.add(value);
+      return value.map((item) => this.sanitizeValue(item, seen));
     }
-    return sanitized;
+
+    if (value instanceof Date || !value || typeof value !== 'object') {
+      return value;
+    }
+
+    if (seen.has(value)) return '[Circular]';
+    seen.add(value);
+
+    return Object.entries(value).reduce<Record<string, any>>((sanitized, [key, entry]) => {
+      sanitized[key] = this.isSensitiveKey(key) ? '***' : this.sanitizeValue(entry, seen);
+      return sanitized;
+    }, {});
+  }
+
+  private isSensitiveKey(key: string): boolean {
+    const words = key
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean);
+
+    if (words.includes('password') || words.includes('secret') || words.includes('token')) {
+      return true;
+    }
+
+    if (words.includes('credential') || words.includes('credentials')) {
+      return true;
+    }
+
+    return words.some((word, index) => word === 'api' && words[index + 1] === 'key');
   }
 }

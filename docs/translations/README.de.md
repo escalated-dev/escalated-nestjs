@@ -49,7 +49,7 @@ Eingebettetes Helpdesk-Modul für NestJS-Anwendungen. Drop-in-Ticketing, SLA-Man
 ## Voraussetzungen
 
 - Node.js 18+
-- NestJS 10+
+- NestJS 11+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 

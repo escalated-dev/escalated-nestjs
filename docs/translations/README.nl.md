@@ -49,7 +49,7 @@ Ingebouwde helpdeskmodule voor NestJS-applicaties. Drop-in ticketing, SLA-beheer
 ## Vereisten
 
 - Node.js 18+
-- NestJS 10+
+- NestJS 11+
 - TypeORM 0.3+
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
 
