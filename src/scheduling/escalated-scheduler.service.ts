@@ -1,19 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual } from 'typeorm';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
+import { Newsletter } from '../entities/newsletter';
 import { SlaService } from '../services/sla.service';
 import { EscalationService } from '../services/escalation.service';
 import { WebhookService } from '../services/webhook.service';
 import { ChatSessionService } from '../services/chat-session.service';
 import { AutomationService } from '../services/automation.service';
+import { NewsletterDispatcherService } from '../services/newsletter/newsletter-dispatcher.service';
+import { NewsletterPlannerService } from '../services/newsletter/newsletter-planner.service';
 import { Ticket } from '../entities/ticket.entity';
 
 @Injectable()
 export class EscalatedSchedulerService {
   private readonly logger = new Logger(EscalatedSchedulerService.name);
+  private newsletterTickRunning = false;
 
   constructor(
+    @Inject(ESCALATED_OPTIONS)
+    private readonly options: EscalatedModuleOptions,
     private readonly slaService: SlaService,
     private readonly escalationService: EscalationService,
     private readonly webhookService: WebhookService,
@@ -21,6 +28,13 @@ export class EscalatedSchedulerService {
     private readonly automationService: AutomationService,
     @InjectRepository(Ticket)
     private readonly ticketRepo: Repository<Ticket>,
+    @Optional()
+    private readonly newsletterPlanner?: NewsletterPlannerService,
+    @Optional()
+    private readonly newsletterDispatcher?: NewsletterDispatcherService,
+    @Optional()
+    @InjectRepository(Newsletter)
+    private readonly newsletterRepo?: Repository<Newsletter>,
   ) {}
 
   /** Check for SLA breaches every minute */
@@ -94,6 +108,32 @@ export class EscalatedSchedulerService {
       }
     } catch (error) {
       this.logger.error('Error running automations', error);
+    }
+  }
+
+  /** Plan due newsletters and dispatch one batch every minute. */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async runNewsletters(): Promise<void> {
+    if (!this.options.enableNewsletters) return;
+    if (!this.newsletterPlanner || !this.newsletterDispatcher || !this.newsletterRepo) return;
+    if (this.newsletterTickRunning) {
+      this.logger.warn('Previous newsletter dispatch tick is still running; skipping');
+      return;
+    }
+
+    this.newsletterTickRunning = true;
+    try {
+      const due = await this.newsletterRepo.find({
+        where: { status: 'scheduled', scheduled_at: LessThanOrEqual(new Date()) },
+      });
+      for (const newsletter of due) {
+        await this.newsletterPlanner.plan(newsletter);
+      }
+      await this.newsletterDispatcher.dispatchBatch();
+    } catch (error) {
+      this.logger.error('Error dispatching newsletters', error);
+    } finally {
+      this.newsletterTickRunning = false;
     }
   }
 }

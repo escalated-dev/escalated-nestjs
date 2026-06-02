@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, Repository } from 'typeorm';
+import { In, IsNull, LessThan, LessThanOrEqual, Repository } from 'typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import { Newsletter, NewsletterDelivery } from '../../entities/newsletter';
@@ -9,6 +9,8 @@ import { NewsletterRendererService } from './newsletter-renderer.service';
 @Injectable()
 export class NewsletterDispatcherService {
   private readonly logger = new Logger(NewsletterDispatcherService.name);
+  private readonly sentByMinute = new Map<string, { count: number; expiresAt: number }>();
+  private static readonly BACKOFF_MINUTES = [1, 5, 30];
 
   constructor(
     @Inject(ESCALATED_OPTIONS)
@@ -27,15 +29,27 @@ export class NewsletterDispatcherService {
     await this.reclaimStuckRows();
 
     const batchSize = this.options.newsletters?.batchSize ?? 50;
+    const rateLimit = this.options.newsletters?.rateLimitPerMinute ?? 60;
+    const allowance = Math.max(0, rateLimit - this.sentThisMinute());
+
+    if (allowance === 0) {
+      await this.finalizeCompletedNewsletters();
+      await this.checkAutoPauseAcrossActiveNewsletters();
+      return;
+    }
 
     const pending = await this.deliveries.find({
-      where: { status: 'pending' },
+      where: [
+        { status: 'pending', next_attempt_at: IsNull() },
+        { status: 'pending', next_attempt_at: LessThanOrEqual(new Date()) },
+      ],
       order: { id: 'ASC' as const },
-      take: batchSize,
+      take: Math.min(batchSize, allowance),
     });
 
     if (pending.length === 0) {
       await this.finalizeCompletedNewsletters();
+      await this.checkAutoPauseAcrossActiveNewsletters();
       return;
     }
 
@@ -43,6 +57,7 @@ export class NewsletterDispatcherService {
       { id: In(pending.map((d) => d.id)) },
       { status: 'queued', claimed_at: new Date() },
     );
+    this.incrementSentThisMinute(pending.length);
 
     for (const delivery of pending) {
       await this.dispatchOne(delivery);
@@ -83,6 +98,7 @@ export class NewsletterDispatcherService {
         status: 'sent',
         sent_at: new Date(),
         claimed_at: null,
+        next_attempt_at: null,
       });
       await this.newsletters.increment({ id: full.newsletter_id }, 'summary_sent', 1);
     } catch (error) {
@@ -98,12 +114,14 @@ export class NewsletterDispatcherService {
           failure_reason: error instanceof Error ? error.message : String(error),
           attempt_count: attempts,
           claimed_at: null,
+          next_attempt_at: null,
         });
       } else {
         await this.deliveries.update(full.id, {
           status: 'pending',
           attempt_count: attempts,
           claimed_at: null,
+          next_attempt_at: this.backoffDate(attempts),
         });
       }
     }
@@ -147,22 +165,56 @@ export class NewsletterDispatcherService {
     const rate = this.options.newsletters?.autoPauseBounceRate ?? 0.05;
     const sending = await this.newsletters.find({ where: { status: 'sending' } });
     for (const n of sending) {
-      const total = await this.deliveries.count({
+      const firstTerminal = await this.deliveries.find({
         where: [
           { newsletter_id: n.id, status: 'sent' },
           { newsletter_id: n.id, status: 'bounced' },
           { newsletter_id: n.id, status: 'complained' },
           { newsletter_id: n.id, status: 'failed' },
         ],
+        select: ['id', 'status'],
+        order: { id: 'ASC' },
+        take: threshold,
       });
-      if (total < threshold) continue;
-      const bounced = await this.deliveries.count({
-        where: { newsletter_id: n.id, status: 'bounced' },
-      });
-      if (total > 0 && bounced / total >= rate) {
+      if (firstTerminal.length < threshold) continue;
+      const bounced = firstTerminal.filter((delivery) => delivery.status === 'bounced').length;
+      if (bounced / threshold >= rate) {
         await this.newsletters.update(n.id, { status: 'paused' });
-        this.logger.warn(`Newsletter ${n.id} auto-paused: ${bounced}/${total} bounced`);
+        this.logger.warn(`Newsletter ${n.id} auto-paused: ${bounced}/${threshold} bounced`);
       }
     }
+  }
+
+  private backoffDate(attempts: number): Date {
+    const minutes = NewsletterDispatcherService.BACKOFF_MINUTES[attempts - 1] ?? 30;
+    return new Date(Date.now() + minutes * 60_000);
+  }
+
+  private minuteKey(): string {
+    const now = new Date();
+    return `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(
+      now.getUTCDate(),
+    ).padStart(2, '0')}${String(now.getUTCHours()).padStart(2, '0')}${String(
+      now.getUTCMinutes(),
+    ).padStart(2, '0')}`;
+  }
+
+  private sentThisMinute(): number {
+    const key = this.minuteKey();
+    const entry = this.sentByMinute.get(key);
+    if (!entry || entry.expiresAt <= Date.now()) {
+      this.sentByMinute.delete(key);
+      return 0;
+    }
+    return entry.count;
+  }
+
+  private incrementSentThisMinute(count: number): void {
+    const key = this.minuteKey();
+    const entry = this.sentByMinute.get(key);
+    this.sentByMinute.set(key, {
+      count: (entry?.count ?? 0) + count,
+      expiresAt: Date.now() + 120_000,
+    });
   }
 }
