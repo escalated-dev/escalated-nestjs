@@ -101,6 +101,18 @@ export class RoleService {
       { slug: 'admin.import', name: 'Import Data', group: 'admin' },
       { slug: 'kb.manage', name: 'Manage Knowledge Base', group: 'knowledge_base' },
       { slug: 'reports.view', name: 'View Reports', group: 'reports' },
+      {
+        slug: 'newsletters.manage',
+        name: 'Manage newsletters',
+        group: 'Newsletters',
+        description: 'Create, edit, delete drafts and lists/templates; send test emails.',
+      },
+      {
+        slug: 'newsletters.send',
+        name: 'Send newsletters',
+        group: 'Newsletters',
+        description: 'Schedule or send newsletters now.',
+      },
     ];
 
     for (const perm of permissions) {
