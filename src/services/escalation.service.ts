@@ -23,7 +23,7 @@ export class EscalationService {
   }
 
   async findById(id: number): Promise<EscalationRule> {
-    const rule = await this.ruleRepo.findOne({ where: { id }, relations: ['slaPolicy'] });
+    const rule = await this.ruleRepo.findOne({ where: { id }, relations: { slaPolicy: true } });
     if (!rule) throw new NotFoundException(`Escalation rule #${id} not found`);
     return rule;
   }
@@ -48,7 +48,7 @@ export class EscalationService {
     const now = new Date();
     const rules = await this.ruleRepo.find({
       where: { isActive: true },
-      relations: ['slaPolicy'],
+      relations: { slaPolicy: true },
     });
 
     for (const rule of rules) {

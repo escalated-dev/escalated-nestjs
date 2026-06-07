@@ -21,7 +21,7 @@ export class ContactSegmentResolverService {
     if (list.kind === 'static') {
       const rows = await this.members.find({
         where: { list_id: list.id },
-        select: ['contact_id'],
+        select: { contact_id: true },
       });
       return rows.map((r) => r.contact_id);
     }
@@ -35,7 +35,7 @@ export class ContactSegmentResolverService {
   async resolveSendable(list: NewsletterList): Promise<number[]> {
     if (list.kind === 'static') {
       const memberIds = (
-        await this.members.find({ where: { list_id: list.id }, select: ['contact_id'] })
+        await this.members.find({ where: { list_id: list.id }, select: { contact_id: true } })
       ).map((r) => r.contact_id);
       if (memberIds.length === 0) return [];
       const rows = await this.contacts

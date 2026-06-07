@@ -47,7 +47,7 @@ export class CustomFieldService {
   async getValues(entityType: string, entityId: number): Promise<CustomFieldValue[]> {
     return this.valueRepo.find({
       where: { entityType, entityId },
-      relations: ['customField'],
+      relations: { customField: true },
     });
   }
 

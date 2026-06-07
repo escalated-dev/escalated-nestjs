@@ -18,14 +18,14 @@ export class KnowledgeBaseService {
     return this.categoryRepo.find({
       where: { isActive: true },
       order: { sortOrder: 'ASC' },
-      relations: ['articles'],
+      relations: { articles: true },
     });
   }
 
   async findCategoryById(id: number): Promise<KbCategory> {
     const category = await this.categoryRepo.findOne({
       where: { id },
-      relations: ['articles'],
+      relations: { articles: true },
     });
     if (!category) throw new NotFoundException(`Category #${id} not found`);
     return category;
@@ -86,7 +86,7 @@ export class KnowledgeBaseService {
   async findArticleById(id: number): Promise<KbArticle> {
     const article = await this.articleRepo.findOne({
       where: { id },
-      relations: ['category'],
+      relations: { category: true },
     });
     if (!article) throw new NotFoundException(`Article #${id} not found`);
     return article;
@@ -95,7 +95,7 @@ export class KnowledgeBaseService {
   async findArticleBySlug(slug: string): Promise<KbArticle> {
     const article = await this.articleRepo.findOne({
       where: { slug, status: 'published' },
-      relations: ['category'],
+      relations: { category: true },
     });
     if (!article) throw new NotFoundException(`Article not found`);
 

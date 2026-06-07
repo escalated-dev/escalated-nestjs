@@ -30,7 +30,7 @@ export class AgentService {
 
   async findAll(): Promise<AgentProfile[]> {
     return this.profileRepo.find({
-      relations: ['departments'],
+      relations: { departments: true },
       order: { displayName: 'ASC' },
     });
   }
@@ -38,7 +38,7 @@ export class AgentService {
   async findById(id: number): Promise<AgentProfile> {
     const profile = await this.profileRepo.findOne({
       where: { id },
-      relations: ['departments'],
+      relations: { departments: true },
     });
     if (!profile) throw new NotFoundException(`Agent profile #${id} not found`);
     return profile;
@@ -47,7 +47,7 @@ export class AgentService {
   async findByUserId(userId: UserId): Promise<AgentProfile> {
     const profile = await this.profileRepo.findOne({
       where: { userId },
-      relations: ['departments'],
+      relations: { departments: true },
     });
     if (!profile) throw new NotFoundException(`Agent profile for user #${userId} not found`);
     return profile;
@@ -56,7 +56,7 @@ export class AgentService {
   async getSkillsForUser(userId: UserId): Promise<AgentSkill[]> {
     return this.agentSkillRepo.find({
       where: { userId },
-      relations: ['skill'],
+      relations: { skill: true },
     });
   }
 
