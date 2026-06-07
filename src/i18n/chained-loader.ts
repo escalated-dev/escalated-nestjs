@@ -104,7 +104,6 @@ function deepMerge(base: any, override: any): any {
  */
 export function resolveCentralLocaleRoot(): string | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pkgJson = require.resolve('@escalated-dev/locale/package.json');
     return path.join(path.dirname(pkgJson), 'translations');
   } catch {
