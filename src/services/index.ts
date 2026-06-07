@@ -17,6 +17,7 @@ export { ImportService } from './import.service';
 export { SavedViewService } from './saved-view.service';
 export { SettingsService } from './settings.service';
 export { TicketLinkService } from './ticket-link.service';
+export { TicketSubjectService } from './ticket-subject.service';
 export { AuditLogService } from './audit-log.service';
 export { DepartmentService } from './department.service';
 export { TagService } from './tag.service';

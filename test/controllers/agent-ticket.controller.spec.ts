@@ -4,6 +4,7 @@ import { AgentTicketController } from '../../src/controllers/agent/ticket.contro
 import { TicketService } from '../../src/services/ticket.service';
 import { ReplyService } from '../../src/services/reply.service';
 import { TicketActionRegistry } from '../../src/services/ticket-action-registry.service';
+import { TicketSubjectService } from '../../src/services/ticket-subject.service';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
 import { AuditLogInterceptor } from '../../src/interceptors/audit-log.interceptor';
 import { Reflector } from '@nestjs/core';
@@ -57,6 +58,12 @@ describe('AgentTicketController', () => {
           },
         },
         {
+          provide: TicketSubjectService,
+          useValue: {
+            serializeForTicket: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
           provide: Reflector,
           useValue: {
             get: jest.fn(),
@@ -99,7 +106,7 @@ describe('AgentTicketController', () => {
   describe('show', () => {
     it('should return ticket with replies and activities', async () => {
       const result = await controller.show(1);
-      expect(result.ticket).toMatchObject(mockTicket);
+      expect(result.ticket).toMatchObject({ ...mockTicket, subjects: [] });
       expect(result.replies).toBeDefined();
       expect(result.activities).toBeDefined();
     });

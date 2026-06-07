@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TicketService } from '../../src/services/ticket.service';
 import { WorkflowListener } from '../../src/listeners/workflow.listener';
 import { WorkflowRunnerService } from '../../src/services/workflow-runner.service';

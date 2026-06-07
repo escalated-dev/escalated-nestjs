@@ -121,6 +121,7 @@ export class AppModule {}
 | `inbound`             | `object`   | --            | Inbound email config (see below)        |
 | `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |
 | `ticketActions`       | `object`   | `{actions:[]}`| Custom agent ticket actions (see below) |
+| `ticketSubjects`      | `object`   | `{types:[]}`  | Host entities a ticket is about (see below) |
 
 #### Outbound email (`mail`)
 
@@ -323,6 +324,87 @@ export class NotificationService {
 
 Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`, `TICKET_CUSTOM_ACTION_TRIGGERED`.
 
+## Ticket subjects
+
+A ticket has a **requester** (the person who raised it) and a **subject line**
+(free text). Sometimes a ticket is also *about* one or more host-app entities —
+a Project, a Customer, an asset — that are not people. Attach them as ticket
+**subjects** so agents see what the ticket concerns and can jump straight to it
+in your app.
+
+Implement the `TicketSubject` contract on any host model you want attachable:
+
+```typescript
+import { TicketSubject } from '@escalated-dev/escalated-nestjs';
+
+export class Project implements TicketSubject {
+  ticketSubjectTitle(): string {
+    return this.name;
+  }
+
+  ticketSubjectSubtitle(): string | null {
+    return `Project · ${this.customer.name}`;
+  }
+
+  ticketSubjectUrl(): string | null {
+    return `/projects/${this.id}`;
+  }
+
+  ticketSubjectColor(): string | null {
+    return '#2563eb';
+  }
+
+  ticketSubjectIcon(): string | null {
+    return 'folder';
+  }
+}
+```
+
+Register an allowlist and optional resolver when importing the module. NestJS
+does not own your host models — the resolver maps a stored `type` + `id` to a
+`TicketSubject` for API serialization:
+
+```typescript
+EscalatedModule.forRoot({
+  ticketSubjects: {
+    types: ['Project', 'Customer'],
+    resolver: async (type, id) => {
+      if (type === 'Project') return projectRepo.findOne({ where: { id } });
+      if (type === 'Customer') return customerRepo.findOne({ where: { id } });
+      return null;
+    },
+  },
+});
+```
+
+Each attached subject is serialized on the ticket as:
+
+```json
+{
+  "type": "Project",
+  "id": "7",
+  "role": "project",
+  "title": "Acme Redesign",
+  "subtitle": "Project · Acme",
+  "url": "/projects/7",
+  "color": "#2563eb",
+  "icon": "folder",
+  "missing": false
+}
+```
+
+`subjectId` is stored as a string so integer, UUID, or string-keyed host models
+all work. When the resolver is absent or returns null, `title` falls back to
+`type#id`, presentation fields are null, and `missing` is `true`.
+
+Agent API (types must be allowlisted):
+
+- `POST /escalated/agent/tickets/:id/subjects` — body `{ type, id, role? }`
+- `DELETE /escalated/agent/tickets/:id/subjects/:linkId`
+
+Programmatic attach via `TicketSubjectService` works for any type when the
+allowlist is empty; the agent API only accepts allowlisted types.
+
 ## Custom Ticket Actions
 
 Host applications can add custom buttons to the agent ticket screen and handle
@@ -424,6 +506,45 @@ All 32 entities are exported and prefixed with `escalated_`:
 **Config:** EscalatedSettings, SavedView
 
 **Knowledge Base:** KbCategory, KbArticle
+
+**Newsletters (optional):** NewsletterList, NewsletterListMember, NewsletterTemplate, Newsletter, NewsletterDelivery
+
+## Newsletters (optional, disabled by default)
+
+Admin-only broadcast feature for sending Markdown emails to contacts. Off by default — when disabled, `NewsletterModule` is not imported and its entities are not registered.
+
+```ts
+EscalatedModule.forRoot({
+  appUrl: 'https://support.example.com',
+  enableNewsletters: true,
+  newsletters: {
+    defaultFrom: 'hi@example.com',
+    defaultTheme: 'default',
+    rateLimitPerMinute: 60,
+    trackingEnabled: true,
+    brand: {
+      name: 'Acme',
+      accent: '#2563eb',
+      physicalAddress: 'Acme Inc. · 123 Main St · Springfield USA',
+    },
+  },
+  mail: {
+    from: 'hi@example.com',
+    transport: { service: 'postmark', auth: { user: '...', pass: '...' } },
+  },
+})
+```
+
+Schedule the dispatcher every minute. The cron tick is currently exposed via `NewsletterDispatcherService.dispatchBatch()` — wire it into your host's scheduler module (or call from a controller for testing):
+
+```ts
+@Cron(CronExpression.EVERY_MINUTE)
+async runNewsletterDispatch() {
+  await this.newsletterDispatcher.dispatchBatch();
+}
+```
+
+Custom themes are Handlebars files placed in the directory pointed to by `newsletters.themesDir`. Each theme receives `subject`, `body` (pre-rendered HTML), `unsubscribe_url`, `view_in_browser_url`, and `brand.*`.
 
 ## License
 

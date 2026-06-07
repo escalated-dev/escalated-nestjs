@@ -11,6 +11,7 @@ import {
   defaultOptions,
 } from './config/escalated.config';
 import { EscalatedI18nModule } from './i18n';
+import { NewsletterModule } from './services/newsletter/newsletter.module';
 
 // Entities
 import {
@@ -22,6 +23,8 @@ import {
   Tag,
   Department,
   TicketLink,
+  TicketSubjectLink,
+  TicketFollower,
   SatisfactionRating,
   SlaPolicy,
   EscalationRule,
@@ -76,6 +79,7 @@ import {
   SavedViewService,
   SettingsService,
   TicketLinkService,
+  TicketSubjectService,
   AuditLogService,
   DepartmentService,
   TagService,
@@ -110,6 +114,7 @@ import { AgentMacroController } from './controllers/agent/macro.controller';
 import { AgentSideConversationController } from './controllers/agent/side-conversation.controller';
 import { AgentSavedViewController } from './controllers/agent/saved-view.controller';
 import { AgentTicketLinkController } from './controllers/agent/ticket-link.controller';
+import { AgentTicketSubjectController } from './controllers/agent/ticket-subject.controller';
 import { AdminSlaController } from './controllers/admin/sla.controller';
 import { AdminAgentController } from './controllers/admin/agent.controller';
 import { AdminSettingsController } from './controllers/admin/settings.controller';
@@ -151,6 +156,8 @@ const entities = [
   Tag,
   Department,
   TicketLink,
+  TicketSubjectLink,
+  TicketFollower,
   SatisfactionRating,
   SlaPolicy,
   EscalationRule,
@@ -204,6 +211,7 @@ const services = [
   SavedViewService,
   SettingsService,
   TicketLinkService,
+  TicketSubjectService,
   AuditLogService,
   DepartmentService,
   TagService,
@@ -229,6 +237,7 @@ const controllers = [
   AgentSideConversationController,
   AgentSavedViewController,
   AgentTicketLinkController,
+  AgentTicketSubjectController,
   AdminSlaController,
   AdminAgentController,
   AdminSettingsController,
@@ -299,6 +308,10 @@ export class EscalatedModule {
               }),
             ]
           : []),
+        // Newsletter system (optional, disabled by default). When the flag is
+        // false the module isn't added to imports — entities don't register
+        // and services don't instantiate.
+        ...(mergedOptions.enableNewsletters ? [NewsletterModule] : []),
       ],
       controllers: conditionalControllers,
       providers: [

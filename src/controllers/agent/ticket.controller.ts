@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketService } from '../../services/ticket.service';
+import { TicketSubjectService } from '../../services/ticket-subject.service';
 import { ReplyService } from '../../services/reply.service';
 import { TicketActionRegistry } from '../../services/ticket-action-registry.service';
 import { CreateTicketDto } from '../../dto/create-ticket.dto';
@@ -30,6 +31,7 @@ import { ESCALATED_EVENTS, TicketCustomActionTriggeredEvent } from '../../events
 export class AgentTicketController {
   constructor(
     private readonly ticketService: TicketService,
+    private readonly ticketSubjectService: TicketSubjectService,
     private readonly replyService: ReplyService,
     private readonly ticketActions: TicketActionRegistry,
     private readonly eventEmitter: EventEmitter2,
@@ -52,18 +54,20 @@ export class AgentTicketController {
   @Get(':id')
   async show(@Param('id', ParseIntPipe) id: number, @Req() req?: any) {
     const ticket = await this.ticketService.findById(id);
-    const [replies, activities, chatContext, requesterTicketCount, relatedTickets] =
+    const [replies, activities, chatContext, requesterTicketCount, relatedTickets, subjects] =
       await Promise.all([
         this.replyService.findByTicketId(id, true),
         this.ticketService.getActivitiesWithHumanDates(id),
         this.ticketService.getChatContext(id),
         this.ticketService.getRequesterTicketCount(ticket.requesterId),
         this.ticketService.getRelatedTickets(id),
+        this.ticketSubjectService.serializeForTicket(ticket),
       ]);
 
     return {
       ticket: {
         ...ticket,
+        subjects,
         chat_session_id: chatContext?.chat_session_id ?? null,
         chat_started_at: chatContext?.chat_started_at ?? null,
         chat_messages: chatContext?.chat_messages ?? [],

@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 import { AgentProfile } from '../entities/agent-profile.entity';
@@ -25,8 +25,12 @@ export class TwoFactorService {
     const profile = await this.agentProfileRepo.findOne({ where: { userId } });
     if (!profile) throw new BadRequestException('Agent profile not found');
 
-    const secret = authenticator.generateSecret();
-    const otpauthUrl = authenticator.keyuri(`user-${userId}`, appName, secret);
+    const secret = generateSecret();
+    const otpauthUrl = generateURI({
+      secret,
+      label: `user-${userId}`,
+      issuer: appName,
+    });
     const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
 
     // Generate recovery codes
@@ -49,10 +53,10 @@ export class TwoFactorService {
       throw new BadRequestException('No 2FA secret found. Generate one first.');
     }
 
-    const isValid = authenticator.verify({
+    const isValid = verifySync({
       token,
       secret: profile.twoFactorSecret,
-    });
+    }).valid;
 
     if (!isValid) {
       throw new BadRequestException('Invalid verification code');
@@ -72,10 +76,10 @@ export class TwoFactorService {
     }
 
     // Check TOTP code
-    const isValid = authenticator.verify({
+    const isValid = verifySync({
       token,
       secret: profile.twoFactorSecret,
-    });
+    }).valid;
 
     if (isValid) return true;
 

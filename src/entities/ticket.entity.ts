@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   ManyToMany,
   JoinTable,
   JoinColumn,
   Index,
   AfterLoad,
 } from 'typeorm';
+import { TicketSubjectLink } from './ticket-subject-link.entity';
 import { TicketStatus } from './ticket-status.entity';
 import { Department } from './department.entity';
 import { Tag } from './tag.entity';
@@ -70,6 +72,9 @@ export class Ticket {
     inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
   })
   tags: Tag[];
+
+  @OneToMany(() => TicketSubjectLink, (link) => link.ticket)
+  subjects: TicketSubjectLink[];
 
   // SLA tracking
   @Column({ type: 'int', nullable: true })
