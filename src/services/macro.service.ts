@@ -64,7 +64,7 @@ export class MacroService {
     // Increment usage count
     await this.macroRepo.update(macroId, { usageCount: () => 'usageCount + 1' });
 
-    return this.ticketRepo.findOne({ where: { id: ticketId }, relations: ['status', 'tags'] });
+    return this.ticketRepo.findOne({ where: { id: ticketId }, relations: { status: true, tags: true } });
   }
 
   private async executeAction(

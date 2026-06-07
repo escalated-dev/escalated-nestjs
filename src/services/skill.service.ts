@@ -68,7 +68,7 @@ export class SkillService {
 
   async listForAdmin(): Promise<SkillListItem[]> {
     const skills = await this.skillRepo.find({
-      relations: ['routingTags', 'routingDepartments', 'agentSkills'],
+      relations: { routingTags: true, routingDepartments: true, agentSkills: true },
       order: { name: 'ASC' },
     });
 
@@ -88,7 +88,7 @@ export class SkillService {
   async findForEdit(id: number): Promise<SkillEditPayload> {
     const skill = await this.skillRepo.findOne({
       where: { id },
-      relations: ['routingTags', 'routingDepartments', 'agentSkills'],
+      relations: { routingTags: true, routingDepartments: true, agentSkills: true },
     });
     if (!skill) throw new NotFoundException(`Skill #${id} not found`);
 
@@ -144,14 +144,14 @@ export class SkillService {
 
     return this.skillRepo.findOne({
       where: { id: saved.id },
-      relations: ['routingTags', 'routingDepartments', 'agentSkills'],
+      relations: { routingTags: true, routingDepartments: true, agentSkills: true },
     });
   }
 
   async update(id: number, dto: UpdateSkillDto): Promise<Skill> {
     const skill = await this.skillRepo.findOne({
       where: { id },
-      relations: ['routingTags', 'routingDepartments'],
+      relations: { routingTags: true, routingDepartments: true },
     });
     if (!skill) throw new NotFoundException(`Skill #${id} not found`);
 
@@ -174,7 +174,7 @@ export class SkillService {
 
     return this.skillRepo.findOne({
       where: { id },
-      relations: ['routingTags', 'routingDepartments', 'agentSkills'],
+      relations: { routingTags: true, routingDepartments: true, agentSkills: true },
     });
   }
 

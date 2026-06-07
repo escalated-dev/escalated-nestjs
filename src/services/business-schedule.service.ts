@@ -14,13 +14,13 @@ export class BusinessScheduleService {
   ) {}
 
   async findAll(): Promise<BusinessSchedule[]> {
-    return this.scheduleRepo.find({ relations: ['holidays'] });
+    return this.scheduleRepo.find({ relations: { holidays: true } });
   }
 
   async findById(id: number): Promise<BusinessSchedule> {
     const schedule = await this.scheduleRepo.findOne({
       where: { id },
-      relations: ['holidays'],
+      relations: { holidays: true },
     });
     if (!schedule) throw new NotFoundException(`Business schedule #${id} not found`);
     return schedule;

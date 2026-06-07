@@ -22,7 +22,7 @@ export class WebhookService {
   async findById(id: number): Promise<Webhook> {
     const webhook = await this.webhookRepo.findOne({
       where: { id },
-      relations: ['deliveries'],
+      relations: { deliveries: true },
     });
     if (!webhook) throw new NotFoundException(`Webhook #${id} not found`);
     return webhook;

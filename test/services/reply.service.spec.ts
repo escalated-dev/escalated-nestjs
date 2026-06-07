@@ -114,7 +114,7 @@ describe('ReplyService', () => {
       expect(result).toHaveLength(1);
       expect(replyRepo.find).toHaveBeenCalledWith({
         where: { ticketId: 1 },
-        relations: ['attachments'],
+        relations: { attachments: true },
         order: { createdAt: 'ASC' },
       });
     });
@@ -123,7 +123,7 @@ describe('ReplyService', () => {
       await service.findByTicketId(1, false);
       expect(replyRepo.find).toHaveBeenCalledWith({
         where: { ticketId: 1, isInternal: false },
-        relations: ['attachments'],
+        relations: { attachments: true },
         order: { createdAt: 'ASC' },
       });
     });

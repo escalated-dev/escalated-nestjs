@@ -22,14 +22,14 @@ export class SlaService {
   async findAll(): Promise<SlaPolicy[]> {
     return this.slaPolicyRepo.find({
       order: { sortOrder: 'ASC' },
-      relations: ['escalationRules'],
+      relations: { escalationRules: true },
     });
   }
 
   async findById(id: number): Promise<SlaPolicy> {
     const policy = await this.slaPolicyRepo.findOne({
       where: { id },
-      relations: ['escalationRules'],
+      relations: { escalationRules: true },
     });
     if (!policy) throw new NotFoundException(`SLA Policy #${id} not found`);
     return policy;

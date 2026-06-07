@@ -91,7 +91,7 @@ export class WorkflowExecutorService {
     const fresh =
       (await this.ticketRepo.findOne({
         where: { id: ticket.id },
-        relations: ['tags'],
+        relations: { tags: true },
       })) ?? ticket;
     const tags = fresh.tags ?? [];
     if (!tags.some((t) => t.id === tag.id)) {
@@ -107,7 +107,7 @@ export class WorkflowExecutorService {
     const fresh =
       (await this.ticketRepo.findOne({
         where: { id: ticket.id },
-        relations: ['tags'],
+        relations: { tags: true },
       })) ?? ticket;
     fresh.tags = (fresh.tags ?? []).filter((t) => t.id !== tag.id);
     await this.ticketRepo.save(fresh);

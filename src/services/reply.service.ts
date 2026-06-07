@@ -66,7 +66,7 @@ export class ReplyService {
 
     return this.replyRepo.find({
       where,
-      relations: ['attachments'],
+      relations: { attachments: true },
       order: { createdAt: 'ASC' },
     });
   }
