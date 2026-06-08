@@ -17,7 +17,7 @@ export class SideConversationService {
   async findByTicket(ticketId: number): Promise<SideConversation[]> {
     return this.sideConvRepo.find({
       where: { ticketId },
-      relations: ['replies'],
+      relations: { replies: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -25,7 +25,7 @@ export class SideConversationService {
   async findById(id: number): Promise<SideConversation> {
     const conv = await this.sideConvRepo.findOne({
       where: { id },
-      relations: ['replies'],
+      relations: { replies: true },
     });
     if (!conv) throw new NotFoundException(`Side conversation #${id} not found`);
     return conv;

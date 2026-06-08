@@ -185,7 +185,7 @@ export class AutomationService {
             if (tag) {
               const t = await this.ticketRepo.findOne({
                 where: { id: ticket.id },
-                relations: ['tags'],
+                relations: { tags: true },
               });
               if (t && !t.tags?.some((x) => x.id === tag.id)) {
                 t.tags = [...(t.tags ?? []), tag];

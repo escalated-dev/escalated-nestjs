@@ -201,7 +201,7 @@ describe('TicketService', () => {
       expect(result).toEqual(mockTicket);
       expect(ticketRepo.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['status', 'department', 'tags'],
+        relations: { status: true, department: true, tags: true },
       });
     });
 

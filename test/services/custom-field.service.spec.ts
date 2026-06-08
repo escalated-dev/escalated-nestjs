@@ -86,7 +86,7 @@ describe('CustomFieldService', () => {
       await service.getValues('ticket', 1);
       expect(valueRepo.find).toHaveBeenCalledWith({
         where: { entityType: 'ticket', entityId: 1 },
-        relations: ['customField'],
+        relations: { customField: true },
       });
     });
   });

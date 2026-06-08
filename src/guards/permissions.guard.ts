@@ -52,7 +52,7 @@ export class PermissionsGuard implements CanActivate {
 
     const role = await this.roleRepo.findOne({
       where: { id: agentProfile.roleId },
-      relations: ['permissions'],
+      relations: { permissions: true },
     });
 
     if (!role) {

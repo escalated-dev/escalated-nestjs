@@ -85,7 +85,7 @@ export class TicketService {
         const reply = await this.replyRepo.findOne({
           where: { ticketId: lr.ticketId, isInternal: false },
           order: { createdAt: 'DESC' },
-          select: ['id', 'ticketId', 'userId', 'createdAt'],
+          select: { id: true, ticketId: true, userId: true, createdAt: true },
         });
         if (reply) {
           lastReplyMap.set(reply.ticketId, {
@@ -108,7 +108,7 @@ export class TicketService {
     // Build a userId -> { name, email } lookup from AgentProfile
     const agentProfiles = await this.agentProfileRepo.find({
       where: { userId: In([...userIds]) },
-      select: ['userId', 'displayName'],
+      select: { userId: true, displayName: true },
     });
     const profileMap = new Map<UserId, AgentProfile>();
     for (const p of agentProfiles) {
@@ -121,7 +121,7 @@ export class TicketService {
     if (chatTicketIds.length > 0) {
       const sessions = await this.chatSessionRepo.find({
         where: { ticketId: In(chatTicketIds) },
-        select: ['ticketId', 'visitorName', 'visitorEmail'],
+        select: { ticketId: true, visitorName: true, visitorEmail: true },
       });
       for (const s of sessions) {
         chatSessionMap.set(s.ticketId, s);
@@ -209,7 +209,7 @@ export class TicketService {
   async findById(id: number): Promise<Ticket> {
     const ticket = await this.ticketRepo.findOne({
       where: { id },
-      relations: ['status', 'department', 'tags'],
+      relations: { status: true, department: true, tags: true },
     });
 
     if (!ticket) {
@@ -222,7 +222,7 @@ export class TicketService {
   async findByReference(referenceNumber: string): Promise<Ticket> {
     const ticket = await this.ticketRepo.findOne({
       where: { referenceNumber },
-      relations: ['status', 'department', 'tags'],
+      relations: { status: true, department: true, tags: true },
     });
 
     if (!ticket) {
@@ -562,8 +562,8 @@ export class TicketService {
 
     const tickets = await this.ticketRepo.find({
       where: { id: In(relatedIds) },
-      relations: ['status'],
-      select: ['id', 'referenceNumber', 'subject', 'statusId'],
+      relations: { status: true },
+      select: { id: true, referenceNumber: true, subject: true, statusId: true },
     });
 
     return tickets.map((t) => ({

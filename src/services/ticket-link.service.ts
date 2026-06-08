@@ -16,7 +16,7 @@ export class TicketLinkService {
   async findByTicket(ticketId: number): Promise<TicketLink[]> {
     return this.linkRepo.find({
       where: [{ ticketId }, { linkedTicketId: ticketId }],
-      relations: ['ticket', 'linkedTicket'],
+      relations: { ticket: true, linkedTicket: true },
     });
   }
 

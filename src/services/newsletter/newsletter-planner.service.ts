@@ -38,7 +38,7 @@ export class NewsletterPlannerService {
 
     const contacts = await this.contacts.find({
       where: { id: In(contactIds) },
-      select: ['id', 'email'],
+      select: { id: true, email: true },
     });
     const emails = contacts.map((c) => c.email);
     const sendable = new Set(

@@ -35,7 +35,7 @@ export class ReplyService {
     }
     const profile = await this.agentProfileRepo.findOne({
       where: { userId },
-      select: ['userId', 'displayName'],
+      select: { userId: true, displayName: true },
     });
     return profile?.displayName ?? `User #${userId}`;
   }
@@ -93,7 +93,7 @@ export class ReplyService {
 
     return this.replyRepo.find({
       where,
-      relations: ['attachments'],
+      relations: { attachments: true },
       order: { createdAt: 'ASC' },
     });
   }
