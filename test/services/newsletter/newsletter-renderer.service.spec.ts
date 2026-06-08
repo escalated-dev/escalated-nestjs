@@ -49,6 +49,7 @@ function buildDelivery(
     failure_reason: null,
     attempt_count: 0,
     claimed_at: null,
+    next_attempt_at: null,
     is_test: false,
     created_at: new Date(),
     newsletter: {

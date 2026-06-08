@@ -66,6 +66,9 @@ export class NewsletterDelivery {
   @Column({ type: 'datetime', nullable: true })
   claimed_at: Date | null;
 
+  @Column({ type: 'datetime', nullable: true })
+  next_attempt_at: Date | null;
+
   @Column({ default: false })
   is_test: boolean;
 
