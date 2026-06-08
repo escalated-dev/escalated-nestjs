@@ -14,7 +14,10 @@ export class NewsletterPermissionService {
     private readonly roles: Repository<Role>,
   ) {}
 
-  async require(request: any, permission: 'newsletters.manage' | 'newsletters.send'): Promise<void> {
+  async require(
+    request: any,
+    permission: 'newsletters.manage' | 'newsletters.send',
+  ): Promise<void> {
     const userId = (request?.user?.id ?? request?.apiUserId) as UserId | undefined;
     if (!userId) {
       throw new ForbiddenException('User not authenticated');
@@ -27,7 +30,7 @@ export class NewsletterPermissionService {
 
     const role = await this.roles.findOne({
       where: { id: profile.roleId },
-      relations: ['permissions'],
+      relations: { permissions: true },
     });
     if (!role) {
       throw new ForbiddenException('Role not found');

@@ -103,7 +103,10 @@ export function optionalDateAfterNow(body: any, key: string): Date | null {
   return date;
 }
 
-export function assertArrayOrNull(value: unknown, key: string): any[] | Record<string, unknown> | null {
+export function assertArrayOrNull(
+  value: unknown,
+  key: string,
+): any[] | Record<string, unknown> | null {
   if (value == null || value === '') return null;
   if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
     return value as any[] | Record<string, unknown>;

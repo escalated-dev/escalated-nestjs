@@ -87,7 +87,7 @@ export class AdminNewsletterController {
           : ['draft'];
     const newsletters = await this.newsletters.find({
       where: { status: In(statuses as NewsletterStatus[]) },
-      relations: ['targetList'],
+      relations: { targetList: true },
       order: { created_at: 'DESC' },
       take: 50,
     });
@@ -123,7 +123,8 @@ export class AdminNewsletterController {
   @Post('preview')
   async preview(@Req() req: any, @Body() body: any) {
     await this.permissions.require(req, 'newsletters.manage');
-    const fromEmail = assertEmail(optionalString(body, 'from_email'), 'from_email') ?? 'preview@example.test';
+    const fromEmail =
+      assertEmail(optionalString(body, 'from_email'), 'from_email') ?? 'preview@example.test';
     const newsletter = this.newsletters.create({
       id: 0,
       subject: optionalString(body, 'subject', 998) ?? '',
@@ -186,7 +187,7 @@ export class AdminNewsletterController {
     if (status) where.status = status;
     const deliveries = await this.deliveries.find({
       where,
-      relations: ['contact'],
+      relations: { contact: true },
       order: { id: 'DESC' as const },
       take: 100,
     });
@@ -212,7 +213,11 @@ export class AdminNewsletterController {
   }
 
   @Put(':newsletter')
-  async update(@Req() req: any, @Param('newsletter', ParseIntPipe) newsletterId: number, @Body() body: any) {
+  async update(
+    @Req() req: any,
+    @Param('newsletter', ParseIntPipe) newsletterId: number,
+    @Body() body: any,
+  ) {
     await this.permissions.require(req, 'newsletters.manage');
     const newsletter = await this.findNewsletter(newsletterId);
     const data = await this.validateForm(body);
@@ -238,7 +243,7 @@ export class AdminNewsletterController {
   }
 
   private async composeProps(): Promise<Record<string, unknown>> {
-    const lists = await this.lists.find({ select: ['id', 'name'] });
+    const lists = await this.lists.find({ select: { id: true, name: true } });
     const listProps = await Promise.all(
       lists.map(async (list) => ({
         ...list,
@@ -249,7 +254,7 @@ export class AdminNewsletterController {
     );
     return {
       lists: listProps,
-      templates: await this.templates.find({ select: ['id', 'name'] }),
+      templates: await this.templates.find({ select: { id: true, name: true } }),
       themes: discoverNewsletterThemes(this.options.newsletters?.themesDir),
       mailConfigured: this.mailConfigured(),
       canSend: true,
@@ -285,7 +290,7 @@ export class AdminNewsletterController {
   private async findNewsletter(id: number): Promise<Newsletter> {
     const newsletter = await this.newsletters.findOne({
       where: { id },
-      relations: ['targetList', 'template'],
+      relations: { targetList: true, template: true },
     });
     if (!newsletter) {
       throw new BadRequestException(`Newsletter #${id} not found`);
@@ -307,7 +312,11 @@ export class AdminNewsletterController {
     return contact;
   }
 
-  private previewDelivery(newsletter: Newsletter, contact: Contact, token: string): NewsletterDelivery {
+  private previewDelivery(
+    newsletter: Newsletter,
+    contact: Contact,
+    token: string,
+  ): NewsletterDelivery {
     return {
       id: '0',
       newsletter_id: newsletter.id,

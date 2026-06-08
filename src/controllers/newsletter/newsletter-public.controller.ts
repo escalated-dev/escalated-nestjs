@@ -28,7 +28,10 @@ const PIXEL_BYTES = Buffer.from(
 @UseGuards(NewsletterEnabledGuard)
 @Controller('escalated/n')
 export class NewsletterPublicController {
-  private static readonly unsubscribeAttempts = new Map<string, { count: number; expiresAt: number }>();
+  private static readonly unsubscribeAttempts = new Map<
+    string,
+    { count: number; expiresAt: number }
+  >();
 
   constructor(
     private readonly tracker: NewsletterTrackerService,
@@ -57,7 +60,10 @@ export class NewsletterPublicController {
   @Get('u/:token')
   async unsubscribeShow(@Param('token') token: string, @Res() res: Response) {
     const delivery = await this.findDelivery(token);
-    res.status(200).type('html').send(this.unsubscribeHtml(token, delivery?.email_at_send ?? null, false));
+    res
+      .status(200)
+      .type('html')
+      .send(this.unsubscribeHtml(token, delivery?.email_at_send ?? null, false));
   }
 
   @Post('u/:token')
@@ -70,7 +76,10 @@ export class NewsletterPublicController {
     if (delivery?.contact_id) {
       await this.contacts.update(delivery.contact_id, { marketing_opt_out_at: new Date() });
     }
-    res.status(200).type('html').send(this.unsubscribeHtml(token, delivery?.email_at_send ?? null, true));
+    res
+      .status(200)
+      .type('html')
+      .send(this.unsubscribeHtml(token, delivery?.email_at_send ?? null, true));
   }
 
   @Get('v/:token')
@@ -159,7 +168,9 @@ export class NewsletterEspWebhookController {
   @Post('mailgun')
   async mailgun(@Body() body: any) {
     const eventData = body?.['event-data'] ?? {};
-    const token = this.tokenFromMessageId(String(eventData?.message?.headers?.['message-id'] ?? ''));
+    const token = this.tokenFromMessageId(
+      String(eventData?.message?.headers?.['message-id'] ?? ''),
+    );
     switch (String(eventData?.event ?? '')) {
       case 'opened':
         await this.tracker.recordOpen(token);
@@ -183,7 +194,8 @@ export class NewsletterEspWebhookController {
 
   @Post('ses')
   async ses(@Body() body: any) {
-    const message = typeof body?.Message === 'string' ? JSON.parse(body.Message) : body?.Message ?? body;
+    const message =
+      typeof body?.Message === 'string' ? JSON.parse(body.Message) : body?.Message ?? body;
     const token = this.tokenFromMessageId(String(message?.mail?.messageId ?? ''));
     switch (String(message?.eventType ?? '')) {
       case 'Open':
@@ -209,7 +221,9 @@ export class NewsletterEspWebhookController {
   @Post('sendgrid')
   async sendgrid(@Body() body: any) {
     for (const event of Array.isArray(body) ? body : []) {
-      const token = this.tokenFromMessageId(String(event?.['smtp-id'] ?? event?.sg_message_id ?? ''));
+      const token = this.tokenFromMessageId(
+        String(event?.['smtp-id'] ?? event?.sg_message_id ?? ''),
+      );
       switch (event?.event) {
         case 'open':
           await this.tracker.recordOpen(token);

@@ -77,7 +77,9 @@ describe('Newsletter engine services', () => {
           }
           return [];
         }),
-        findOne: jest.fn(async (opts: any) => rows.find((row) => row.id === String(opts.where.id)) ?? null),
+        findOne: jest.fn(
+          async (opts: any) => rows.find((row) => row.id === String(opts.where.id)) ?? null,
+        ),
         update: jest.fn(async (criteria: any, patch: any) => {
           const ids = idsFromCriteria(criteria);
           for (const row of rows) {
@@ -95,7 +97,10 @@ describe('Newsletter engine services', () => {
           ).length;
         }),
       };
-      const renderer = { render: jest.fn(() => '<p>Hello</p>'), unsubscribeUrl: jest.fn(() => 'http://u') };
+      const renderer = {
+        render: jest.fn(() => '<p>Hello</p>'),
+        unsubscribeUrl: jest.fn(() => 'http://u'),
+      };
       const mailer = { sendMail: jest.fn(async () => undefined) };
       const service = new NewsletterDispatcherService(
         {
@@ -180,7 +185,13 @@ describe('Newsletter engine services', () => {
   });
 
   describe('NewsletterPlannerService', () => {
-    function buildPlanner(sendableIds = [1, 2], contacts = [{ id: 1, email: 'a@example.com' }, { id: 2, email: 'b@example.com' }]) {
+    function buildPlanner(
+      sendableIds = [1, 2],
+      contacts = [
+        { id: 1, email: 'a@example.com' },
+        { id: 2, email: 'b@example.com' },
+      ],
+    ) {
       const inserted: any[] = [];
       const newsletters = {
         update: jest.fn(),
@@ -192,7 +203,11 @@ describe('Newsletter engine services', () => {
       };
       const service = new NewsletterPlannerService(
         { resolveSendable: jest.fn(async () => sendableIds) } as any,
-        { filterSendable: jest.fn(async (emails: string[]) => emails.filter((e) => e !== 'bounced@example.com')) } as any,
+        {
+          filterSendable: jest.fn(async (emails: string[]) =>
+            emails.filter((e) => e !== 'bounced@example.com'),
+          ),
+        } as any,
         newsletters as any,
         { insert: jest.fn(async (rows: any[]) => inserted.push(...rows)) } as any,
         { find: jest.fn(async () => contacts) } as any,
@@ -210,10 +225,13 @@ describe('Newsletter engine services', () => {
     });
 
     it('skips opted-out ids before planning and suppressed emails before insert', async () => {
-      const ctx = buildPlanner([1, 3], [
-        { id: 1, email: 'ok@example.com' },
-        { id: 3, email: 'bounced@example.com' },
-      ]);
+      const ctx = buildPlanner(
+        [1, 3],
+        [
+          { id: 1, email: 'ok@example.com' },
+          { id: 3, email: 'bounced@example.com' },
+        ],
+      );
       await ctx.service.plan({ id: 10 } as any);
       expect(ctx.inserted).toHaveLength(1);
       expect(ctx.inserted[0].email_at_send).toBe('ok@example.com');
@@ -222,18 +240,35 @@ describe('Newsletter engine services', () => {
 
   describe('NewsletterTrackerService', () => {
     function buildTracker(row = delivery('1', { status: 'sent' })) {
-      const newsletter = { id: 1, summary_opened: 0, summary_clicked: 0, summary_bounced: 0, summary_complained: 0 };
+      const newsletter = {
+        id: 1,
+        summary_opened: 0,
+        summary_clicked: 0,
+        summary_bounced: 0,
+        summary_complained: 0,
+      };
       const newsletters = {
         increment: jest.fn(async (_criteria: any, field: string, amount: number) => {
           newsletter[field] += amount;
         }),
       };
       const deliveries = {
-        findOne: jest.fn(async (opts: any) => (opts.where.tracking_token === row.tracking_token ? row : null)),
+        findOne: jest.fn(async (opts: any) =>
+          opts.where.tracking_token === row.tracking_token ? row : null,
+        ),
         update: jest.fn(async (_id: any, patch: any) => Object.assign(row, patch)),
       };
       const bounces = { markBounced: jest.fn(), markComplained: jest.fn() };
-      return { service: new NewsletterTrackerService(newsletters as any, deliveries as any, bounces as any), row, newsletter, bounces };
+      return {
+        service: new NewsletterTrackerService(
+          newsletters as any,
+          deliveries as any,
+          bounces as any,
+        ),
+        row,
+        newsletter,
+        bounces,
+      };
     }
 
     it('records first open once and ignores bounced deliveries', async () => {
@@ -281,7 +316,9 @@ describe('Newsletter engine services', () => {
       const store = new BounceSuppressionStoreService(settings as any);
       await store.markBounced('USER@Example.com');
       expect(await store.isBounced('user@example.com')).toBe(true);
-      expect(await store.filterSendable(['user@example.com', 'ok@example.com'])).toEqual(['ok@example.com']);
+      expect(await store.filterSendable(['user@example.com', 'ok@example.com'])).toEqual([
+        'ok@example.com',
+      ]);
     });
   });
 

@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 
 @Injectable()

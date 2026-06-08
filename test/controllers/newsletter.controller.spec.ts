@@ -64,7 +64,9 @@ describe('Newsletter HTTP smoke tests', () => {
       {} as any,
     );
     const encoded = Buffer.from('javascript:alert(1)', 'utf8').toString('base64');
-    await expect(controller.click('abc', encoded, responseMock())).rejects.toThrow(BadRequestException);
+    await expect(controller.click('abc', encoded, responseMock())).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('webhook handlers extract token and map sendgrid spam reports', async () => {

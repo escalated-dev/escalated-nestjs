@@ -172,7 +172,7 @@ export class NewsletterDispatcherService {
           { newsletter_id: n.id, status: 'complained' },
           { newsletter_id: n.id, status: 'failed' },
         ],
-        select: ['id', 'status'],
+        select: { id: true, status: true },
         order: { id: 'ASC' },
         take: threshold,
       });

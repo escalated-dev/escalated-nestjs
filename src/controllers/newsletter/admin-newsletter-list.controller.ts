@@ -81,7 +81,7 @@ export class AdminNewsletterListController {
     const list = await this.findList(listId);
     const members = await this.members.find({
       where: { list_id: list.id },
-      relations: ['contact'],
+      relations: { contact: true },
       order: { id: 'DESC' },
       take: 100,
     });
@@ -101,7 +101,9 @@ export class AdminNewsletterListController {
     const list = await this.findList(listId);
     await this.lists.update(list.id, {
       ...(body.name !== undefined ? { name: requiredString(body, 'name', 255) } : {}),
-      ...(body.description !== undefined ? { description: optionalString(body, 'description') } : {}),
+      ...(body.description !== undefined
+        ? { description: optionalString(body, 'description') }
+        : {}),
       ...(body.filter_json !== undefined
         ? { filter_json: assertArrayOrNull(body.filter_json, 'filter_json') as any }
         : {}),
@@ -193,7 +195,9 @@ export class AdminNewsletterListController {
       imported++;
     }
 
-    return redirect(`/admin/newsletters/lists/${list.id}`, { status: `Imported ${imported} contacts` });
+    return redirect(`/admin/newsletters/lists/${list.id}`, {
+      status: `Imported ${imported} contacts`,
+    });
   }
 
   private async findList(id: number): Promise<NewsletterList> {
