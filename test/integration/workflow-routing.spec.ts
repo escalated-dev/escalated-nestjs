@@ -15,6 +15,7 @@ import { ChatSession } from '../../src/entities/chat-session.entity';
 import { TicketLink } from '../../src/entities/ticket-link.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { CustomFieldValue } from '../../src/entities/custom-field-value.entity';
+import { TicketFollower } from '../../src/entities/ticket-follower.entity';
 import { Workflow } from '../../src/entities/workflow.entity';
 import { WorkflowLog } from '../../src/entities/workflow-log.entity';
 import { buildWorkflow } from '../factories';
@@ -105,6 +106,10 @@ describe('integration: TicketService.create → Workflow routing', () => {
         {
           provide: getRepositoryToken(CustomFieldValue),
           useValue: {},
+        },
+        {
+          provide: getRepositoryToken(TicketFollower),
+          useValue: { find: jest.fn().mockResolvedValue([]) },
         },
         { provide: getRepositoryToken(Workflow), useValue: workflowRepo },
         { provide: getRepositoryToken(WorkflowLog), useValue: logRepo },

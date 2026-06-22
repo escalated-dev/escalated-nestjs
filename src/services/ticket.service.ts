@@ -13,6 +13,8 @@ import { AgentProfile } from '../entities/agent-profile.entity';
 import { ChatSession } from '../entities/chat-session.entity';
 import { Tag } from '../entities/tag.entity';
 import { CustomFieldValue } from '../entities/custom-field-value.entity';
+import { TicketFollower } from '../entities/ticket-follower.entity';
+import { resolveFollowerUserIds } from './follower-recipients';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 import { TicketFilterDto } from '../dto/ticket-filter.dto';
@@ -47,6 +49,8 @@ export class TicketService {
     private readonly tagRepo: Repository<Tag>,
     @InjectRepository(CustomFieldValue)
     private readonly customFieldValueRepo: Repository<CustomFieldValue>,
+    @InjectRepository(TicketFollower)
+    private readonly followerRepo: Repository<TicketFollower>,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -320,9 +324,16 @@ export class TicketService {
         description: 'Status changed',
       });
 
+      const followerUserIds = await resolveFollowerUserIds(this.followerRepo, id, userId);
       this.eventEmitter.emit(
         ESCALATED_EVENTS.TICKET_STATUS_CHANGED,
-        new TicketStatusChangedEvent(ticket, previousStatusId, dto.statusId, userId),
+        new TicketStatusChangedEvent(
+          ticket,
+          previousStatusId,
+          dto.statusId,
+          userId,
+          followerUserIds,
+        ),
       );
     }
 
