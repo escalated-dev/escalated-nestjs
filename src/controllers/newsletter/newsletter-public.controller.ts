@@ -195,7 +195,7 @@ export class NewsletterEspWebhookController {
   @Post('ses')
   async ses(@Body() body: any) {
     const message =
-      typeof body?.Message === 'string' ? JSON.parse(body.Message) : body?.Message ?? body;
+      typeof body?.Message === 'string' ? JSON.parse(body.Message) : (body?.Message ?? body);
     const token = this.tokenFromMessageId(String(message?.mail?.messageId ?? ''));
     switch (String(message?.eventType ?? '')) {
       case 'Open':
