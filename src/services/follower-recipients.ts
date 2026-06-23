@@ -15,7 +15,7 @@ export async function resolveFollowerUserIds(
   ticketId: number,
   actorUserId: UserId,
 ): Promise<UserId[]> {
-  const rows = await followerRepo.find({ where: { ticketId }, select: ['userId'] });
+  const rows = await followerRepo.find({ where: { ticketId }, select: { userId: true } });
   const result: UserId[] = [];
   const seen = new Set<UserId>();
   for (const row of rows) {
