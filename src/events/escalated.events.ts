@@ -30,6 +30,8 @@ export class TicketStatusChangedEvent {
     public readonly previousStatusId: number,
     public readonly newStatusId: number,
     public readonly userId: UserId,
+    /** Follower user ids to notify (excluding the actor). See issue #74. */
+    public readonly followerUserIds: UserId[] = [],
   ) {}
 }
 
@@ -38,6 +40,12 @@ export class TicketReplyCreatedEvent {
     public readonly reply: any,
     public readonly ticket: any,
     public readonly userId: UserId,
+    /**
+     * Host-app user ids of the ticket's followers (excluding the reply author),
+     * so the host can fan a notification out to them. The package abstracts the
+     * user table and cannot resolve their emails itself. See issue #74.
+     */
+    public readonly followerUserIds: UserId[] = [],
   ) {}
 }
 

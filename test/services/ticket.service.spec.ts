@@ -11,6 +11,7 @@ import { ChatSession } from '../../src/entities/chat-session.entity';
 import { TicketLink } from '../../src/entities/ticket-link.entity';
 import { Tag } from '../../src/entities/tag.entity';
 import { CustomFieldValue } from '../../src/entities/custom-field-value.entity';
+import { TicketFollower } from '../../src/entities/ticket-follower.entity';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
 
 describe('TicketService', () => {
@@ -19,6 +20,7 @@ describe('TicketService', () => {
   let statusRepo: any;
   let activityRepo: any;
   let tagRepo: any;
+  let followerRepo: any;
   let eventEmitter: EventEmitter2;
 
   const mockTicket = {
@@ -122,6 +124,12 @@ describe('TicketService', () => {
           },
         },
         {
+          provide: getRepositoryToken(TicketFollower),
+          useValue: {
+            find: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
           provide: EventEmitter2,
           useValue: {
             emit: jest.fn(),
@@ -135,6 +143,7 @@ describe('TicketService', () => {
     statusRepo = module.get(getRepositoryToken(TicketStatus));
     activityRepo = module.get(getRepositoryToken(TicketActivity));
     tagRepo = module.get(getRepositoryToken(Tag));
+    followerRepo = module.get(getRepositoryToken(TicketFollower));
     eventEmitter = module.get(EventEmitter2);
   });
 
@@ -243,6 +252,18 @@ describe('TicketService', () => {
         ESCALATED_EVENTS.TICKET_STATUS_CHANGED,
         expect.anything(),
       );
+    });
+
+    it('carries the ticket followers (minus the actor) on the status-change event', async () => {
+      statusRepo.findOne.mockResolvedValue({ id: 2, isClosed: false });
+      followerRepo.find.mockResolvedValue([{ userId: 9 }, { userId: 3 }]);
+      const dto = { statusId: 2 };
+      await service.update(1, dto, 3);
+
+      const call = (eventEmitter.emit as jest.Mock).mock.calls.find(
+        (c) => c[0] === ESCALATED_EVENTS.TICKET_STATUS_CHANGED,
+      );
+      expect(call[1].followerUserIds).toEqual([9]);
     });
 
     it('should emit assignment event', async () => {

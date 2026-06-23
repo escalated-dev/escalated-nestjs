@@ -8,6 +8,7 @@ import { Tag } from '../entities/tag.entity';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { Reply } from '../entities/reply.entity';
 import { TicketFollower } from '../entities/ticket-follower.entity';
+import { resolveFollowerUserIds } from './follower-recipients';
 import {
   ESCALATED_EVENTS,
   TicketAssignedEvent,
@@ -143,6 +144,7 @@ export class WorkflowExecutorService {
     }
     const previousStatusId = ticket.statusId;
     await this.ticketRepo.update(ticket.id, { statusId: status.id });
+    const followerUserIds = await resolveFollowerUserIds(this.followerRepo, ticket.id, 0);
     this.eventEmitter.emit(
       ESCALATED_EVENTS.TICKET_STATUS_CHANGED,
       new TicketStatusChangedEvent(
@@ -150,6 +152,7 @@ export class WorkflowExecutorService {
         previousStatusId,
         status.id,
         0,
+        followerUserIds,
       ),
     );
   }

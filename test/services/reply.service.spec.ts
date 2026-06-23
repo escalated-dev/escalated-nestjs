@@ -6,6 +6,7 @@ import { Reply } from '../../src/entities/reply.entity';
 import { Ticket } from '../../src/entities/ticket.entity';
 import { TicketActivity } from '../../src/entities/ticket-activity.entity';
 import { AgentProfile } from '../../src/entities/agent-profile.entity';
+import { TicketFollower } from '../../src/entities/ticket-follower.entity';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
 
 describe('ReplyService', () => {
@@ -13,6 +14,7 @@ describe('ReplyService', () => {
   let replyRepo: any;
   let ticketRepo: any;
   let agentProfileRepo: any;
+  let followerRepo: any;
   let eventEmitter: EventEmitter2;
 
   const mockTicket = {
@@ -65,6 +67,12 @@ describe('ReplyService', () => {
           },
         },
         {
+          provide: getRepositoryToken(TicketFollower),
+          useValue: {
+            find: jest.fn().mockResolvedValue([]),
+          },
+        },
+        {
           provide: EventEmitter2,
           useValue: {
             emit: jest.fn(),
@@ -77,6 +85,7 @@ describe('ReplyService', () => {
     replyRepo = module.get(getRepositoryToken(Reply));
     ticketRepo = module.get(getRepositoryToken(Ticket));
     agentProfileRepo = module.get(getRepositoryToken(AgentProfile));
+    followerRepo = module.get(getRepositoryToken(TicketFollower));
     eventEmitter = module.get(EventEmitter2);
   });
 
@@ -133,6 +142,24 @@ describe('ReplyService', () => {
       const [, event] = (eventEmitter.emit as jest.Mock).mock.calls[0];
       expect(event.reply.author).toEqual({ id: 5, name: 'User #5' });
       expect(event.reply.authorName).toBe('User #5');
+    });
+
+    it('carries the ticket followers (minus the reply author) on the event', async () => {
+      // userId 7 follows; userId 2 is the author and also a follower — they must
+      // not be notified of their own reply.
+      followerRepo.find.mockResolvedValue([{ userId: 7 }, { userId: 2 }]);
+
+      await service.create(1, { body: 'Update' }, 2);
+
+      const [, event] = (eventEmitter.emit as jest.Mock).mock.calls[0];
+      expect(event.followerUserIds).toEqual([7]);
+    });
+
+    it('emits an empty follower list when the ticket has none', async () => {
+      await service.create(1, { body: 'Update' }, 2);
+
+      const [, event] = (eventEmitter.emit as jest.Mock).mock.calls[0];
+      expect(event.followerUserIds).toEqual([]);
     });
   });
 

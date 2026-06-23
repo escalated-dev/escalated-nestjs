@@ -41,6 +41,7 @@ describe('WorkflowExecutorService', () => {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
     };
     followerRepo = {
+      find: jest.fn().mockResolvedValue([]),
       findOne: jest.fn().mockResolvedValue(null),
       save: jest.fn(async (x) => ({ id: 1, ...x })),
     };
