@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@escalated-dev/locale": "github:escalated-dev/escalated-locale#v0.1.2",
-    "@nestjs-modules/mailer": "^2.3.4",
+    "@nestjs-modules/mailer": "^2.3.7",
     "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/platform-socket.io": "^11.1.26",
     "@nestjs/schedule": "^6.1.3",
