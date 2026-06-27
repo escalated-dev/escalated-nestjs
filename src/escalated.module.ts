@@ -106,6 +106,7 @@ import {
 } from './listeners';
 import { TicketActionRegistry } from './services/ticket-action-registry.service';
 import { InboundEmailController } from './controllers/inbound-email.controller';
+import { ApiAuthController } from './controllers/api/auth.controller';
 import { InboundWebhookSignatureGuard } from './guards/inbound-webhook-signature.guard';
 
 // Controllers
@@ -255,6 +256,7 @@ const controllers = [
   WidgetChatController,
   AttachmentController,
   InboundEmailController,
+  ApiAuthController,
 ];
 
 @Module({})
