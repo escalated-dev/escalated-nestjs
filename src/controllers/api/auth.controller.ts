@@ -51,7 +51,10 @@ export class ApiAuthController {
   }
 
   @Patch('profile')
-  async profile(@Headers('authorization') authorization: string | undefined, @Body() body: Record<string, any>) {
+  async profile(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: Record<string, any>,
+  ) {
     const cb = this.options.apiAuth?.updateProfile;
     if (!cb) throw new NotImplementedException('Profile updates are not configured');
     return this.wrap(await cb(this.bearer(authorization), body ?? {}));

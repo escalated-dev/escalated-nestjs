@@ -179,7 +179,10 @@ export interface EscalatedModuleOptions {
     register?: (params: Record<string, any>) => Promise<Record<string, any> | null>;
     validate?: (token: string) => Promise<Record<string, any> | null>;
     refresh?: (token: string) => Promise<Record<string, any> | null>;
-    updateProfile?: (token: string, attrs: Record<string, any>) => Promise<Record<string, any> | null>;
+    updateProfile?: (
+      token: string,
+      attrs: Record<string, any>,
+    ) => Promise<Record<string, any> | null>;
     logout?: (token: string) => Promise<void>;
   };
 }
