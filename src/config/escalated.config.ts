@@ -165,6 +165,26 @@ export interface EscalatedModuleOptions {
     types?: string[];
     resolver?: (type: string, id: string) => Promise<TicketSubject | null>;
   };
+
+  /**
+   * Host-app authentication callbacks for the general JSON API
+   * (`/api/v1/auth/*`) consumed by the Flutter app. Escalated owns no
+   * credentials or sessions, so it ships no password-hashing dependency; the
+   * host implements only the callbacks it needs. Each returns the JSON payload
+   * to send (e.g. token + user) on success, or `null` for an auth failure
+   * (401). An unconfigured callback responds `501`.
+   */
+  apiAuth?: {
+    authenticate?: (params: Record<string, any>) => Promise<Record<string, any> | null>;
+    register?: (params: Record<string, any>) => Promise<Record<string, any> | null>;
+    validate?: (token: string) => Promise<Record<string, any> | null>;
+    refresh?: (token: string) => Promise<Record<string, any> | null>;
+    updateProfile?: (
+      token: string,
+      attrs: Record<string, any>,
+    ) => Promise<Record<string, any> | null>;
+    logout?: (token: string) => Promise<void>;
+  };
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
