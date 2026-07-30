@@ -52,7 +52,7 @@
     "handlebars": "^4.7.9",
     "lodash": "^4.18.1",
     "markdown-it": "^14.3.0",
-    "nestjs-i18n": "^10.5.0",
+    "nestjs-i18n": "^10.8.5",
     "nodemailer": "^8.0.11",
     "otplib": "^13.4.1",
     "qrcode": "^1.5.4",
