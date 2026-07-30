@@ -38,8 +38,7 @@ export class TicketSubjectService {
   }
 
   private get resolver():
-    | ((type: string, id: string) => Promise<TicketSubject | null>)
-    | undefined {
+    ((type: string, id: string) => Promise<TicketSubject | null>) | undefined {
     return this.options.ticketSubjects?.resolver;
   }
 

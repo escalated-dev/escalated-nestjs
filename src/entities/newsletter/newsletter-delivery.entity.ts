@@ -11,13 +11,7 @@ import { Newsletter } from './newsletter.entity';
 import { Contact } from '../contact.entity';
 
 export type NewsletterDeliveryStatus =
-  | 'pending'
-  | 'queued'
-  | 'sent'
-  | 'bounced'
-  | 'complained'
-  | 'suppressed'
-  | 'failed';
+  'pending' | 'queued' | 'sent' | 'bounced' | 'complained' | 'suppressed' | 'failed';
 
 @Entity('escalated_newsletter_deliveries')
 @Index(['newsletter_id', 'status'])
