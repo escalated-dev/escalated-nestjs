@@ -104,12 +104,42 @@ export class AppModule {}
 | Option                | Type       | Default       | Description                             |
 | --------------------- | ---------- | ------------- | --------------------------------------- |
 | `routePrefix`         | `string`   | `'escalated'` | URL prefix for all routes               |
+| `connection`          | `string`   | --            | Named TypeORM DataSource for Escalated's tables (default DataSource when unset) |
 | `enableWebsockets`    | `boolean`  | `false`       | Enable Socket.IO real-time broadcasting |
 | `enableKnowledgeBase` | `boolean`  | `true`        | Enable KB articles and categories       |
 | `enableCsat`          | `boolean`  | `true`        | Enable satisfaction surveys             |
 | `enable2fa`           | `boolean`  | `false`       | Enable TOTP 2FA for agents              |
 | `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
 | `appUrl`              | `string`   | --            | Base URL for links                      |
+
+### Database connection
+
+By default Escalated's entities register against your default TypeORM
+DataSource. Name a different one to keep the support tables somewhere else — a
+schema shared with a legacy system, a separate reporting store, or simply out
+of your primary database:
+
+```ts
+TypeOrmModule.forRoot({ name: 'support', /* ... */ }),
+
+EscalatedModule.forRoot({
+  connection: 'support',
+});
+```
+
+The name is whatever you passed to `TypeOrmModule.forRoot({ name })`.
+
+Every service in the package injects its repository with a plain
+`@InjectRepository(X)`, which binds the default DataSource's token where the
+decorator is written — long before your connection name is known. Escalated
+registers its entities against the named DataSource and aliases those default
+tokens onto it, so the whole package follows your choice with no change to how
+you consume it.
+
+**Your user entity does not move.** It belongs to your application, and
+Escalated stores host user ids as plain unconstrained columns precisely so the
+two can live on different connections — there is no foreign key that would have
+to span them.
 | `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
 | `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
