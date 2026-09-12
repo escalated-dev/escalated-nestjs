@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-11
+
 ### Added — configurable database connection
 
 - `connection` on `EscalatedModule.forRoot()` names the TypeORM DataSource that Escalated's own tables live on. Unset means the default DataSource, which is the historical behaviour and leaves an unconfigured host unchanged.
@@ -24,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added — Centralized translations
 
-- Translations now consumed from the central `@escalated-dev/locale` npm package via `nestjs-i18n`. New `EscalatedI18nModule` configures a chained `ChainedI18nLoader` that merges, in order: central package → `src/i18n/overrides/` → optional host-app path (`EscalatedModuleOptions.i18nOverridesPath`). Later sources win key-by-key. New options: `fallbackLanguage` (default `'en'`), `i18nOverridesPath`. **Blocked on `@escalated-dev/locale` v0.1.0 publish.**
+- Translations now consumed from the central `@escalated-dev/locale` npm package via `nestjs-i18n`. New `EscalatedI18nModule` configures a chained `ChainedI18nLoader` that merges, in order: central package → `src/i18n/overrides/` → optional host-app path (`EscalatedModuleOptions.i18nOverridesPath`). Later sources win key-by-key. New options: `fallbackLanguage` (default `'en'`), `i18nOverridesPath`.
 
 ### Added — Public ticket system
 
