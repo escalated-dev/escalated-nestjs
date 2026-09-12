@@ -10,6 +10,7 @@ import {
   ESCALATED_OPTIONS,
   defaultOptions,
 } from './config/escalated.config';
+import { escalatedRepositoryProviders } from './config/connection';
 import { EscalatedI18nModule } from './i18n';
 import { NewsletterModule } from './services/newsletter/newsletter.module';
 
@@ -294,7 +295,9 @@ export class EscalatedModule {
     return {
       module: EscalatedModule,
       imports: [
-        TypeOrmModule.forFeature(entities),
+        // Registered against the host's chosen DataSource. Undefined is the
+        // default one, so an unconfigured host is unchanged.
+        TypeOrmModule.forFeature(entities, mergedOptions.connection),
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),
         ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
@@ -313,12 +316,18 @@ export class EscalatedModule {
         // Newsletter system (optional, disabled by default). When the flag is
         // false the module isn't added to imports — entities don't register
         // and services don't instantiate.
-        ...(mergedOptions.enableNewsletters ? [NewsletterModule] : []),
+        ...(mergedOptions.enableNewsletters
+          ? [NewsletterModule.forRoot(mergedOptions.connection)]
+          : []),
       ],
       controllers: conditionalControllers,
       providers: [
         optionsProvider,
         ticketActionRegistryProvider,
+        // Aliases the default repository tokens onto the named DataSource, so
+        // the package's 164 `@InjectRepository(X)` sites need no change. Empty
+        // when no connection is configured.
+        ...escalatedRepositoryProviders(entities, mergedOptions.connection),
         ...services,
         ...conditionalProviders,
         ApiTokenGuard,

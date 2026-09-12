@@ -9,6 +9,22 @@ export interface EscalatedModuleOptions {
   /** User entity class or table name for joins */
   userEntity?: any;
 
+  /**
+   * The TypeORM DataSource that Escalated's own tables live on, named as you
+   * registered it with `TypeOrmModule.forRoot({ name: '...' })`.
+   *
+   * Undefined means the default DataSource, which is the historical behaviour
+   * and what almost every host wants. Name one when the support tables belong
+   * somewhere other than your primary database: a schema shared with a legacy
+   * system, a separate reporting or archive store, or simply keeping ticketing
+   * data out of the application database.
+   *
+   * This does NOT move your user entity. The host owns that, and Escalated
+   * stores host user ids as plain unconstrained columns precisely so the two
+   * can live on different connections.
+   */
+  connection?: string;
+
   /** Function to resolve user from request */
   userResolver?: (req: any) => { id: UserId; name?: string; email?: string } | null;
 

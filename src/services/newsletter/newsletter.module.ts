@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { escalatedRepositoryProviders } from '../../config/connection';
 import { AgentProfile } from '../../entities/agent-profile.entity';
 import { Contact } from '../../entities/contact.entity';
 import { EscalatedSettings } from '../../entities/escalated-settings.entity';
@@ -32,48 +33,56 @@ import { NewsletterTrackerService } from './newsletter-tracker.service';
  * Optional newsletter feature. Registered by EscalatedModule only when
  * `options.enableNewsletters === true`. Disabled is the default — no
  * entities or services load otherwise.
+ *
+ * Dynamic rather than static so it can be told which DataSource Escalated's
+ * tables live on. Its entities are part of the same schema as the rest of the
+ * package and must not be left behind on the default connection when the host
+ * has moved everything else.
  */
-@Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      NewsletterList,
-      NewsletterListMember,
-      NewsletterTemplate,
-      Newsletter,
-      NewsletterDelivery,
-      Contact,
-      EscalatedSettings,
-      AgentProfile,
-      Role,
-    ]),
-  ],
-  controllers: [
-    AdminNewsletterListController,
-    AdminNewsletterTemplateController,
-    AdminNewsletterSettingsController,
-    AdminNewsletterController,
-    NewsletterPublicController,
-    NewsletterEspWebhookController,
-  ],
-  providers: [
-    BounceSuppressionStoreService,
-    ContactSegmentResolverService,
-    NewsletterRendererService,
-    NewsletterPlannerService,
-    NewsletterDispatcherService,
-    NewsletterTrackerService,
-    NewsletterPermissionService,
-    NewsletterEnabledGuard,
-  ],
-  exports: [
-    TypeOrmModule,
-    BounceSuppressionStoreService,
-    ContactSegmentResolverService,
-    NewsletterRendererService,
-    NewsletterPlannerService,
-    NewsletterDispatcherService,
-    NewsletterTrackerService,
-    NewsletterPermissionService,
-  ],
-})
-export class NewsletterModule {}
+const newsletterEntities = [
+  NewsletterList,
+  NewsletterListMember,
+  NewsletterTemplate,
+  Newsletter,
+  NewsletterDelivery,
+  Contact,
+  EscalatedSettings,
+  AgentProfile,
+  Role,
+];
+
+const newsletterControllers = [
+  AdminNewsletterListController,
+  AdminNewsletterTemplateController,
+  AdminNewsletterSettingsController,
+  AdminNewsletterController,
+  NewsletterPublicController,
+  NewsletterEspWebhookController,
+];
+
+const newsletterServices = [
+  BounceSuppressionStoreService,
+  ContactSegmentResolverService,
+  NewsletterRendererService,
+  NewsletterPlannerService,
+  NewsletterDispatcherService,
+  NewsletterTrackerService,
+  NewsletterPermissionService,
+];
+
+@Module({})
+export class NewsletterModule {
+  static forRoot(connection?: string): DynamicModule {
+    return {
+      module: NewsletterModule,
+      imports: [TypeOrmModule.forFeature(newsletterEntities, connection)],
+      controllers: newsletterControllers,
+      providers: [
+        ...escalatedRepositoryProviders(newsletterEntities, connection),
+        ...newsletterServices,
+        NewsletterEnabledGuard,
+      ],
+      exports: [TypeOrmModule, ...newsletterServices],
+    };
+  }
+}

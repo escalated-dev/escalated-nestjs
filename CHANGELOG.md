@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — configurable database connection
+
+- `connection` on `EscalatedModule.forRoot()` names the TypeORM DataSource that Escalated's own tables live on. Unset means the default DataSource, which is the historical behaviour and leaves an unconfigured host unchanged.
+
+  Every service injects its repository with a plain `@InjectRepository(X)`, which binds the default DataSource's token at class-definition time — 164 of them, long before a runtime connection name is known. The entities are registered against the named DataSource and the default repository tokens are aliased onto it, so the package follows the host's choice without threading a name through every decorator.
+
+  `NewsletterModule` became a dynamic module for the same reason: its entities are part of the same schema and must not be left behind on the default connection when the host has moved everything else.
+
+  Your user entity is deliberately not moved — it belongs to the host, and Escalated stores host user ids as plain unconstrained columns so the two can live on different connections.
+
 ### Added — `add_follower` workflow action
 
 - New `add_follower` workflow action subscribes a host-app user as a **follower** of the matched ticket — a notification target alongside the assignee and requester. Combined with a condition (e.g. `departmentId equals 5`), admins can auto-add followers to tickets in a given department without writing host code (resolves the request in escalated-dev discussion #88). The action's `value` is a host user key, parsed the same way as `assign_agent` (trimmed, stored as-is) so it is safe for integer- and uuid/string-keyed hosts alike. Idempotent: a user can't double-follow (unique `(ticketId, userId)`).
