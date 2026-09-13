@@ -80,23 +80,23 @@ export class Ticket {
   @Column({ type: 'int', nullable: true })
   slaPolicyId: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   firstResponseDueAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   resolutionDueAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   firstRespondedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   resolvedAt: Date;
 
   @Column({ default: false })
   slaBreached: boolean;
 
   // Snooze
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   snoozedUntil: Date;
 
   // Merge tracking
@@ -114,7 +114,7 @@ export class Ticket {
   @Column({ type: 'int', nullable: true })
   satisfactionRatingId: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   closedAt: Date;
 
   @CreateDateColumn()

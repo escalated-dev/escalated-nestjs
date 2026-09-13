@@ -38,7 +38,7 @@ export class Contact {
 
   /** Set when the contact one-click unsubscribes from marketing newsletters. */
   @Index()
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   marketing_opt_out_at: Date | null;
 
   @CreateDateColumn()

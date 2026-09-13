@@ -51,10 +51,10 @@ export class Newsletter {
   status: NewsletterStatus;
 
   @Index()
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   scheduled_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   sent_at: Date | null;
 
   @Index()

@@ -31,7 +31,7 @@ export class Webhook {
   @Column({ type: 'int', default: 0 })
   failureCount: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   lastDeliveredAt: Date;
 
   @OneToMany(() => WebhookDelivery, (d) => d.webhook)

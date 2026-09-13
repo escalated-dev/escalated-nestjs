@@ -38,7 +38,7 @@ export class WebhookDelivery {
   @Column({ type: 'int', default: 0 })
   attempts: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   nextRetryAt: Date;
 
   @CreateDateColumn()
