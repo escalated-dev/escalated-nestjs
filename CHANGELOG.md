@@ -7,12 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-13
+
+### Fixed — the module could not boot
+
+- `EscalatedModule.forRoot()` failed at startup with "Nest can't resolve dependencies of the EscalatedSchedulerService … AutomationService". The scheduler injected `AutomationService`, but the module registered neither that service, nor the `Automation` entity, nor `AdminAutomationController`. All three are registered now, and a test boots the real module (#114).
+
 ### Security — admin, agent and customer routes enforce the configured guards
 
 - `adminGuard`, `agentGuard` and `customerGuard` were documented but never read, and no controller applied a guard, so every `/escalated/admin/*` and `/escalated/agent/*` route answered anonymous requests. They are now enforced on their route groups: `adminGuard` on `/escalated/admin/*`, `agentGuard` on `/escalated/agent/*`, `customerGuard` on `/escalated/customer/tickets/*`, and either `agentGuard` or `customerGuard` on `/escalated/attachments/*`.
 - **Fail closed.** A group whose guard is not configured refuses every request with 403 and logs a warning once. Hosts that relied on the routes being open must configure the guards.
 - A guard may be a `CanActivate` class or instance. A class the host registers as a provider is used as that instance; otherwise it is created with dependency injection.
-- Public surfaces keep their own auth model: widget and widget chat, the customer knowledge base, inbound email webhooks, `/escalated/api/v1/auth/*`, and newsletter tracking and ESP webhooks.
+- Public surfaces keep their own auth model: widget and widget chat, the customer knowledge base, inbound email webhooks, `/escalated/api/v1/auth/*`, and newsletter tracking and ESP webhooks (#115).
+
+### Fixed — outbound webhooks were never delivered
+
+- `WebhookService` listens on `escalated.**`, but the event emitter was created without wildcards, so the listener never matched and no webhook ever received a delivery. Wildcards are on now. Every event name is dot-delimited and contains no `*`, so exact-name listeners still match only their own event. A host listener whose name contains `*` now acts as a pattern (#116).
+
+### Security — webhook URLs must resolve to public addresses
+
+- Webhook URLs that are, or resolve to, loopback, private, link-local (including cloud metadata endpoints) or reserved addresses are refused when saved (400) and checked again before every delivery and retry. Redirects are not followed (#116).
+
+### Fixed — fresh installs on PostgreSQL and SQLite
+
+- Entities declared date columns as `datetime`, which PostgreSQL rejects, and as `timestamp`, which SQLite rejects, so schema synchronization failed on both; only MySQL worked. All 26 date columns now use `type: Date`, which TypeORM maps per database the same way it already maps the created/updated columns. A CI job synchronizes the schema against PostgreSQL. **Existing MySQL installs** will see 16 columns altered from `timestamp` to `datetime` on the next synchronize (#117).
+
+### Security — the widget no longer trusts a body-supplied `requesterId`
+
+- `POST /escalated/widget/tickets` took `requesterId` from the unauthenticated request body when no email was given, so anyone could file a ticket into another user's account. Without an `email`, the requester is now the host-authenticated `req.user`; otherwise the request gets 400. A body `requesterId` is ignored. The shipped widget uses the email path and is unaffected (#118).
 
 ## [1.1.0] - 2026-09-11
 
