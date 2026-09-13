@@ -9,9 +9,11 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { AutomationService } from '../../services/automation.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
 /**
  * Admin CRUD for time-based automation rules.
@@ -19,6 +21,7 @@ import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.i
  * The runner itself is invoked via the cron tick (`AutomationCron`), not
  * via this controller. This controller only manages the rule definitions.
  */
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminAutomationController {

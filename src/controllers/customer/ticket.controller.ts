@@ -8,13 +8,16 @@ import {
   Req,
   ParseIntPipe,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 import { TicketService } from '../../services/ticket.service';
 import { ReplyService } from '../../services/reply.service';
 import { SatisfactionRatingService } from '../../services/satisfaction-rating.service';
 import { CreateTicketDto } from '../../dto/create-ticket.dto';
 import { CreateReplyDto } from '../../dto/create-reply.dto';
+import { EscalatedCustomerGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedCustomerGuard)
 @Controller('escalated/customer/tickets')
 export class CustomerTicketController {
   constructor(

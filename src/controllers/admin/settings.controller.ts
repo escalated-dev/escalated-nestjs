@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { SettingsService } from '../../services/settings.service';
 import { DepartmentService } from '../../services/department.service';
@@ -18,7 +19,9 @@ import { CustomFieldService } from '../../services/custom-field.service';
 import { RoleService } from '../../services/role.service';
 import { AuditLogService } from '../../services/audit-log.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminSettingsController {

@@ -47,7 +47,11 @@ export class DemoController {
       sameSite: 'lax',
       path: '/',
     });
-    const dest = user.is_admin || user.is_agent ? '/escalated/admin/sla/policies' : '/escalated/customer/tickets';
+    const dest = user.is_admin
+      ? '/escalated/admin/sla/policies'
+      : user.is_agent
+        ? '/escalated/agent/tickets'
+        : '/escalated/customer/tickets';
     return res.redirect(302, dest);
   }
 

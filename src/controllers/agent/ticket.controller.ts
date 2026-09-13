@@ -13,6 +13,7 @@ import {
   HttpCode,
   NotFoundException,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketService } from '../../services/ticket.service';
@@ -25,7 +26,9 @@ import { CreateReplyDto } from '../../dto/create-reply.dto';
 import { TicketFilterDto } from '../../dto/ticket-filter.dto';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
 import { ESCALATED_EVENTS, TicketCustomActionTriggeredEvent } from '../../events/escalated.events';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets')
 @UseInterceptors(AuditLogInterceptor)
 export class AgentTicketController {

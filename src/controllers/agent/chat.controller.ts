@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ChatSessionService } from '../../services/chat-session.service';
 import { UserId } from '../../config/user-id-column';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/chat')
 export class AgentChatController {
   constructor(private readonly chatSessionService: ChatSessionService) {}

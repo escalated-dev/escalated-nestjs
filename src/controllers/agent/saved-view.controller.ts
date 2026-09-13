@@ -9,9 +9,12 @@ import {
   Req,
   ParseIntPipe,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { SavedViewService } from '../../services/saved-view.service';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/saved-views')
 export class AgentSavedViewController {
   constructor(private readonly savedViewService: SavedViewService) {}

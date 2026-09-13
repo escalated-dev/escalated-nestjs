@@ -28,13 +28,28 @@ export interface EscalatedModuleOptions {
   /** Function to resolve user from request */
   userResolver?: (req: any) => { id: UserId; name?: string; email?: string } | null;
 
-  /** Guard class for admin routes */
+  /**
+   * Guard for the admin routes (`/escalated/admin/*`). A `CanActivate` class or
+   * instance. A class the host registers as a provider is used as that
+   * instance; otherwise it is created with dependency injection.
+   *
+   * Required to use the admin routes: when unset they refuse every request
+   * (403). The guard should set `req.user` (with an `id`) for the acting user.
+   */
   adminGuard?: any;
 
-  /** Guard class for agent routes */
+  /**
+   * Guard for the agent routes (`/escalated/agent/*`). Same shape and
+   * fail-closed behaviour as `adminGuard`. Attachment downloads are admitted
+   * by either `agentGuard` or `customerGuard`.
+   */
   agentGuard?: any;
 
-  /** Guard class for customer routes */
+  /**
+   * Guard for the customer ticket routes (`/escalated/customer/tickets/*`).
+   * Same shape and fail-closed behaviour as `adminGuard`. The customer
+   * knowledge base stays public.
+   */
   customerGuard?: any;
 
   /** Enable WebSocket broadcasting (default: false) */

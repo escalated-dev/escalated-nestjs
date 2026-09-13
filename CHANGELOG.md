@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security — admin, agent and customer routes enforce the configured guards
+
+- `adminGuard`, `agentGuard` and `customerGuard` were documented but never read, and no controller applied a guard, so every `/escalated/admin/*` and `/escalated/agent/*` route answered anonymous requests. They are now enforced on their route groups: `adminGuard` on `/escalated/admin/*`, `agentGuard` on `/escalated/agent/*`, `customerGuard` on `/escalated/customer/tickets/*`, and either `agentGuard` or `customerGuard` on `/escalated/attachments/*`.
+- **Fail closed.** A group whose guard is not configured refuses every request with 403 and logs a warning once. Hosts that relied on the routes being open must configure the guards.
+- A guard may be a `CanActivate` class or instance. A class the host registers as a provider is used as that instance; otherwise it is created with dependency injection.
+- Public surfaces keep their own auth model: widget and widget chat, the customer knowledge base, inbound email webhooks, `/escalated/api/v1/auth/*`, and newsletter tracking and ESP webhooks.
+
 ## [1.1.0] - 2026-09-11
 
 ### Added — configurable database connection

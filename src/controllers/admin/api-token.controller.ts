@@ -8,9 +8,12 @@ import {
   Req,
   ParseIntPipe,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTokenService } from '../../services/api-token.service';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/api-tokens')
 export class AdminApiTokenController {
   constructor(private readonly apiTokenService: ApiTokenService) {}

@@ -72,6 +72,7 @@ npm install @escalated-dev/escalated-nestjs
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
+import { AdminGuard, AgentGuard, CustomerGuard } from './auth'; // your own guards
 
 @Module({
   imports: [
@@ -87,6 +88,10 @@ import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
     }),
     EscalatedModule.forRoot({
       routePrefix: 'escalated',
+      // Required: admin, agent and customer routes refuse every request without them.
+      adminGuard: AdminGuard,
+      agentGuard: AgentGuard,
+      customerGuard: CustomerGuard,
       appName: 'My App',
       appUrl: 'https://myapp.com',
       enableWebsockets: false,
@@ -143,15 +148,69 @@ to span them.
 | `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
 | `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
-| `adminGuard`          | `class`    | --            | Custom guard for admin routes           |
-| `agentGuard`          | `class`    | --            | Custom guard for agent routes           |
-| `customerGuard`       | `class`    | --            | Custom guard for customer routes        |
+| `adminGuard`          | `class`    | --            | Guard for `/escalated/admin/*`. Unset refuses every admin route (see Route guards) |
+| `agentGuard`          | `class`    | --            | Guard for `/escalated/agent/*`. Unset refuses every agent route |
+| `customerGuard`       | `class`    | --            | Guard for `/escalated/customer/tickets/*`. Unset refuses every customer ticket route |
 | `userResolver`        | `function` | --            | Extract user from request               |
 | `mail`                | `object`   | --            | Outbound email config (see below)       |
 | `inbound`             | `object`   | --            | Inbound email config (see below)        |
 | `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |
 | `ticketActions`       | `object`   | `{actions:[]}`| Custom agent ticket actions (see below) |
 | `ticketSubjects`      | `object`   | `{types:[]}`  | Host entities a ticket is about (see below) |
+
+#### Route guards (`adminGuard`, `agentGuard`, `customerGuard`)
+
+Escalated owns no users or sessions, so your app decides who is an admin, an agent or a customer. Give each route group a guard:
+
+| Option                                   | Routes it protects              |
+| ---------------------------------------- | ------------------------------- |
+| `adminGuard`                             | `/escalated/admin/*`            |
+| `agentGuard`                             | `/escalated/agent/*`            |
+| `customerGuard`                          | `/escalated/customer/tickets/*` |
+| either `agentGuard` or `customerGuard`   | `/escalated/attachments/*`      |
+
+**Route groups fail closed.** When a group's guard is not configured, every request to that group is refused with `403` and a warning is logged once. The routes are never open by default.
+
+A guard is any NestJS `CanActivate`, given as a class or an instance. If you also register the class as a provider in your own module, Escalated uses that instance, so the guard can inject your services. Otherwise Escalated creates it with dependency injection inside its own module. An exception thrown by the guard (for example `UnauthorizedException`) is sent as the response; a guard that returns `false` produces `403`.
+
+Controllers read the acting user from `req.user.id`, so authenticate the request and set `req.user` in the guard, or in middleware that runs before it.
+
+```typescript
+@Injectable()
+export class SupportAdminGuard implements CanActivate {
+  constructor(private readonly auth: AuthService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const user = await this.auth.userFromRequest(req); // your authentication
+    if (!user) throw new UnauthorizedException();
+    req.user = user;
+    return user.isAdmin;
+  }
+}
+
+@Module({
+  imports: [
+    EscalatedModule.forRoot({
+      adminGuard: SupportAdminGuard,
+      agentGuard: SupportAgentGuard,
+      customerGuard: SupportCustomerGuard,
+    }),
+  ],
+  providers: [AuthService, SupportAdminGuard, SupportAgentGuard, SupportCustomerGuard],
+})
+export class AppModule {}
+```
+
+None of the three guards apply to these routes, which are public or carry their own authentication:
+
+- `/escalated/widget/*`, including widget chat (public; a guest reads their ticket with its guest access token)
+- `/escalated/customer/kb/*` (published knowledge base articles)
+- `/escalated/webhook/email/*` (`X-Escalated-Inbound-Secret`, see below)
+- `/escalated/api/v1/auth/*` (your `apiAuth` callbacks)
+- `/escalated/n/*` and `/escalated/webhooks/newsletter/*` (newsletter tracking, unsubscribe and ESP webhooks)
+
+The newsletter admin routes (`/admin/newsletters/*`) check the `newsletters.manage` and `newsletters.send` permissions on every request.
 
 #### Outbound email (`mail`)
 
@@ -242,6 +301,8 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 
 ### Agent Routes (`/escalated/agent/`)
 
+Protected by `agentGuard`.
+
 | Method | Path                                    | Description               |
 | ------ | --------------------------------------- | ------------------------- |
 | GET    | `/tickets`                              | List tickets with filters |
@@ -265,6 +326,8 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 | POST   | `/saved-views`                          | Create saved view         |
 
 ### Admin Routes (`/escalated/admin/`)
+
+Protected by `adminGuard`.
 
 | Method  | Path                    | Description               |
 | ------- | ----------------------- | ------------------------- |
@@ -290,6 +353,8 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 
 ### Customer Routes (`/escalated/customer/`)
 
+The ticket routes are protected by `customerGuard`. The knowledge base routes are public.
+
 | Method | Path                   | Description          |
 | ------ | ---------------------- | -------------------- |
 | GET    | `/tickets`             | List own tickets     |
@@ -302,6 +367,8 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 | GET    | `/kb/search`           | Search KB            |
 
 ### Widget Routes (`/escalated/widget/`)
+
+Public. No route-group guard applies.
 
 | Method | Path                   | Description               |
 | ------ | ---------------------- | ------------------------- |
