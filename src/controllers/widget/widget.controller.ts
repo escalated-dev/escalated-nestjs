@@ -25,16 +25,22 @@ import { UserId } from '../../config/user-id-column';
 import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalated.events';
 
 /**
- * Shape accepted by POST /escalated/widget/tickets. Either path is valid:
- *   1. Public path — supply `email` (and optionally `name`). A Contact is
- *      resolved/created and used as the ticket's `contactId`. `requesterId`
- *      is determined by the configured guest policy.
- *   2. Legacy path — supply `requesterId` for tickets created by an already-
- *      authenticated host-app user. No Contact is created.
+ * Shape accepted by POST /escalated/widget/tickets. The route is public, so the
+ * requester is never taken from the body:
+ *   1. Public path: supply `email` (and optionally `name`). A Contact is
+ *      resolved/created and used as the ticket's `contactId`. The requester is
+ *      determined by the configured guest policy.
+ *   2. Host-user path: no `email`, and the host app has authenticated the
+ *      request (`req.user`). The ticket is filed as that user. No Contact is
+ *      created.
+ *
+ * `requesterId` is accepted for backwards compatibility but ignored: an
+ * anonymous caller could otherwise file tickets into any user's account.
  */
 interface WidgetCreateTicketBody {
   email?: string;
   name?: string;
+  /** @deprecated Ignored. The requester comes from `email` or `req.user`. */
   requesterId?: UserId;
   subject: string;
   description: string;
@@ -80,24 +86,26 @@ export class WidgetController {
 
   @Post('tickets')
   @UseGuards(PublicSubmitThrottleGuard)
-  async createTicket(@Body() body: WidgetCreateTicketBody) {
+  async createTicket(@Body() body: WidgetCreateTicketBody, @Req() req?: any) {
     let contactId: number | null = null;
     let requesterId: UserId;
 
     const policy = await this.resolveGuestPolicy();
+    const authenticatedUserId: UserId | undefined = req?.user?.id;
 
     if (body.email) {
       const contact = await this.contactService.findOrCreateByEmail(body.email, body.name);
       contactId = contact.id;
       requesterId = this.requesterIdForPolicy(policy);
     } else if (
-      body.requesterId !== undefined &&
-      body.requesterId !== null &&
-      body.requesterId !== ''
+      authenticatedUserId !== undefined &&
+      authenticatedUserId !== null &&
+      authenticatedUserId !== ''
     ) {
-      requesterId = body.requesterId;
+      // Only a host-authenticated user can file a ticket without an email.
+      requesterId = authenticatedUserId;
     } else {
-      throw new BadRequestException('Either email or requesterId is required');
+      throw new BadRequestException('An email is required to submit a ticket');
     }
 
     const ticket = await this.ticketService.create(
