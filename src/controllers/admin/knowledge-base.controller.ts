@@ -10,10 +10,13 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { KnowledgeBaseService } from '../../services/knowledge-base.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/kb')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminKnowledgeBaseController {

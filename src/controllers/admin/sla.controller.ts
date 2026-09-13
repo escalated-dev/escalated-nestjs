@@ -9,12 +9,15 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { SlaService } from '../../services/sla.service';
 import { EscalationService } from '../../services/escalation.service';
 import { BusinessScheduleService } from '../../services/business-schedule.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/sla')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminSlaController {

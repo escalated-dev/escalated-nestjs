@@ -9,10 +9,13 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { WebhookService } from '../../services/webhook.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/webhooks')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminWebhookController {

@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Param, Body, Req, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { SideConversationService } from '../../services/side-conversation.service';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets/:ticketId/side-conversations')
 export class AgentSideConversationController {
   constructor(private readonly sideConversationService: SideConversationService) {}

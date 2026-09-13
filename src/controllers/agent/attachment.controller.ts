@@ -1,9 +1,19 @@
-import { Controller, Get, Param, Res, ParseIntPipe, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  ParseIntPipe,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { basename, isAbsolute, relative, resolve } from 'path';
 import { existsSync } from 'fs';
 import { AttachmentService } from '../../services/attachment.service';
+import { EscalatedAgentOrCustomerGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentOrCustomerGuard)
 @Controller('escalated/attachments')
 export class AttachmentController {
   constructor(private readonly attachmentService: AttachmentService) {}

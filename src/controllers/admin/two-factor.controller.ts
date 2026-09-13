@@ -1,6 +1,8 @@
-import { Controller, Post, Delete, Body, Req } from '@nestjs/common';
+import { Controller, Post, Delete, Body, Req, UseGuards } from '@nestjs/common';
 import { TwoFactorService } from '../../services/two-factor.service';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/2fa')
 export class AdminTwoFactorController {
   constructor(private readonly twoFactorService: TwoFactorService) {}

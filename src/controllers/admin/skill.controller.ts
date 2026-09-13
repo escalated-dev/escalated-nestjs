@@ -9,12 +9,15 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { SkillService } from '../../services/skill.service';
 import { CreateSkillDto } from '../../dto/admin/create-skill.dto';
 import { UpdateSkillDto } from '../../dto/admin/update-skill.dto';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/skills')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminSkillController {

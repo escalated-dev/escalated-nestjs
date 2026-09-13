@@ -9,11 +9,14 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { AgentService } from '../../services/agent.service';
 import { SkillService } from '../../services/skill.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/agents')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminAgentController {

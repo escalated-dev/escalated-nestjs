@@ -4,6 +4,7 @@ import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
 
 import { User } from './user.entity';
 import { DemoController } from './demo.controller';
+import { DemoAdminGuard, DemoAgentGuard, DemoCustomerGuard } from './demo-auth.guard';
 
 @Module({
   imports: [
@@ -30,8 +31,12 @@ import { DemoController } from './demo.controller';
         return { id, name: 'Demo User', email: 'demo@demo.test' };
       },
       appName: 'Escalated NestJS Demo',
+      adminGuard: DemoAdminGuard,
+      agentGuard: DemoAgentGuard,
+      customerGuard: DemoCustomerGuard,
     }),
   ],
   controllers: [DemoController],
+  providers: [DemoAdminGuard, DemoAgentGuard, DemoCustomerGuard],
 })
 export class AppModule {}

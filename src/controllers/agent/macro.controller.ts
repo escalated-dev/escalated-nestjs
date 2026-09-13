@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Param, Req, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Param, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { MacroService } from '../../services/macro.service';
 import { CannedResponseService } from '../../services/canned-response.service';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent')
 export class AgentMacroController {
   constructor(

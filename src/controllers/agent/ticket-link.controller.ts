@@ -1,6 +1,18 @@
-import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  UseGuards,
+} from '@nestjs/common';
 import { TicketLinkService } from '../../services/ticket-link.service';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets/:ticketId/links')
 export class AgentTicketLinkController {
   constructor(private readonly ticketLinkService: TicketLinkService) {}

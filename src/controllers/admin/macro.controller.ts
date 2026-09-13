@@ -9,11 +9,14 @@ import {
   ParseIntPipe,
   HttpCode,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { MacroService } from '../../services/macro.service';
 import { CannedResponseService } from '../../services/canned-response.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin')
 @UseInterceptors(AuditLogInterceptor)
 export class AdminMacroController {

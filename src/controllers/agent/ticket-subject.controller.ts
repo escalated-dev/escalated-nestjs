@@ -8,11 +8,14 @@ import {
   HttpCode,
   BadRequestException,
   Inject,
+  UseGuards,
 } from '@nestjs/common';
 import { TicketService } from '../../services/ticket.service';
 import { TicketSubjectService } from '../../services/ticket-subject.service';
 import { EscalatedModuleOptions, ESCALATED_OPTIONS } from '../../config/escalated.config';
+import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 
+@UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets/:ticketId/subjects')
 export class AgentTicketSubjectController {
   constructor(
