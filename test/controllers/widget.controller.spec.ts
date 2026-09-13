@@ -140,21 +140,37 @@ describe('WidgetController', () => {
     });
   });
 
-  describe('createTicket (legacy requesterId path)', () => {
-    it('does NOT resolve a Contact when only requesterId is given', async () => {
+  describe('createTicket (authenticated host-user path)', () => {
+    it('files the ticket as req.user without resolving a Contact', async () => {
       const { controller, ticketService, contactService } = await buildModule();
 
-      await controller.createTicket({
-        requesterId: 17,
-        subject: 'Help',
-        description: 'd',
-      });
+      await controller.createTicket({ subject: 'Help', description: 'd' }, { user: { id: 17 } });
 
       expect(contactService.findOrCreateByEmail).not.toHaveBeenCalled();
       expect(ticketService.create).toHaveBeenCalledWith(
         expect.objectContaining({ channel: 'widget' }),
         17,
       );
+    });
+
+    it('ignores a requesterId in the body in favour of req.user', async () => {
+      const { controller, ticketService } = await buildModule();
+
+      await controller.createTicket(
+        { requesterId: 42, subject: 'Help', description: 'd' },
+        { user: { id: 17 } },
+      );
+
+      expect(ticketService.create).toHaveBeenCalledWith(expect.anything(), 17);
+    });
+
+    it('rejects an anonymous requesterId instead of filing the ticket as that user', async () => {
+      const { controller, ticketService } = await buildModule();
+
+      await expect(
+        controller.createTicket({ requesterId: 42, subject: 'Help', description: 'd' }, {}),
+      ).rejects.toThrow(BadRequestException);
+      expect(ticketService.create).not.toHaveBeenCalled();
     });
 
     it('rejects when neither email nor requesterId is supplied', async () => {

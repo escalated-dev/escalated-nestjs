@@ -305,7 +305,7 @@ All tables are prefixed with `escalated_` to avoid conflicts.
 
 | Method | Path                   | Description               |
 | ------ | ---------------------- | ------------------------- |
-| POST   | `/tickets`             | Create ticket (public)    |
+| POST   | `/tickets`             | Create ticket (public). The requester comes from `email` (guest policy) or from a host-authenticated `req.user`; a `requesterId` in the body is ignored |
 | GET    | `/tickets/:id`         | View ticket (guest token) |
 | POST   | `/tickets/:id/replies` | Reply (guest token)       |
 | GET    | `/kb/search`           | Search KB                 |
