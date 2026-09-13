@@ -305,7 +305,10 @@ export class EscalatedModule {
         // default one, so an unconfigured host is unchanged.
         TypeOrmModule.forFeature(entities, mergedOptions.connection),
         ScheduleModule.forRoot(),
-        EventEmitterModule.forRoot(),
+        // Wildcards let WebhookService subscribe to `escalated.**`. Every event
+        // name is dot-delimited and contains no `*`, so exact-name listeners
+        // still match only their own event.
+        EventEmitterModule.forRoot({ wildcard: true, delimiter: '.' }),
         ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
         EscalatedI18nModule.forRoot({
           fallbackLanguage: mergedOptions.fallbackLanguage,

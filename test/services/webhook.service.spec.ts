@@ -4,6 +4,11 @@ import { WebhookService } from '../../src/services/webhook.service';
 import { Webhook } from '../../src/entities/webhook.entity';
 import { WebhookDelivery } from '../../src/entities/webhook-delivery.entity';
 
+// Webhook URLs are resolved before saving; keep the suite off the network.
+jest.mock('dns/promises', () => ({
+  lookup: jest.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
+}));
+
 describe('WebhookService', () => {
   let service: WebhookService;
   let webhookRepo: any;

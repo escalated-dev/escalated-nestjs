@@ -354,6 +354,14 @@ export class NotificationService {
 
 Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`, `TICKET_CUSTOM_ACTION_TRIGGERED`.
 
+Escalated registers `EventEmitterModule` with `wildcard: true` and the `.` delimiter, so a listener can use a pattern such as `@OnEvent('escalated.ticket.*')`. A listener name that contains `*` is treated as a pattern; names without `*` match exactly, as before.
+
+### Outbound webhooks
+
+Webhooks managed under `/escalated/admin/webhooks` receive `ticket.created`, `ticket.updated`, `ticket.assigned`, `ticket.status_changed`, `ticket.reply_created`, `ticket.merged`, `ticket.split` and `sla.breached`, as a JSON `POST` signed with `X-Escalated-Signature` (HMAC-SHA256 of the body with the webhook's secret). Subscribe to `*` for all of them.
+
+A webhook URL must use `http` or `https` and must resolve only to public addresses. Loopback, private, link-local (including cloud metadata) and reserved targets are refused when the webhook is saved (`400`) and checked again before every delivery attempt. Redirects are not followed.
+
 ## Ticket subjects
 
 A ticket has a **requester** (the person who raised it) and a **subject line**

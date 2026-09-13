@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OnEvent } from '@nestjs/event-emitter';
 import * as crypto from 'crypto';
 import { Webhook } from '../entities/webhook.entity';
 import { WebhookDelivery } from '../entities/webhook-delivery.entity';
+import { assertPublicWebhookUrl, UnsafeWebhookUrlError } from './webhook-url-safety';
 
 @Injectable()
 export class WebhookService {
@@ -29,6 +30,7 @@ export class WebhookService {
   }
 
   async create(data: Partial<Webhook>): Promise<Webhook> {
+    await this.assertSavableUrl(data.url);
     if (!data.secret) {
       data.secret = crypto.randomBytes(32).toString('hex');
     }
@@ -38,6 +40,9 @@ export class WebhookService {
 
   async update(id: number, data: Partial<Webhook>): Promise<Webhook> {
     await this.findById(id);
+    if (data.url !== undefined) {
+      await this.assertSavableUrl(data.url);
+    }
     await this.webhookRepo.update(id, data);
     return this.findById(id);
   }
@@ -77,6 +82,8 @@ export class WebhookService {
 
     // Attempt delivery
     try {
+      // Checked again at send time: DNS may have changed since the URL was saved.
+      await assertPublicWebhookUrl(webhook.url);
       const response = await fetch(webhook.url, {
         method: 'POST',
         headers: {
@@ -85,6 +92,8 @@ export class WebhookService {
           'X-Escalated-Event': eventName,
         },
         body: payloadStr,
+        // A redirect could lead to an address the check above refuses.
+        redirect: 'manual',
         signal: AbortSignal.timeout(10000),
       });
 
@@ -131,6 +140,7 @@ export class WebhookService {
       if (!webhook || !webhook.isActive) continue;
 
       try {
+        await assertPublicWebhookUrl(webhook.url);
         const signature = this.sign(delivery.payload, webhook.secret);
         const response = await fetch(webhook.url, {
           method: 'POST',
@@ -140,6 +150,7 @@ export class WebhookService {
             'X-Escalated-Event': delivery.event,
           },
           body: delivery.payload,
+          redirect: 'manual',
           signal: AbortSignal.timeout(10000),
         });
 
@@ -170,6 +181,18 @@ export class WebhookService {
       order: { createdAt: 'DESC' },
       take: 50,
     });
+  }
+
+  /** Rejects a URL that is not http(s) or does not resolve only to public addresses. */
+  private async assertSavableUrl(url: string | undefined): Promise<void> {
+    try {
+      await assertPublicWebhookUrl(url as string);
+    } catch (error) {
+      if (error instanceof UnsafeWebhookUrlError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
   }
 
   private sign(payload: string, secret: string): string {
