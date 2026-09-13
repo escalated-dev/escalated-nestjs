@@ -66,7 +66,7 @@ export class Automation {
   @Column({ type: 'int', default: 0 })
   position: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   lastRunAt: Date | null;
 
   @CreateDateColumn()

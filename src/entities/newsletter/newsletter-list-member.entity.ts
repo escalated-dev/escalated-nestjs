@@ -24,7 +24,7 @@ export class NewsletterListMember {
   @Column()
   contact_id: number;
 
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: Date, default: () => 'CURRENT_TIMESTAMP' })
   added_at: Date;
 
   @Column(userIdColumn({ nullable: true }))

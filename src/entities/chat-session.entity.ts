@@ -38,13 +38,13 @@ export class ChatSession {
   @Column({ length: 30, default: 'waiting' })
   status: string; // waiting, active, ended
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   acceptedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   endedAt: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: Date })
   lastActivityAt: Date;
 
   @ManyToOne(() => Ticket, { nullable: true })

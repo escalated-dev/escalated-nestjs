@@ -36,13 +36,13 @@ export class NewsletterDelivery {
   @Column({ length: 40, unique: true })
   tracking_token: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   sent_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   opened_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   last_clicked_at: Date | null;
 
   @Column({ default: 0 })
@@ -57,10 +57,10 @@ export class NewsletterDelivery {
   @Column({ type: 'smallint', default: 0 })
   attempt_count: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   claimed_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   next_attempt_at: Date | null;
 
   @Column({ default: false })

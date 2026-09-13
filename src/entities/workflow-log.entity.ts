@@ -35,10 +35,10 @@ export class WorkflowLog {
   @Column({ type: 'text', nullable: true })
   errorMessage: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   startedAt: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: Date, nullable: true })
   completedAt: Date | null;
 
   @CreateDateColumn()
