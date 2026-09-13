@@ -57,6 +57,7 @@ import {
   Workflow,
   WorkflowLog,
   InboundEmail,
+  Automation,
 } from './entities';
 
 // Services
@@ -98,6 +99,7 @@ import {
   MailgunInboundParser,
   SESInboundParser,
   InboundRouterService,
+  AutomationService,
 } from './services';
 
 import {
@@ -127,6 +129,7 @@ import { AdminMacroController } from './controllers/admin/macro.controller';
 import { AdminSkillController } from './controllers/admin/skill.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
+import { AdminAutomationController } from './controllers/admin/automation.controller';
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
 import { CustomerKnowledgeBaseController } from './controllers/customer/knowledge-base.controller';
 import { WidgetController } from './controllers/widget/widget.controller';
@@ -191,6 +194,7 @@ const entities = [
   Workflow,
   WorkflowLog,
   InboundEmail,
+  Automation,
 ];
 
 const services = [
@@ -231,6 +235,7 @@ const services = [
   MailgunInboundParser,
   SESInboundParser,
   InboundRouterService,
+  AutomationService,
 ];
 
 const controllers = [
@@ -250,6 +255,7 @@ const controllers = [
   AdminSkillController,
   AdminKnowledgeBaseController,
   AdminTwoFactorController,
+  AdminAutomationController,
   CustomerTicketController,
   CustomerKnowledgeBaseController,
   WidgetController,
