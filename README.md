@@ -246,6 +246,14 @@ EscalatedModule.forRoot({
 
 Webhook endpoint: `POST /escalated/webhook/email/inbound`. Guard requires `X-Escalated-Inbound-Secret` header to match `webhookSecret` (constant-time compare).
 
+How an inbound email is routed:
+
+- **Finding the ticket.** With `replySecret` set (outbound mail then carries `reply+{id}.{hmac8}@replyDomain` as its Reply-To), only that signed address identifies a ticket. Without a secret, the `In-Reply-To` / `References` headers and a `[TK-XXX]` subject reference are used instead.
+- **Sender check.** A matched email becomes a reply only when the `From` address (case-insensitive) is the ticket's requester: the ticket's Contact, or a Contact linked to the requester user. The reply is posted as that requester. Identity is never taken from `From`, so an email naming an agent's address is not posted as that agent; agents reply in the app.
+- **Everything else** (no match, or a sender who is not the requester) creates a new ticket for the sender, so mail is never dropped and the matched ticket is left untouched.
+
+`From` can still be forged for the requester's own address, so also have your inbound provider enforce SPF/DKIM/DMARC.
+
 #### Guest policy (`guestPolicy`)
 
 Controls the identity assigned to a ticket submitted via the public form or inbound email.

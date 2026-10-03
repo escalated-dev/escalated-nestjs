@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security — inbound email replies must come from the requester
+
+- An inbound email that matched a ticket by `In-Reply-To` / `References` or a `[TK-XXX]` subject reference was added as a reply whatever its sender. A matched email is now a reply only when `From` is the ticket's requester (the ticket's Contact, or a Contact linked to the requester user), and it is posted as that requester. Any other sender gets a new ticket of their own.
+- With `inbound.replySecret` configured, only the signed Reply-To address identifies a ticket; header and subject matching are used only when no secret is set.
+
 ## [1.1.1] - 2026-09-13
 
 ### Fixed — the module could not boot

@@ -89,7 +89,8 @@ export interface EscalatedModuleOptions {
   /**
    * Inbound email ingress configuration.
    *   - `replyDomain` is the host of the signed Reply-To address.
-   *   - `replySecret` signs the reply-to token (HMAC-SHA256).
+   *   - `replySecret` signs the reply-to token (HMAC-SHA256). When set, inbound
+   *     mail is matched to a ticket only through that signed address.
    *   - `webhookSecret` authenticates provider webhook calls.
    */
   inbound?: {
