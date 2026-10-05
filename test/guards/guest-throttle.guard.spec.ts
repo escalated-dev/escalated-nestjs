@@ -116,6 +116,28 @@ describe('GuestThrottleGuard', () => {
     expect(Number(headers['Retry-After'])).toBeLessThanOrEqual(60);
   });
 
+  it('counts in a host-supplied storage for multi-instance deployments', async () => {
+    const shared = {
+      increment: jest.fn(async () => ({
+        totalHits: 1,
+        timeToExpire: 60,
+        isBlocked: false,
+        timeToBlockExpire: 0,
+      })),
+    };
+    const g = guard({ guestRateLimit: { storage: shared } });
+
+    await hit(g, 'reply', '203.0.113.9', 1);
+
+    expect(shared.increment).toHaveBeenCalledWith(
+      'escalated:guest:reply:203.0.113.9',
+      60_000,
+      10,
+      60_000,
+      'escalated-guest-reply',
+    );
+  });
+
   it('passes a route that declares no guest throttle scope', async () => {
     const g = guard({ guestRateLimit: { ticketsPerMinute: 1 } });
 

@@ -1,6 +1,10 @@
 import { CanActivate, ExecutionContext, Inject, Injectable, SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { InjectThrottlerStorage, ThrottlerException, type ThrottlerStorage } from '@nestjs/throttler';
+import {
+  InjectThrottlerStorage,
+  ThrottlerException,
+  type ThrottlerStorage,
+} from '@nestjs/throttler';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 
 export type GuestThrottleScope = 'ticket' | 'reply';
@@ -20,9 +24,9 @@ const DEFAULT_LIMITS: Record<GuestThrottleScope, number> = { ticket: 5, reply: 1
  * uncapped endpoint lets anyone flood the helpdesk and the mail provider.
  *
  * Limits come from `EscalatedModuleOptions.guestRateLimit` (defaults: 5 ticket
- * submissions and 10 replies per IP per minute). Counters are kept in the
- * `@nestjs/throttler` storage, so a host can swap in a shared store for a
- * multi-instance deployment. Apply it before `GuestAccessGuard` so requests
+ * submissions and 10 replies per IP per minute). Counters are kept in
+ * `guestRateLimit.storage` when the host supplies a shared store, otherwise in
+ * the in-memory `@nestjs/throttler` storage. Apply it before `GuestAccessGuard` so requests
  * with a wrong guest token are counted too.
  */
 @Injectable()
@@ -52,7 +56,8 @@ export class GuestThrottleGuard implements CanActivate {
     const ip = req.ip ?? req.socket?.remoteAddress ?? 'unknown';
     const key = `escalated:guest:${scope}:${ip}`;
 
-    const { isBlocked, timeToBlockExpire } = await this.storage.increment(
+    const storage = config.storage ?? this.storage;
+    const { isBlocked, timeToBlockExpire } = await storage.increment(
       key,
       WINDOW_MS,
       limit,
@@ -61,10 +66,9 @@ export class GuestThrottleGuard implements CanActivate {
     );
 
     if (isBlocked) {
-      http.getResponse<{ header?: (name: string, value: unknown) => void }>().header?.(
-        'Retry-After',
-        timeToBlockExpire,
-      );
+      http
+        .getResponse<{ header?: (name: string, value: unknown) => void }>()
+        .header?.('Retry-After', timeToBlockExpire);
       throw new ThrottlerException('Too many requests. Please try again later.');
     }
 

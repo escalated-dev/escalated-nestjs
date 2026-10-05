@@ -1,6 +1,7 @@
 import { TicketAction, TicketActionConfig } from '../contracts/ticket-action.interface';
 import { TicketSubject } from '../contracts/ticket-subject.interface';
 import { UserId } from './user-id-column';
+import type { ThrottlerStorage } from '@nestjs/throttler';
 
 export interface EscalatedModuleOptions {
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
@@ -115,10 +116,9 @@ export interface EscalatedModuleOptions {
   /**
    * Per-client-IP rate limits on the unauthenticated guest endpoints
    * (`POST widget/tickets`, `POST widget/tickets/:id/replies`). A request over
-   * the limit gets `429` with `Retry-After`. Counters live in the
-   * `@nestjs/throttler` storage, so a multi-instance host can register a shared
-   * `ThrottlerStorage` (e.g. Redis). The client IP is `req.ip`; behind a proxy
-   * the host must configure its HTTP adapter's `trust proxy`.
+   * the limit gets `429` with `Retry-After`. The client IP is `req.ip`; behind
+   * a proxy the host must configure its HTTP adapter's `trust proxy`, or every
+   * guest shares the proxy's address.
    */
   guestRateLimit?: {
     /** Default true. Set false only when the host already throttles upstream. */
@@ -127,6 +127,12 @@ export interface EscalatedModuleOptions {
     ticketsPerMinute?: number;
     /** Guest replies per IP per minute. Default 10. */
     repliesPerMinute?: number;
+    /**
+     * Where the counters live. Default: the in-memory `@nestjs/throttler`
+     * store, which is per process. A multi-instance deployment should pass a
+     * shared `ThrottlerStorage` (e.g. a Redis-backed one).
+     */
+    storage?: ThrottlerStorage;
   };
 
   /** App name for branding */
