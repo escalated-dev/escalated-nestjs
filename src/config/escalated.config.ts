@@ -112,6 +112,23 @@ export interface EscalatedModuleOptions {
     | { mode: 'guest_user'; guestUserId: UserId }
     | { mode: 'prompt_signup'; signupUrlTemplate?: string };
 
+  /**
+   * Per-client-IP rate limits on the unauthenticated guest endpoints
+   * (`POST widget/tickets`, `POST widget/tickets/:id/replies`). A request over
+   * the limit gets `429` with `Retry-After`. Counters live in the
+   * `@nestjs/throttler` storage, so a multi-instance host can register a shared
+   * `ThrottlerStorage` (e.g. Redis). The client IP is `req.ip`; behind a proxy
+   * the host must configure its HTTP adapter's `trust proxy`.
+   */
+  guestRateLimit?: {
+    /** Default true. Set false only when the host already throttles upstream. */
+    enabled?: boolean;
+    /** Guest ticket submissions per IP per minute. Default 5. */
+    ticketsPerMinute?: number;
+    /** Guest replies per IP per minute. Default 10. */
+    repliesPerMinute?: number;
+  };
+
   /** App name for branding */
   appName?: string;
 
@@ -232,6 +249,11 @@ export const defaultOptions: EscalatedModuleOptions = {
   webhookMaxRetries: 3,
   widgetOrigins: ['*'],
   fallbackLanguage: 'en',
+  guestRateLimit: {
+    enabled: true,
+    ticketsPerMinute: 5,
+    repliesPerMinute: 10,
+  },
   enableNewsletters: false,
   newsletters: {
     defaultTheme: 'default',
