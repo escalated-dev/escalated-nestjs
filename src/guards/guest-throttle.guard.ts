@@ -26,8 +26,8 @@ const DEFAULT_LIMITS: Record<GuestThrottleScope, number> = { ticket: 5, reply: 1
  * Limits come from `EscalatedModuleOptions.guestRateLimit` (defaults: 5 ticket
  * submissions and 10 replies per IP per minute). Counters are kept in
  * `guestRateLimit.storage` when the host supplies a shared store, otherwise in
- * the in-memory `@nestjs/throttler` storage. Apply it before `GuestAccessGuard` so requests
- * with a wrong guest token are counted too.
+ * the in-memory `@nestjs/throttler` storage. Apply it before `GuestAccessGuard`
+ * so requests with a wrong guest token are counted too.
  */
 @Injectable()
 export class GuestThrottleGuard implements CanActivate {
