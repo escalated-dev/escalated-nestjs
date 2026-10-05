@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
 import { BadRequestException } from '@nestjs/common';
 import { WidgetController } from '../../src/controllers/widget/widget.controller';
 import { TicketService } from '../../src/services/ticket.service';
@@ -85,6 +86,7 @@ async function buildModule(
       },
       { provide: ESCALATED_OPTIONS, useValue: options },
       { provide: EventEmitter2, useValue: eventEmitter },
+      { provide: ThrottlerStorage, useClass: ThrottlerStorageService },
     ],
   }).compile();
 

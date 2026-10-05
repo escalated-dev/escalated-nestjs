@@ -12,9 +12,9 @@ const MAX_PER_WINDOW = 10;
 /**
  * Per-email rate limit for unauthenticated public ticket submission.
  *
- * If `request.body.email` is absent (legacy requesterId path), the guard is
- * a no-op and defers to the standard ThrottlerGuard already applied at the
- * module level.
+ * If `request.body.email` is absent (host-authenticated path), the guard is a
+ * no-op. The per-IP limit on the same route is `GuestThrottleGuard`; the
+ * package registers `ThrottlerModule` but applies no global `ThrottlerGuard`.
  *
  * NOTE: in-memory store. Suitable for single-instance deployments and for
  * tests. A multi-instance deployment must swap the backing store for Redis

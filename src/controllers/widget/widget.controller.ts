@@ -20,6 +20,7 @@ import { ContactService } from '../../services/contact.service';
 import { SettingsService } from '../../services/settings.service';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
+import { GuestThrottle, GuestThrottleGuard } from '../../guards/guest-throttle.guard';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import { UserId } from '../../config/user-id-column';
 import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalated.events';
@@ -85,7 +86,8 @@ export class WidgetController {
   }
 
   @Post('tickets')
-  @UseGuards(PublicSubmitThrottleGuard)
+  @GuestThrottle('ticket')
+  @UseGuards(GuestThrottleGuard, PublicSubmitThrottleGuard)
   async createTicket(@Body() body: WidgetCreateTicketBody, @Req() req?: any) {
     let contactId: number | null = null;
     let requesterId: UserId;
@@ -141,7 +143,9 @@ export class WidgetController {
   }
 
   @Post('tickets/:id/replies')
-  @UseGuards(GuestAccessGuard)
+  @GuestThrottle('reply')
+  // Throttle runs first so requests with a wrong guest token are counted too.
+  @UseGuards(GuestThrottleGuard, GuestAccessGuard)
   async addReply(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { body: string },

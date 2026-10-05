@@ -142,6 +142,7 @@ import { ApiTokenGuard } from './guards/api-token.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { GuestAccessGuard } from './guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from './guards/public-submit-throttle.guard';
+import { GuestThrottleGuard } from './guards/guest-throttle.guard';
 
 // Interceptors
 import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
@@ -343,6 +344,7 @@ export class EscalatedModule {
         PermissionsGuard,
         GuestAccessGuard,
         PublicSubmitThrottleGuard,
+        GuestThrottleGuard,
         InboundWebhookSignatureGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
