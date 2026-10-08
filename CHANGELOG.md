@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-08
+
+This release changes how inbound email is matched to tickets and throttles the guest widget endpoints. Read **Upgrading** before deploying.
+
+### Upgrading
+
+- **Inbound replies are accepted only from the ticket's requester.** A matched email becomes a reply only when `From` is the ticket's requester (the ticket's Contact, or a Contact linked to the requester user), and it is posted as that requester. Every other sender, including an agent answering a notification by email, gets a new ticket of their own. Agents should reply in the app.
+- **With `inbound.replySecret` configured, only the signed Reply-To address identifies a ticket.** Header and `[TK-XXX]` subject matching are used only when no secret is set, so replies to mail sent before the secret was configured open new tickets.
+- **Guest widget endpoints are rate-limited per client IP** by default: `POST widget/tickets` at 5 a minute and `POST widget/tickets/:id/replies` at 10 a minute, answering 429 with `Retry-After`. Reply attempts with a wrong guest token count too. Configure with the new `guestRateLimit` option (`enabled`, `ticketsPerMinute`, `repliesPerMinute`, `storage`). The default store is in-memory per process; pass a shared `ThrottlerStorage` (for example Redis-backed) when running more than one instance. Behind a proxy, configure the HTTP adapter's `trust proxy`, or every guest shares the proxy's address.
+
+### Security — guest widget endpoints are rate-limited per IP
+
+- `ThrottlerModule` was registered but no `ThrottlerGuard` was applied, so the documented global limit was never enforced, guest replies had no limit, and the per-email ticket limit could be bypassed by changing the email. A new `GuestThrottleGuard` counts per client IP with separate ticket and reply buckets; on ticket creation it runs before the existing per-email limit, and on replies it runs before the guest token check (#130).
+
 ### Security — inbound email replies must come from the requester
 
 - An inbound email that matched a ticket by `In-Reply-To` / `References` or a `[TK-XXX]` subject reference was added as a reply whatever its sender. A matched email is now a reply only when `From` is the ticket's requester (the ticket's Contact, or a Contact linked to the requester user), and it is posted as that requester. Any other sender gets a new ticket of their own.
