@@ -7,7 +7,9 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { TicketAccess, TicketActor } from '../config/ticket-access';
+import { Ticket } from '../entities/ticket.entity';
+import { Logger, Optional } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { ESCALATED_EVENTS } from '../events/escalated.events';
@@ -23,7 +25,23 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   private readonly logger = new Logger(EscalatedGateway.name);
 
-  handleConnection(client: Socket): void {
+  constructor(@Optional() private readonly access?: TicketAccess) {}
+
+  async handleConnection(client: Socket): Promise<void> {
+    if (this.access?.enabled()) {
+      try {
+        const actor = await this.access.requestActor(client.request);
+        client.data.escalatedUserId = actor?.id ?? null;
+        client.data.escalatedGuestToken = actor ? null : client.handshake.auth?.guestToken;
+        if (!actor && !client.data.escalatedGuestToken) {
+          client.disconnect(true);
+          return;
+        }
+      } catch {
+        client.disconnect(true);
+        return;
+      }
+    }
     this.logger.log(`Client connected: ${client.id}`);
   }
 
@@ -32,10 +50,11 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('join:ticket')
-  handleJoinTicket(
+  async handleJoinTicket(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { ticketId: number },
-  ): void {
+  ): Promise<void> {
+    if (this.access?.enabled() && !(await this.socketCanSee(client, data.ticketId))) return;
     client.join(`ticket:${data.ticketId}`);
     this.logger.log(`Client ${client.id} joined ticket:${data.ticketId}`);
   }
@@ -49,16 +68,21 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('join:agent')
-  handleJoinAgent(
+  async handleJoinAgent(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { agentId: UserId },
-  ): void {
+  ): Promise<void> {
+    if (this.access?.enabled()) {
+      const actor = await this.socketActor(client);
+      if (!actor || String(actor.id) !== String(data.agentId) || (!actor.isAgent && !actor.isAdmin))
+        return;
+    }
     client.join(`agent:${data.agentId}`);
   }
 
   @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
   handleTicketCreated(event: any): void {
-    this.server?.emit('ticket:created', {
+    this.emitScoped(undefined, 'ticket:created', {
       ticket: event.ticket,
     });
   }
@@ -67,7 +91,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleTicketUpdated(event: any): void {
     const ticketId = event.ticket?.id;
     if (ticketId) {
-      this.server?.to(`ticket:${ticketId}`).emit('ticket:updated', {
+      this.emitScoped(`ticket:${ticketId}`, 'ticket:updated', {
         ticket: event.ticket,
         changes: event.changes,
       });
@@ -78,7 +102,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleReplyCreated(event: any): void {
     const ticketId = event.ticket?.id;
     if (ticketId) {
-      this.server?.to(`ticket:${ticketId}`).emit('ticket:reply', {
+      this.emitScoped(`ticket:${ticketId}`, 'ticket:reply', {
         reply: event.reply,
         ticketId,
       });
@@ -88,7 +112,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   @OnEvent(ESCALATED_EVENTS.TICKET_ASSIGNED)
   handleTicketAssigned(event: any): void {
     if (event.newAssigneeId) {
-      this.server?.to(`agent:${event.newAssigneeId}`).emit('ticket:assigned', {
+      this.emitScoped(`agent:${event.newAssigneeId}`, 'ticket:assigned', {
         ticket: event.ticket,
       });
     }
@@ -98,7 +122,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleSlaBreached(event: any): void {
     const assigneeId = event.ticket?.assigneeId;
     if (assigneeId) {
-      this.server?.to(`agent:${assigneeId}`).emit('sla:breached', {
+      this.emitScoped(`agent:${assigneeId}`, 'sla:breached', {
         ticket: event.ticket,
         breachType: event.breachType,
       });
@@ -108,10 +132,11 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   // ── Live Chat ──
 
   @SubscribeMessage('join:chat')
-  handleJoinChat(
+  async handleJoinChat(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { sessionId: number },
-  ): void {
+  ): Promise<void> {
+    if (this.access?.enabled() && !(await this.socketCanSeeChat(client, data.sessionId))) return;
     client.join(`chat:${data.sessionId}`);
     this.logger.log(`Client ${client.id} joined chat:${data.sessionId}`);
   }
@@ -125,16 +150,21 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('join:chat-queue')
-  handleJoinChatQueue(@ConnectedSocket() client: Socket): void {
+  async handleJoinChatQueue(@ConnectedSocket() client: Socket): Promise<void> {
+    if (this.access?.enabled()) {
+      const actor = await this.socketActor(client);
+      if (!actor?.isAgent && !actor?.isAdmin) return;
+    }
     client.join('chat-queue');
   }
 
   @SubscribeMessage('chat:typing')
-  handleChatTyping(
+  async handleChatTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { sessionId: number; userName: string },
-  ): void {
-    client.to(`chat:${data.sessionId}`).emit('chat:typing', {
+  ): Promise<void> {
+    if (this.access?.enabled() && !(await this.socketCanSeeChat(client, data.sessionId))) return;
+    this.emitScoped(`chat:${data.sessionId}`, 'chat:typing', {
       sessionId: data.sessionId,
       userName: data.userName,
     });
@@ -142,7 +172,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @OnEvent(ESCALATED_EVENTS.CHAT_STARTED)
   handleChatStarted(event: any): void {
-    this.server?.to('chat-queue').emit('chat:started', {
+    this.emitScoped('chat-queue', 'chat:started', {
       session: event.session,
     });
   }
@@ -151,7 +181,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleChatAccepted(event: any): void {
     const sessionId = event.session?.id;
     if (sessionId) {
-      this.server?.to(`chat:${sessionId}`).emit('chat:accepted', {
+      this.emitScoped(`chat:${sessionId}`, 'chat:accepted', {
         session: event.session,
         agentId: event.agentId,
       });
@@ -162,7 +192,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleChatMessage(event: any): void {
     const sessionId = event.session?.id;
     if (sessionId) {
-      this.server?.to(`chat:${sessionId}`).emit('chat:message', {
+      this.emitScoped(`chat:${sessionId}`, 'chat:message', {
         reply: event.reply,
         sessionId,
       });
@@ -173,9 +203,68 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleChatEnded(event: any): void {
     const sessionId = event.session?.id;
     if (sessionId) {
-      this.server?.to(`chat:${sessionId}`).emit('chat:ended', {
+      this.emitScoped(`chat:${sessionId}`, 'chat:ended', {
         session: event.session,
       });
+    }
+  }
+
+  private async socketActor(client: { data: any }): Promise<TicketActor | null> {
+    if (client.data.escalatedUserId == null) return null;
+    return this.access!.resolveUser(client.data.escalatedUserId);
+  }
+
+  private async socketCanSee(client: { data: any }, ticketId: number): Promise<boolean> {
+    if (!this.access?.enabled()) return true;
+    const ticket = await this.access.withActor(null, () =>
+      this.access!.source.getRepository(Ticket).findOneBy({ id: ticketId }),
+    );
+    if (!ticket) return false;
+    const actor = await this.socketActor(client);
+    if (!actor)
+      return (
+        !!client.data.escalatedGuestToken &&
+        client.data.escalatedGuestToken === ticket.guestAccessToken
+      );
+    if (actor.isAdmin) return true;
+    if (!actor.isAgent) return String(actor.id) === String(ticket.requesterId);
+    return this.access.allows(actor, ticket);
+  }
+
+  private async socketCanSeeChat(client: { data: any }, sessionId: number): Promise<boolean> {
+    if (!this.access?.enabled()) return true;
+    const session = await this.access.withActor(null, () =>
+      this.access!.source.getRepository('ChatSession').findOneBy({ id: sessionId }),
+    );
+    return !!session && this.socketCanSee(client, session.ticketId);
+  }
+
+  private emitScoped(room: string | undefined, event: string, payload: any): void {
+    if (!this.server) return;
+    if (!this.access?.enabled()) {
+      (room ? this.server.to(room) : this.server).emit(event, payload);
+      return;
+    }
+    this.deliverScoped(room, event, payload).catch((error) =>
+      this.logger.warn(`Scoped broadcast failed: ${error.message}`),
+    );
+  }
+
+  private async deliverScoped(
+    room: string | undefined,
+    event: string,
+    payload: any,
+  ): Promise<void> {
+    const sockets = await this.server.fetchSockets();
+    const ticketId = payload.ticket?.id ?? payload.ticketId ?? payload.session?.ticketId;
+    for (const client of sockets) {
+      if (room && !client.rooms.has(room)) continue;
+      const allowed = ticketId
+        ? await this.socketCanSee(client, ticketId)
+        : payload.sessionId
+          ? await this.socketCanSeeChat(client, payload.sessionId)
+          : false;
+      if (allowed) client.emit(event, payload);
     }
   }
 }

@@ -4,6 +4,18 @@ import { UserId } from '../config/user-id-column';
 
 export class TicketFilterDto {
   @IsOptional()
+  @IsString()
+  accountType?: string;
+
+  @IsOptional()
+  @IsString()
+  accountId?: string;
+
+  @IsOptional()
+  @IsIn(['question', 'problem', 'incident', 'task'])
+  ticketType?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   page?: number = 1;

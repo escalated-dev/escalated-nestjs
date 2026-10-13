@@ -5,11 +5,27 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { Department } from './department.entity';
 import { EscalationRule } from './escalation-rule.entity';
 
 @Entity('escalated_sla_policies')
 export class SlaPolicy {
+  @ManyToOne(() => Department, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'departmentId' })
+  department: Department | null;
+
+  @Column({ type: 'int', nullable: true })
+  @Index()
+  departmentId: number | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Index()
+  ticketType: string | null;
+
   @PrimaryGeneratedColumn()
   id: number;
 

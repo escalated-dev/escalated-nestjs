@@ -1,5 +1,12 @@
-import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Inject,
+  Optional,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { TicketAccess } from '../config/ticket-access';
 import { Repository } from 'typeorm';
 import { TicketSubject } from '../contracts/ticket-subject.interface';
 import { TicketSubjectLink } from '../entities/ticket-subject-link.entity';
@@ -31,6 +38,7 @@ export class TicketSubjectService {
     private readonly linkRepo: Repository<TicketSubjectLink>,
     @Inject(ESCALATED_OPTIONS)
     private readonly options: EscalatedModuleOptions,
+    @Optional() private readonly access?: TicketAccess,
   ) {}
 
   private get allowedTypes(): string[] {
@@ -66,6 +74,7 @@ export class TicketSubjectService {
   ): Promise<TicketSubjectLink> {
     this.assertTypeAllowed(subjectType);
 
+    await this.fillAccount(ticket, subjectType, subjectId);
     const id = String(subjectId);
     const existing = await this.linkRepo.findOne({
       where: { ticketId: ticket.id, subjectType, subjectId: id },
@@ -93,6 +102,23 @@ export class TicketSubjectService {
       subjectId: id,
       role: role ?? null,
       position: Number(maxPosition) + 1,
+    });
+  }
+
+  private async fillAccount(ticket: Ticket, type: string, id: string | number): Promise<void> {
+    const account = await this.access?.resolveAccount({ kind: 'subject', type, id });
+    if (!account || !this.access) return;
+    await this.access.withActor(null, async () => {
+      const repository = this.linkRepo.manager.getRepository(Ticket);
+      await repository
+        .createQueryBuilder()
+        .update()
+        .set({ accountType: account.type, accountId: account.id })
+        .where('id = :id AND accountType IS NULL AND accountId IS NULL', { id: ticket.id })
+        .execute();
+      const stored = await repository.findOneByOrFail({ id: ticket.id });
+      ticket.accountType = stored.accountType;
+      ticket.accountId = stored.accountId;
     });
   }
 
@@ -125,6 +151,7 @@ export class TicketSubjectService {
     let position = 0;
     for (const item of items) {
       this.assertTypeAllowed(item.subjectType);
+      await this.fillAccount(ticket, item.subjectType, item.subjectId);
       const link = await this.linkRepo.save({
         ticketId: ticket.id,
         subjectType: item.subjectType,

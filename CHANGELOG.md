@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in department/account query visibility across staff HTTP, token API,
+  widgets, reports, bulk operations, linked records and live updates.
+- Host account resolvers, indexed account identities, account/type routing
+  conditions and deterministic department/type SLA targeting.
+- Migration and access CI coverage on PostgreSQL and MySQL.
+
+### Fixed
+
+- Automation scans no longer query a nonexistent deletedAt column.
+- Chat routing stores the selected department on the underlying ticket.
+
+## [Unreleased]
+
 ## [1.2.0] - 2026-10-08
 
 This release changes how inbound email is matched to tickets and throttles the guest widget endpoints. Read **Upgrading** before deploying.

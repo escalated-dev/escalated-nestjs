@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { TicketAccess } from '../config/ticket-access';
 import { Repository, LessThan, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SlaPolicy } from '../entities/sla-policy.entity';
@@ -17,6 +18,7 @@ export class SlaService {
     @InjectRepository(Ticket)
     private readonly ticketRepo: Repository<Ticket>,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() private readonly access?: TicketAccess,
   ) {}
 
   async findAll(): Promise<SlaPolicy[]> {
@@ -59,7 +61,7 @@ export class SlaService {
     const firstResponseMinutes = this.getFirstResponseMinutes(policy, ticket.priority);
     const resolutionMinutes = this.getResolutionMinutes(policy, ticket.priority);
 
-    const now = new Date();
+    const now = this.access?.options.targetedSlas ? new Date(ticket.createdAt) : new Date();
     let firstResponseDue = now;
     let resolutionDue = now;
 
@@ -80,6 +82,11 @@ export class SlaService {
       resolutionDue = new Date(now.getTime() + resolutionMinutes * 60000);
     }
 
+    Object.assign(ticket, {
+      slaPolicyId: policy.id,
+      firstResponseDueAt: firstResponseDue,
+      resolutionDueAt: resolutionDue,
+    });
     await this.ticketRepo.update(ticket.id, {
       slaPolicyId: policy.id,
       firstResponseDueAt: firstResponseDue,
@@ -129,6 +136,30 @@ export class SlaService {
   }
 
   private async findMatchingPolicy(ticket: Ticket): Promise<SlaPolicy | null> {
+    if (this.access?.options.targetedSlas) {
+      const policies = await this.slaPolicyRepo.find({
+        where: { isActive: true },
+        order: { id: 'ASC' },
+      });
+      const rank = (policy: SlaPolicy) =>
+        policy.departmentId != null
+          ? policy.ticketType != null
+            ? 0
+            : 1
+          : policy.ticketType != null
+            ? 2
+            : 3;
+      return (
+        policies
+          .filter(
+            (policy) =>
+              (policy.departmentId == null || policy.departmentId === ticket.departmentId) &&
+              (policy.ticketType == null || policy.ticketType === ticket.ticketType) &&
+              (policy.departmentId != null || policy.ticketType != null || policy.isDefault),
+          )
+          .sort((a, b) => rank(a) - rank(b) || a.id - b.id)[0] ?? null
+      );
+    }
     // First try to find policy matching conditions
     const policies = await this.slaPolicyRepo.find({
       where: { isActive: true },
@@ -136,13 +167,19 @@ export class SlaService {
     });
 
     for (const policy of policies) {
-      if (this.matchesConditions(ticket, policy.conditions)) {
+      if (
+        policy.departmentId == null &&
+        policy.ticketType == null &&
+        this.matchesConditions(ticket, policy.conditions)
+      ) {
         return policy;
       }
     }
 
     // Fall back to default
-    return this.slaPolicyRepo.findOne({ where: { isDefault: true, isActive: true } });
+    return this.slaPolicyRepo.findOne({
+      where: { isDefault: true, isActive: true, departmentId: IsNull(), ticketType: IsNull() },
+    });
   }
 
   private matchesConditions(ticket: Ticket, conditions: Record<string, any> | null): boolean {

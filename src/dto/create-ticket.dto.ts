@@ -2,6 +2,10 @@ import { IsString, IsOptional, IsInt, IsIn, IsArray, MaxLength } from 'class-val
 import { UserId } from '../config/user-id-column';
 
 export class CreateTicketDto {
+  @IsOptional()
+  @IsIn(['question', 'problem', 'incident', 'task'])
+  ticketType?: string;
+
   @IsString()
   @MaxLength(500)
   subject: string;

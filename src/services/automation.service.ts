@@ -1,3 +1,4 @@
+import { accountIdentity, caseSensitiveEquals } from '../config/ticket-access';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
@@ -104,7 +105,9 @@ export class AutomationService {
    * at the moment of an event.
    */
   private async findMatchingTickets(automation: Automation): Promise<Ticket[]> {
-    const qb = this.ticketRepo.createQueryBuilder('ticket').where('ticket.deletedAt IS NULL');
+    const qb = this.ticketRepo
+      .createQueryBuilder('ticket')
+      .where('ticket.isMerged = :isMerged', { isMerged: false });
 
     // Open = not yet resolved or closed. Lifecycle is tracked by the
     // resolvedAt / closedAt timestamps on the ticket; status names live
@@ -118,6 +121,40 @@ export class AutomationService {
       const value = condition.value;
 
       switch (field) {
+        case 'ticket_type':
+        case 'department_id':
+        case 'account_type':
+        case 'account_id': {
+          const property = {
+            ticket_type: 'ticketType',
+            department_id: 'departmentId',
+            account_type: 'accountType',
+            account_id: 'accountId',
+          }[field];
+          const parameter = `routing_${Object.keys(qb.getParameters()).length}`;
+          const expression = field.startsWith('account_')
+            ? caseSensitiveEquals(qb.connection, `ticket.${property}`, `:${parameter}`)
+            : `ticket.${property} = :${parameter}`;
+          qb.andWhere(expression, { [parameter]: value });
+          break;
+        }
+        case 'account': {
+          const account = accountIdentity(value);
+          if (!account) {
+            qb.andWhere('1 = 0');
+            break;
+          }
+          const parameter = `account_${Object.keys(qb.getParameters()).length}`;
+          qb.andWhere(
+            caseSensitiveEquals(qb.connection, 'ticket.accountType', `:${parameter}_type`),
+            { [`${parameter}_type`]: account.type },
+          );
+          qb.andWhere(caseSensitiveEquals(qb.connection, 'ticket.accountId', `:${parameter}_id`), {
+            [`${parameter}_id`]: account.id,
+          });
+          break;
+        }
+
         case 'hours_since_created': {
           const threshold = this.hoursAgo(Number(value));
           qb.andWhere(`ticket.createdAt ${this.flipOperator(operator)} :hsc`, { hsc: threshold });
