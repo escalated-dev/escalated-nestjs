@@ -35,3 +35,11 @@ export { AuditLogInterceptor, AuditAction } from './interceptors/audit-log.inter
 
 // i18n
 export { EscalatedI18nModule, EscalatedI18nOptions, ChainedI18nLoader } from './i18n';
+
+export {
+  TicketAccess,
+  TicketActor,
+  AccountIdentity,
+  AccountReference,
+} from './config/ticket-access';
+export { TicketAccessAndRouting1791918000000 } from './migrations/1791918000000-TicketAccessAndRouting';

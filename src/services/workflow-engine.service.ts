@@ -1,3 +1,4 @@
+import { accountIdentity } from '../config/ticket-access';
 import { Injectable } from '@nestjs/common';
 
 export const OPERATORS = [
@@ -46,7 +47,7 @@ export const TRIGGER_EVENTS = [
 interface Condition {
   field: string;
   operator: string;
-  value: string;
+  value: unknown;
 }
 interface ConditionGroup {
   all?: Condition[];
@@ -66,8 +67,26 @@ export class WorkflowEngineService {
   }
 
   evalSingle(c: Condition, ticket: Record<string, string>): boolean {
-    const actual = ticket[c.field] ?? '';
-    return this.applyOperator(c.operator, actual, c.value);
+    const aliases: Record<string, string> = {
+      ticket_type: 'ticketType',
+      account_type: 'accountType',
+      account_id: 'accountId',
+      department_id: 'departmentId',
+    };
+    if (c.field === 'account') {
+      const actual = accountIdentity({
+        type: ticket.accountType ?? ticket.account_type,
+        id: ticket.accountId ?? ticket.account_id,
+      });
+      if (c.operator === 'is_empty') return actual === null;
+      if (c.operator === 'is_not_empty') return actual !== null;
+      const expected = accountIdentity(c.value);
+      if (!expected || !['equals', 'not_equals'].includes(c.operator)) return false;
+      const equal = !!actual && actual.type === expected.type && actual.id === expected.id;
+      return c.operator === 'equals' ? equal : !equal;
+    }
+    const actual = ticket[c.field] ?? ticket[aliases[c.field]] ?? '';
+    return this.applyOperator(c.operator, actual, String(c.value ?? ''));
   }
 
   applyOperator(op: string, actual: string, expected: string): boolean {

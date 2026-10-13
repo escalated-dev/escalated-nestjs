@@ -1,5 +1,12 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, getDataSourceToken } from '@nestjs/typeorm';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { DataSource } from 'typeorm';
+import {
+  TicketAccess,
+  TicketAccessInterceptor,
+  validateTicketAccess,
+} from './config/ticket-access';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -271,6 +278,7 @@ const controllers = [
 export class EscalatedModule {
   static forRoot(options: EscalatedModuleOptions = {}): DynamicModule {
     const mergedOptions = { ...defaultOptions, ...options };
+    validateTicketAccess(mergedOptions);
 
     const optionsProvider: Provider = {
       provide: ESCALATED_OPTIONS,
@@ -333,6 +341,16 @@ export class EscalatedModule {
       controllers: conditionalControllers,
       providers: [
         optionsProvider,
+        {
+          provide: TicketAccess,
+          useFactory: (source: DataSource) => new TicketAccess(source, mergedOptions),
+          inject: [getDataSourceToken(mergedOptions.connection)],
+        },
+        {
+          provide: APP_INTERCEPTOR,
+          useFactory: (access: TicketAccess) => new TicketAccessInterceptor(access),
+          inject: [TicketAccess],
+        },
         ticketActionRegistryProvider,
         // Aliases the default repository tokens onto the named DataSource, so
         // the package's 164 `@InjectRepository(X)` sites need no change. Empty
@@ -352,7 +370,13 @@ export class EscalatedModule {
         EmailListener,
         RecordCustomActionInternalNoteListener,
       ],
-      exports: [...services, optionsProvider, ticketActionRegistryProvider, TypeOrmModule],
+      exports: [
+        TicketAccess,
+        ...services,
+        optionsProvider,
+        ticketActionRegistryProvider,
+        TypeOrmModule,
+      ],
     };
   }
 }

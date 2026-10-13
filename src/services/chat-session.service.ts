@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -7,6 +7,7 @@ import { TicketService } from './ticket.service';
 import { ReplyService } from './reply.service';
 import { ChatRoutingService } from './chat-routing.service';
 import { ESCALATED_EVENTS } from '../events/escalated.events';
+import { TicketAccess } from '../config/ticket-access';
 import { UserId } from '../config/user-id-column';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class ChatSessionService {
     private readonly replyService: ReplyService,
     private readonly chatRoutingService: ChatRoutingService,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() private readonly access?: TicketAccess,
   ) {}
 
   /**
@@ -29,17 +31,24 @@ export class ChatSessionService {
     initialMessage?: string,
     departmentId?: number,
   ): Promise<ChatSession> {
+    const route = await this.chatRoutingService.resolve(departmentId);
     const ticket = await this.ticketService.create(
       {
         subject: `Chat with ${visitorName}`,
         description: initialMessage || '',
         priority: 'medium',
         channel: 'chat',
+        departmentId: route.departmentId ?? departmentId,
       },
       0, // system/guest requester
     );
 
-    const route = await this.chatRoutingService.resolve(departmentId);
+    if (
+      this.access?.enabled() &&
+      route.agentId &&
+      !(await this.access.allowsAgent(route.agentId, ticket))
+    )
+      route.agentId = null;
 
     const session = this.chatSessionRepo.create({
       ticketId: ticket.id,
@@ -64,6 +73,12 @@ export class ChatSessionService {
    */
   async accept(sessionId: number, agentId: UserId): Promise<ChatSession> {
     const session = await this.findById(sessionId);
+
+    if (
+      this.access?.enabled() &&
+      !(await this.access.allowsAgent(agentId, await this.ticketService.findById(session.ticketId)))
+    )
+      throw new BadRequestException('Agent cannot access this ticket');
 
     if (session.status !== 'waiting') {
       throw new BadRequestException('Chat session is not in a waiting state.');

@@ -664,3 +664,5 @@ Custom themes are Handlebars files placed in the directory pointed to by `newsle
 ## License
 
 MIT - Copyright (c) Escalated.dev. See [LICENSE](LICENSE).
+
+See [ticket access and routing](docs/ticket-access-and-routing.md) for opt-in department/account visibility and targeted SLAs.

@@ -11,6 +11,9 @@ import { SlaPolicy } from './sla-policy.entity';
 
 @Entity('escalated_escalation_rules')
 export class EscalationRule {
+  @Column({ type: 'simple-json', nullable: true })
+  conditions: Record<string, unknown> | null;
+
   @PrimaryGeneratedColumn()
   id: number;
 

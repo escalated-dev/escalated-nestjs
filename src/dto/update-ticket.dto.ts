@@ -11,6 +11,10 @@ import { UserId } from '../config/user-id-column';
 
 export class UpdateTicketDto {
   @IsOptional()
+  @IsIn(['question', 'problem', 'incident', 'task'])
+  ticketType?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(500)
   subject?: string;

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -9,6 +9,7 @@ import { AgentProfile } from '../entities/agent-profile.entity';
 import { TicketFollower } from '../entities/ticket-follower.entity';
 import { resolveFollowerUserIds } from './follower-recipients';
 import { CreateReplyDto } from '../dto/create-reply.dto';
+import { TicketAccess } from '../config/ticket-access';
 import { UserId } from '../config/user-id-column';
 import { ESCALATED_EVENTS, TicketReplyCreatedEvent } from '../events/escalated.events';
 
@@ -26,6 +27,7 @@ export class ReplyService {
     @InjectRepository(TicketFollower)
     private readonly followerRepo: Repository<TicketFollower>,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() private readonly access?: TicketAccess,
   ) {}
 
   /**
@@ -81,7 +83,13 @@ export class ReplyService {
       userId === null || userId === undefined ? null : { id: userId, name: authorName };
     (saved as Reply & { authorName?: string }).authorName = authorName;
 
-    const followerUserIds = await resolveFollowerUserIds(this.followerRepo, ticketId, userId);
+    const followerUserIds = await resolveFollowerUserIds(
+      this.followerRepo,
+      ticketId,
+      userId,
+      this.access,
+      ticket,
+    );
 
     this.eventEmitter.emit(
       ESCALATED_EVENTS.TICKET_REPLY_CREATED,

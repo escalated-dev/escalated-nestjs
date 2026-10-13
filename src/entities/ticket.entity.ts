@@ -19,8 +19,17 @@ import { Tag } from './tag.entity';
 import { userIdColumn, UserId } from '../config/user-id-column';
 
 @Entity('escalated_tickets')
-@Index(['referenceNumber'], { unique: true })
+@Index(['accountType', 'accountId'])
 export class Ticket {
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  accountType: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  accountId: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, default: 'question' })
+  ticketType: string;
+
   @PrimaryGeneratedColumn()
   id: number;
 

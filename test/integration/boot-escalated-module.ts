@@ -1,5 +1,6 @@
 import { ModuleMetadata } from '@nestjs/common';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
+import type { DataSourceOptions } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EscalatedModule } from '../../src/escalated.module';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
@@ -15,8 +16,9 @@ jest.mock('otplib', () => ({
 
 export interface BootOptions {
   escalated?: EscalatedModuleOptions;
+  database?: DataSourceOptions;
   /** Extra providers/imports the host app would contribute. */
-  host?: Pick<ModuleMetadata, 'imports' | 'providers'>;
+  host?: Pick<ModuleMetadata, 'imports' | 'providers' | 'controllers'>;
   /** Hook to override providers before compiling. */
   configure?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
 }
@@ -33,8 +35,7 @@ export async function bootEscalatedModule(options: BootOptions = {}): Promise<Te
   let builder = Test.createTestingModule({
     imports: [
       TypeOrmModule.forRoot({
-        type: 'better-sqlite3',
-        database: ':memory:',
+        ...(options.database ?? { type: 'better-sqlite3' as const, database: ':memory:' }),
         autoLoadEntities: true,
         synchronize: false,
         manualInitialization: true,
@@ -43,6 +44,7 @@ export async function bootEscalatedModule(options: BootOptions = {}): Promise<Te
       ...(options.host?.imports ?? []),
     ],
     providers: [...(options.host?.providers ?? [])],
+    controllers: [...(options.host?.controllers ?? [])],
   });
 
   if (options.configure) {

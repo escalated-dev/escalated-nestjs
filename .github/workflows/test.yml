@@ -36,7 +36,7 @@ jobs:
         run: npm run build
 
   schema:
-    name: Schema (PostgreSQL)
+    name: Access and schema (PostgreSQL)
     runs-on: ubuntu-latest
 
     services:
@@ -69,4 +69,31 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Synchronize the schema on PostgreSQL
-        run: npx jest test/entities/schema-portability.spec.ts
+        run: npx jest --runInBand test/entities/schema-portability.spec.ts test/entities/ticket-access-migration.spec.ts test/integration/ticket-access.spec.ts
+
+  access-mysql:
+    name: Access and migration (MySQL)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: escalated_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=15
+    env:
+      ESCALATED_TEST_MYSQL_URL: mysql://root:mysql@localhost:3306/escalated_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npx jest --runInBand test/entities/ticket-access-migration.spec.ts test/integration/ticket-access.spec.ts

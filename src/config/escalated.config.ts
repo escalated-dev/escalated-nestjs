@@ -3,7 +3,23 @@ import { TicketSubject } from '../contracts/ticket-subject.interface';
 import { UserId } from './user-id-column';
 import type { ThrottlerStorage } from '@nestjs/throttler';
 
+import type { AccountIdentity, AccountReference, TicketActor } from './ticket-access';
+
 export interface EscalatedModuleOptions {
+  visibility?: 'all' | 'department';
+  ticketAccess?: {
+    /** Resolve authoritative host roles for every authenticated user, including token owners. */
+    resolveUser: (id: UserId) => TicketActor | Promise<TicketActor>;
+  };
+  accounts?: {
+    enabled?: boolean;
+    scopeAgents?: boolean;
+    resolver?: (
+      reference: AccountReference,
+    ) => AccountIdentity | null | Promise<AccountIdentity | null>;
+  };
+  targetedSlas?: boolean;
+
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
   routePrefix?: string;
 

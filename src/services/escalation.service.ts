@@ -1,3 +1,4 @@
+import { accountIdentity, caseSensitiveEquals } from '../config/ticket-access';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -78,6 +79,35 @@ export class EscalationService {
         .andWhere('ticket.firstRespondedAt IS NULL');
     }
 
+    for (const [field, value] of Object.entries(rule.conditions ?? {})) {
+      if (field === 'account') {
+        const account = accountIdentity(value);
+        if (!account) {
+          qb.andWhere('1 = 0');
+          continue;
+        }
+        qb.andWhere(caseSensitiveEquals(qb.connection, 'ticket.accountType', ':accountType'), {
+          accountType: account.type,
+        });
+        qb.andWhere(caseSensitiveEquals(qb.connection, 'ticket.accountId', ':accountId'), {
+          accountId: account.id,
+        });
+      } else {
+        const property = {
+          ticket_type: 'ticketType',
+          department_id: 'departmentId',
+          account_type: 'accountType',
+          account_id: 'accountId',
+        }[field];
+        if (property) {
+          const expression =
+            field === 'department_id'
+              ? `ticket.${property} = :routing_${property}`
+              : caseSensitiveEquals(qb.connection, `ticket.${property}`, `:routing_${property}`);
+          qb.andWhere(expression, { [`routing_${property}`]: value });
+        }
+      }
+    }
     return qb.getMany();
   }
 

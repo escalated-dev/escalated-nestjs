@@ -1,8 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { v4 as uuidv4 } from 'uuid';
+import { TicketSubjectService, TicketSubjectSyncItem } from './ticket-subject.service';
+import {
+  AccountIdentity,
+  TicketAccess,
+  accountIdentity,
+  caseSensitiveEquals,
+} from '../config/ticket-access';
+import { SlaService } from './sla.service';
 import { UserId } from '../config/user-id-column';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
@@ -52,6 +60,9 @@ export class TicketService {
     @InjectRepository(TicketFollower)
     private readonly followerRepo: Repository<TicketFollower>,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() private readonly access?: TicketAccess,
+    @Optional() private readonly sla?: SlaService,
+    @Optional() private readonly subjects?: TicketSubjectService,
   ) {}
 
   private generateReferenceNumber(): string {
@@ -158,7 +169,11 @@ export class TicketService {
     return enriched;
   }
 
-  async create(dto: CreateTicketDto, requesterId: UserId): Promise<Ticket> {
+  async create(
+    dto: CreateTicketDto,
+    requesterId: UserId,
+    context?: { subjects?: TicketSubjectSyncItem[]; account?: AccountIdentity | null },
+  ): Promise<Ticket> {
     // Get default status if not provided
     let statusId = dto.statusId;
     if (!statusId) {
@@ -169,6 +184,7 @@ export class TicketService {
     const ticket = this.ticketRepo.create({
       referenceNumber: this.generateReferenceNumber(),
       subject: dto.subject,
+      ticketType: dto.ticketType ?? 'question',
       description: dto.description,
       priority: dto.priority || 'medium',
       channel: dto.channel || 'web',
@@ -180,7 +196,18 @@ export class TicketService {
       guestAccessToken: uuidv4(),
     });
 
+    const account = context?.account
+      ? accountIdentity(context.account)
+      : await this.access?.resolveAccount({ kind: 'requester', type: 'User', id: requesterId });
+    if (context?.account && !account) throw new BadRequestException('Invalid account identity');
+    if (account) {
+      ticket.accountType = account.type;
+      ticket.accountId = account.id;
+    }
     const saved = await this.ticketRepo.save(ticket);
+    for (const subject of context?.subjects ?? [])
+      await this.subjects?.attach(saved, subject.subjectType, subject.subjectId, subject.role);
+    if (this.access?.options.targetedSlas) await this.sla?.applyToTicket(saved);
 
     // Handle tags
     if (dto.tagIds?.length) {
@@ -263,6 +290,24 @@ export class TicketService {
       qb.andWhere('ticket.departmentId = :departmentId', { departmentId: filters.departmentId });
     }
 
+    if (filters.ticketType)
+      qb.andWhere('ticket.ticketType = :ticketType', { ticketType: filters.ticketType });
+    if (
+      this.access?.options.accounts?.enabled &&
+      (filters.accountType !== undefined || filters.accountId !== undefined)
+    ) {
+      const identity = accountIdentity({ type: filters.accountType, id: filters.accountId });
+      if (!identity)
+        throw new BadRequestException('Account filters require accountType and accountId');
+      qb.andWhere(
+        caseSensitiveEquals(this.access.source, 'ticket.accountType', ':filterAccountType'),
+        { filterAccountType: identity.type },
+      );
+      qb.andWhere(caseSensitiveEquals(this.access.source, 'ticket.accountId', ':filterAccountId'), {
+        filterAccountId: identity.id,
+      });
+    }
+
     if (filters.assigneeId) {
       qb.andWhere('ticket.assigneeId = :assigneeId', { assigneeId: filters.assigneeId });
     }
@@ -324,7 +369,13 @@ export class TicketService {
         description: 'Status changed',
       });
 
-      const followerUserIds = await resolveFollowerUserIds(this.followerRepo, id, userId);
+      const followerUserIds = await resolveFollowerUserIds(
+        this.followerRepo,
+        id,
+        userId,
+        this.access,
+        ticket,
+      );
       this.eventEmitter.emit(
         ESCALATED_EVENTS.TICKET_STATUS_CHANGED,
         new TicketStatusChangedEvent(
@@ -394,6 +445,7 @@ export class TicketService {
       'priority',
       'departmentId',
       'assigneeId',
+      'ticketType',
       'statusId',
     ]) {
       if (dto[key] !== undefined) {
@@ -465,8 +517,10 @@ export class TicketService {
         description: `This ticket was split from ${original.referenceNumber}`,
         priority: original.priority,
         departmentId: original.departmentId,
+        ticketType: original.ticketType,
       },
       userId,
+      { account: accountIdentity({ type: original.accountType, id: original.accountId }) },
     );
 
     await this.activityRepo.save({

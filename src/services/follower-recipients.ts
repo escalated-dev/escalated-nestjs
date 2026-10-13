@@ -1,3 +1,5 @@
+import { TicketAccess } from '../config/ticket-access';
+import { Ticket } from '../entities/ticket.entity';
 import { Repository } from 'typeorm';
 import { TicketFollower } from '../entities/ticket-follower.entity';
 import { UserId } from '../config/user-id-column';
@@ -14,12 +16,15 @@ export async function resolveFollowerUserIds(
   followerRepo: Repository<TicketFollower>,
   ticketId: number,
   actorUserId: UserId,
+  access?: TicketAccess,
+  ticket?: Ticket,
 ): Promise<UserId[]> {
   const rows = await followerRepo.find({ where: { ticketId }, select: { userId: true } });
   const result: UserId[] = [];
   const seen = new Set<UserId>();
   for (const row of rows) {
     if (row.userId === actorUserId || seen.has(row.userId)) continue;
+    if (access?.enabled() && ticket && !(await access.allowsUser(row.userId, ticket))) continue;
     seen.add(row.userId);
     result.push(row.userId);
   }
