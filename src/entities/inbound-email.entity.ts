@@ -17,7 +17,7 @@ export class InboundEmail {
   @Column({ length: 50 })
   provider: string;
 
-  @Column({ type: 'simple-json', default: '{}' })
+  @Column({ type: 'simple-json', default: () => "('{}')" })
   rawPayload: Record<string, unknown>;
 
   @Column({ length: 320, nullable: true, type: 'varchar' })

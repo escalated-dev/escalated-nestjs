@@ -23,10 +23,10 @@ export class Workflow {
   @Column({ length: 255 })
   triggerEvent: string;
 
-  @Column({ type: 'simple-json', default: '{}' })
+  @Column({ type: 'simple-json', default: () => "('{}')" })
   conditions: Record<string, unknown>;
 
-  @Column({ type: 'simple-json', default: '[]' })
+  @Column({ type: 'simple-json', default: () => "('[]')" })
   actions: Array<Record<string, unknown>>;
 
   @Column({ default: 0 })

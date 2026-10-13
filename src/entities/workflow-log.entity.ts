@@ -29,7 +29,7 @@ export class WorkflowLog {
   @Column({ default: true })
   conditionsMatched: boolean;
 
-  @Column({ type: 'simple-json', default: '[]' })
+  @Column({ type: 'simple-json', default: () => "('[]')" })
   actionsExecutedRaw: Array<Record<string, unknown>>;
 
   @Column({ type: 'text', nullable: true })

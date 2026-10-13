@@ -33,7 +33,7 @@ export class Contact {
   @Column(userIdColumn({ nullable: true }))
   userId: UserId | null;
 
-  @Column({ type: 'simple-json', default: '{}' })
+  @Column({ type: 'simple-json', default: () => "('{}')" })
   metadata: Record<string, unknown>;
 
   /** Set when the contact one-click unsubscribes from marketing newsletters. */

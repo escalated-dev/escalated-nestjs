@@ -115,9 +115,11 @@ describe('configurable ticket access over HTTP', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
+    if (app) await app.close();
+    else if (source?.isInitialized) await source.destroy();
   });
   afterEach(async () => {
+    if (!visible || !hidden) return;
     access.options.visibility = 'department';
     access.options.accounts = undefined;
     access.options.targetedSlas = false;
