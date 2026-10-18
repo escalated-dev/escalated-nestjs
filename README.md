@@ -55,10 +55,14 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 
 ## Requirements
 
-- Node.js 18+
-- NestJS 11+
-- TypeORM 0.3+
+- Node.js 22+ for the current dependency graph
+- NestJS 11
+- TypeORM 0.3.x (the published peer range)
 - Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+
+The manifest's broader Node 20 and Nest 10 compatibility declarations are under
+review. See the [dependency audit](docs/dependency-audit.md) for the existing
+engine mismatch, installed-host checks and held major upgrades.
 
 ## Installation
 
@@ -597,10 +601,21 @@ socket.on('ticket:reply', (data) => console.log('New reply:', data));
 ```bash
 git clone https://github.com/escalated-dev/escalated-nestjs.git
 cd escalated-nestjs
-npm install --legacy-peer-deps
-npm test
+npm ci
+npm test -- --runInBand
 npm run build
+npm run lint
+npm run format:check
+npm run test:package
+npm audit
 ```
+
+Use a current patched Node 22 release for development (`.nvmrc` selects 22.x).
+CI installs the committed lockfile with strict peer checking and runs the test
+suite on Node 20, 22 and 24, plus the PostgreSQL/MySQL access and migration checks.
+Node 20's existing upstream engine mismatch remains open; a functional test
+pass does not establish engine compatibility. The full audit also reports the
+remaining unpatched `braces` and `sprintf-js` findings described above.
 
 ## TypeORM Entities
 
