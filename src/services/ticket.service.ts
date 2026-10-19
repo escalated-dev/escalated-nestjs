@@ -193,6 +193,7 @@ export class TicketService {
       assigneeId: dto.assigneeId,
       requesterId,
       contactId: dto.contactId ?? null,
+      metadata: dto.metadata ?? null,
       guestAccessToken: uuidv4(),
     });
 

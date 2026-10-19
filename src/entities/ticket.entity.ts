@@ -119,6 +119,13 @@ export class Ticket {
   @Column({ length: 255, nullable: true })
   guestAccessToken: string;
 
+  /**
+   * Host parameters sent with a widget ticket or chat (order number, page URL,
+   * the embedding site as `embedded_on`, ...). Visitor supplied: unverified.
+   */
+  @Column({ type: 'simple-json', nullable: true })
+  metadata: Record<string, string | number | boolean> | null;
+
   // CSAT
   @Column({ type: 'int', nullable: true })
   satisfactionRatingId: number;

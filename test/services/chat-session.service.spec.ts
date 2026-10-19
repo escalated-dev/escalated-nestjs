@@ -104,6 +104,29 @@ describe('ChatSessionService', () => {
       );
       expect(session.visitorName).toBe('Visitor');
     });
+
+    it('keeps host parameters on the chat ticket', async () => {
+      const metadata = {
+        page_url: 'https://shop.example.com/cart',
+        embedded_on: 'https://shop.example.com',
+      };
+
+      await service.start('Visitor', 'v@test.com', 'Hello', undefined, metadata);
+
+      expect(ticketService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ channel: 'chat', metadata }),
+        0,
+      );
+    });
+
+    it('starts a chat without host parameters as before', async () => {
+      await service.start('Visitor', 'v@test.com', 'Hello');
+
+      expect(ticketService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ metadata: null }),
+        0,
+      );
+    });
   });
 
   describe('accept', () => {

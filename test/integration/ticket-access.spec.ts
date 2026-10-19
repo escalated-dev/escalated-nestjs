@@ -2,6 +2,7 @@ import { INestApplication, Controller, Get, Post, UseGuards } from '@nestjs/comm
 import { DataSource, In, Not } from 'typeorm';
 import { bootEscalatedModule } from './boot-escalated-module';
 import { TicketAccess, validateTicketAccess } from '../../src/config/ticket-access';
+import { WIDGET_EMBED_ORIGIN } from '../../src/config/widget-embed';
 import { TicketService } from '../../src/services/ticket.service';
 import { TicketSubjectService } from '../../src/services/ticket-subject.service';
 import { AutomationService } from '../../src/services/automation.service';
@@ -160,6 +161,15 @@ describe('configurable ticket access over HTTP', () => {
   it('scopes widget lookups even with a valid private token', async () => {
     const result = await fetch(`${base}/escalated/widget/tickets/${hidden.id}?guest_token=secret`);
     expect(result.status).toBe(404);
+  });
+
+  it('resolves no user for a widget request embedded on another site', async () => {
+    const user = { id: 1 };
+
+    await expect(access.requestActor({ user })).resolves.toMatchObject({ id: 1 });
+    await expect(
+      access.requestActor({ user, [WIDGET_EMBED_ORIGIN]: 'https://shop.example.com' }),
+    ).resolves.toBeNull();
   });
 
   it('preserves administrator access', async () => {

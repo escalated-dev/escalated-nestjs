@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, ParseIntPipe, Req } from '@nestjs/common';
 import { ChatSessionService } from '../../services/chat-session.service';
+import { embedOrigin } from '../../services/widget-origins.service';
+import { sanitizeWidgetMetadata } from '../../services/widget-metadata';
 
 @Controller('escalated/widget/chat')
 export class WidgetChatController {
@@ -20,13 +22,18 @@ export class WidgetChatController {
       email?: string;
       message?: string;
       departmentId?: number;
+      /** Host parameters from the embedding page, kept on the chat's ticket. */
+      metadata?: Record<string, unknown>;
     },
+    @Req() req?: any,
   ) {
+    const metadata = sanitizeWidgetMetadata(body.metadata, embedOrigin(req));
     const session = await this.chatSessionService.start(
       body.name || 'Visitor',
       body.email,
       body.message,
       body.departmentId,
+      metadata,
     );
 
     return {

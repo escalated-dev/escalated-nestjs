@@ -43,3 +43,8 @@ export {
   AccountReference,
 } from './config/ticket-access';
 export { TicketAccessAndRouting1791918000000 } from './migrations/1791918000000-TicketAccessAndRouting';
+export { WidgetTicketMetadata1792281600000 } from './migrations/1792281600000-WidgetTicketMetadata';
+
+// Widget embedding
+export { WidgetCorsMiddleware } from './middleware/widget-cors.middleware';
+export { WIDGET_EMBED_ORIGIN, embedOrigin } from './config/widget-embed';
