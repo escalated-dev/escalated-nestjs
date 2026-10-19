@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | Bağlantılar için temel URL                      |
 | `maxFileSize`         | `number`   | `10485760`    | Bayt cinsinden maksimum yükleme boyutu                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook yeniden deneme sayısı                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | Widget için CORS kökenleri                 |
+| `widgetOrigins`       | `string[]` | `[]`          | Widget için CORS kökenleri                 |
 | `adminGuard`          | `class`    | --            | Yönetici rotaları için özel koruma           |
 | `agentGuard`          | `class`    | --            | Temsilci rotaları için özel koruma           |
 | `customerGuard`       | `class`    | --            | Müşteri rotaları için özel koruma        |

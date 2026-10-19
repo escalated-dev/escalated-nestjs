@@ -153,7 +153,7 @@ two can live on different connections — there is no foreign key that would hav
 to span them.
 | `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | CORS origins for widget                 |
+| `widgetOrigins`       | `string[]` | `[]`          | Sites that may embed the widget (see [Embedding the widget](docs/embedding-the-widget.md)) |
 | `adminGuard`          | `class`    | --            | Guard for `/escalated/admin/*`. Unset refuses every admin route (see Route guards) |
 | `agentGuard`          | `class`    | --            | Guard for `/escalated/agent/*`. Unset refuses every agent route |
 | `customerGuard`       | `class`    | --            | Guard for `/escalated/customer/tickets/*`. Unset refuses every customer ticket route |
@@ -386,11 +386,17 @@ Public. No route-group guard applies.
 
 | Method | Path                   | Description               |
 | ------ | ---------------------- | ------------------------- |
-| POST   | `/tickets`             | Create ticket (public). The requester comes from `email` (guest policy) or from a host-authenticated `req.user`; a `requesterId` in the body is ignored |
+| GET    | `/config`              | Widget settings (colour, position, greeting, departments, `accepts_metadata`) |
+| GET    | `/embed.js`            | Standalone widget script for other sites |
+| POST   | `/tickets`             | Create ticket (public). The requester comes from `email` (guest policy) or from a host-authenticated `req.user`; a `requesterId` in the body is ignored. Optional `metadata` |
 | GET    | `/tickets/:id`         | View ticket (guest token) |
 | POST   | `/tickets/:id/replies` | Reply (guest token)       |
 | GET    | `/kb/search`           | Search KB                 |
 | POST   | `/rate/:token`         | Submit CSAT               |
+
+Live chat lives under `/escalated/widget/chat/`. To run the widget on another
+site, list that site and load `embed.js` there; see
+[Embedding the widget](docs/embedding-the-widget.md).
 
 ## Using Services Directly
 

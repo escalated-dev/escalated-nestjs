@@ -14,6 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Host account resolvers, indexed account identities, account/type routing
   conditions and deterministic department/type SLA targeting.
 - Migration and access CI coverage on PostgreSQL and MySQL.
+- The widget can be embedded on other sites. List them in the `widgetOrigins`
+  option, `ESCALATED_WIDGET_ALLOWED_ORIGINS` or the `widget_allowed_origins`
+  admin setting (`https://*.example.com` covers subdomains). Listed origins
+  get CORS on every `/escalated/widget/*` route, including preflights and
+  error answers, and always run as guests. Nothing changes until a site is
+  listed. See `docs/embedding-the-widget.md`.
+- `GET /escalated/widget/embed.js` serves the standalone widget bundle from
+  `@escalated-dev/escalated` 0.12.1.
+- `GET /escalated/widget/config` returns colour, position, greeting, active
+  departments, `kb_enabled`, `guest_tickets_enabled` and
+  `accepts_metadata: true`.
+- Widget tickets and chats keep host parameters sent as `metadata` (a
+  sanitised flat map, with `embedded_on` set from the request's Origin) in a
+  new nullable `metadata` column on tickets. Existing installations run the
+  exported `WidgetTicketMetadata1792281600000` migration.
+
+### Changed
+
+- `widgetOrigins` defaults to `[]` instead of `['*']`. The old value was never
+  applied; a bare `*` is now ignored rather than allowing every site.
 
 ### Fixed
 

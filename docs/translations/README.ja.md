@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | リンクのベースURL                      |
 | `maxFileSize`         | `number`   | `10485760`    | 最大アップロードサイズ（バイト）                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhookリトライ回数                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | ウィジェットのCORSオリジン                 |
+| `widgetOrigins`       | `string[]` | `[]`          | ウィジェットのCORSオリジン                 |
 | `adminGuard`          | `class`    | --            | 管理者ルート用カスタムガード           |
 | `agentGuard`          | `class`    | --            | エージェントルート用カスタムガード           |
 | `customerGuard`       | `class`    | --            | 顧客ルート用カスタムガード        |
