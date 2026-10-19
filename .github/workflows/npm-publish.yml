@@ -1,0 +1,106 @@
+name: Publish to npm
+
+# Publishes @escalated-dev/escalated-nestjs when a GitHub release is published.
+# Re-run for an existing tag with "Run workflow" (workflow_dispatch) and the tag name.
+# Without an NPM_TOKEN secret (or the NPM_TRUSTED_PUBLISHING variable) the publish
+# step is skipped with a notice instead of failing. See RELEASE.md.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (e.g. v1.2.2)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ env.TAG }}
+
+      - name: Verify package.json version matches the tag
+        run: |
+          pkg_version="$(node -p "require('./package.json').version")"
+          tag_version="${TAG#v}"
+          if [ "$pkg_version" != "$tag_version" ]; then
+            echo "::error::package.json version ($pkg_version) does not match tag $TAG"
+            exit 1
+          fi
+          echo "Publishing version $pkg_version from $TAG"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+          cache: npm
+
+      # Trusted publishing (OIDC) needs npm >= 11.5.1.
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --runInBand
+
+      # Packs, installs the tarball into a clean consumer and boots EscalatedModule.
+      - name: Installed-package check
+        run: npm run test:package
+
+      - name: Verify package contents
+        run: |
+          npm pack --dry-run --json --ignore-scripts > "$RUNNER_TEMP/pack.json"
+          node - "$RUNNER_TEMP/pack.json" <<'JS'
+          const fs = require('node:fs');
+          const pkg = require(process.cwd() + '/package.json');
+          const [packed] = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const files = new Set(packed.files.map((f) => f.path));
+          const norm = (p) => p.replace(/^\.\//, '');
+          const problems = [];
+          for (const field of ['main', 'types']) {
+            if (pkg[field] && !files.has(norm(pkg[field]))) problems.push(`${field} (${pkg[field]}) is not in the tarball`);
+          }
+          const banned = [...files].filter((p) => /^(test|tests|\.github|docker)\//.test(p) || /(^|\/)\.env/.test(p));
+          if (banned.length) problems.push(`unexpected files: ${banned.slice(0, 10).join(', ')}`);
+          console.log(`${packed.name}@${packed.version}: ${packed.entryCount} files, ${packed.size} bytes packed`);
+          if (problems.length) {
+            for (const p of problems) console.log(`::error::${p}`);
+            process.exit(1);
+          }
+          JS
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TRUSTED_PUBLISHING: ${{ vars.NPM_TRUSTED_PUBLISHING }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ] && [ "$TRUSTED_PUBLISHING" != "true" ]; then
+            echo "::notice title=npm publish skipped::skipping: NPM_TOKEN not configured (and NPM_TRUSTED_PUBLISHING is not 'true'). See RELEASE.md."
+            exit 0
+          fi
+          version="$(node -p "require('./package.json').version")"
+          if npm view "$(node -p "require('./package.json').name")@$version" version >/dev/null 2>&1; then
+            echo "::notice title=npm publish skipped::$version is already on npm."
+            exit 0
+          fi
+          dist_tag=latest
+          case "$version" in *-*) dist_tag=next ;; esac
+          npm publish --provenance --access public --tag "$dist_tag"
