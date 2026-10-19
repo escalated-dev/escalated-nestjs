@@ -49,10 +49,6 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: npm
 
-      # Trusted publishing (OIDC) needs npm >= 11.5.1.
-      - name: Update npm
-        run: npm install -g npm@latest
-
       - run: npm ci
 
       # Same order as CI (test.yml): tests run before dist/ exists.
@@ -87,6 +83,13 @@ jobs:
             process.exit(1);
           }
           JS
+
+      # Install and test with the npm bundled with Node: newer npm releases skip
+      # dependency install scripts (better-sqlite3's native build) and refuse
+      # remote tarball dependencies by default. Trusted publishing (OIDC) needs
+      # npm >= 11.5.1, so upgrade only for the publish step.
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Publish
         env:
