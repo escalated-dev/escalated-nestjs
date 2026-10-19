@@ -4,8 +4,15 @@
   "description": "Embedded helpdesk module for NestJS applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "assets",
+    "templates"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
     "test": "jest",
     "test:cov": "jest --coverage",
     "test:package": "node scripts/verify-installed-package.cjs",
