@@ -59,7 +59,14 @@ try {
     run(process.execPath, [npmCli, 'pack', '--json', '--pack-destination', directory], root, true),
   )[0];
   const files = new Set(packed.files.map((file) => file.path));
-  for (const required of ['dist/index.js', 'dist/index.d.ts', 'dist/escalated.module.js']) {
+  for (const required of [
+    'dist/index.js',
+    'dist/index.d.ts',
+    'dist/escalated.module.js',
+    // Read at runtime relative to dist/ (widget-script.controller, newsletter renderer).
+    'assets/widget/escalated-widget.js',
+    'templates/newsletter/themes/default.hbs',
+  ]) {
     assert(files.has(required), `Published package is missing ${required}`);
   }
   const consumer = path.join(directory, 'consumer');

@@ -4,8 +4,15 @@
   "description": "Embedded helpdesk module for NestJS applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "assets",
+    "templates"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
     "test": "jest",
     "test:cov": "jest --coverage",
     "test:package": "node scripts/verify-installed-package.cjs",
@@ -41,7 +48,7 @@
     "typeorm": "^0.3.0"
   },
   "dependencies": {
-    "@escalated-dev/locale": "github:escalated-dev/escalated-locale#v0.1.8",
+    "@escalated-dev/locale": "^0.1.8",
     "@nestjs-modules/mailer": "^3.0.2",
     "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/platform-socket.io": "^11.2.7",
