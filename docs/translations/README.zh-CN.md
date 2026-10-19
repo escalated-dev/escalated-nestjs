@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | 链接的基本 URL                      |
 | `maxFileSize`         | `number`   | `10485760`    | 最大上传大小（字节）                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook 重试次数                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | 小部件的 CORS 来源                 |
+| `widgetOrigins`       | `string[]` | `[]`          | 小部件的 CORS 来源                 |
 | `adminGuard`          | `class`    | --            | 管理员路由的自定义守卫           |
 | `agentGuard`          | `class`    | --            | 客服人员路由的自定义守卫           |
 | `customerGuard`       | `class`    | --            | 客户路由的自定义守卫        |

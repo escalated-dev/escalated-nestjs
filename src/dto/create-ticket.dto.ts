@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsIn, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsIn, IsArray, IsObject, MaxLength } from 'class-validator';
 import { UserId } from '../config/user-id-column';
 
 export class CreateTicketDto {
@@ -43,4 +43,9 @@ export class CreateTicketDto {
 
   @IsOptional()
   customFields?: Record<string, any>;
+
+  /** Flat map of host parameters, e.g. from an embedded widget. */
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, string | number | boolean> | null;
 }

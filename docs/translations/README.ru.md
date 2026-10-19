@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | Базовый URL для ссылок                      |
 | `maxFileSize`         | `number`   | `10485760`    | Макс. размер загрузки в байтах                |
 | `webhookMaxRetries`   | `number`   | `3`           | Количество повторов webhook                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | CORS-источники для виджета                 |
+| `widgetOrigins`       | `string[]` | `[]`          | CORS-источники для виджета                 |
 | `adminGuard`          | `class`    | --            | Пользовательский guard для маршрутов администратора           |
 | `agentGuard`          | `class`    | --            | Пользовательский guard для маршрутов агента           |
 | `customerGuard`       | `class`    | --            | Пользовательский guard для маршрутов клиента        |

@@ -3,7 +3,7 @@ const tsParser = require('@typescript-eslint/parser');
 
 module.exports = [
   {
-    ignores: ['.eslintrc.js', 'eslint.config.js', 'jest.config.js', 'dist/**'],
+    ignores: ['.eslintrc.js', 'eslint.config.js', 'jest.config.js', 'dist/**', 'assets/**'],
   },
   ...tsPlugin.configs['flat/recommended'],
   {

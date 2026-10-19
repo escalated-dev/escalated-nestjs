@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | عنوان URL الأساسي للروابط                      |
 | `maxFileSize`         | `number`   | `10485760`    | الحد الأقصى لحجم الرفع بالبايت                |
 | `webhookMaxRetries`   | `number`   | `3`           | محاولات إعادة المحاولة للـ Webhook                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | مصادر CORS للأداة                 |
+| `widgetOrigins`       | `string[]` | `[]`          | مصادر CORS للأداة                 |
 | `adminGuard`          | `class`    | --            | حارس مخصص لمسارات المسؤول           |
 | `agentGuard`          | `class`    | --            | حارس مخصص لمسارات الوكيل           |
 | `customerGuard`       | `class`    | --            | حارس مخصص لمسارات العميل        |

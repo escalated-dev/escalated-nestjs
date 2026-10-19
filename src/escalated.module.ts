@@ -1,4 +1,4 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { DynamicModule, MiddlewareConsumer, Module, NestModule, Provider } from '@nestjs/common';
 import { TypeOrmModule, getDataSourceToken } from '@nestjs/typeorm';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { DataSource } from 'typeorm';
@@ -107,6 +107,7 @@ import {
   SESInboundParser,
   InboundRouterService,
   AutomationService,
+  WidgetOriginsService,
 } from './services';
 
 import {
@@ -143,6 +144,10 @@ import { WidgetController } from './controllers/widget/widget.controller';
 import { AgentChatController } from './controllers/agent/chat.controller';
 import { AttachmentController } from './controllers/agent/attachment.controller';
 import { WidgetChatController } from './controllers/widget/chat.controller';
+import { WidgetScriptController } from './controllers/widget/widget-script.controller';
+
+// Middleware
+import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
 
 // Guards
 import { ApiTokenGuard } from './guards/api-token.guard';
@@ -244,6 +249,7 @@ const services = [
   SESInboundParser,
   InboundRouterService,
   AutomationService,
+  WidgetOriginsService,
 ];
 
 const controllers = [
@@ -269,13 +275,24 @@ const controllers = [
   WidgetController,
   AgentChatController,
   WidgetChatController,
+  WidgetScriptController,
   AttachmentController,
   InboundEmailController,
   ApiAuthController,
 ];
 
 @Module({})
-export class EscalatedModule {
+export class EscalatedModule implements NestModule {
+  /**
+   * CORS for embedding the widget on other sites, on every widget and widget
+   * chat route (not on `embed.js`, which is public to every origin).
+   */
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(WidgetCorsMiddleware)
+      .forRoutes(...routesOf(WidgetController, WidgetChatController));
+  }
+
   static forRoot(options: EscalatedModuleOptions = {}): DynamicModule {
     const mergedOptions = { ...defaultOptions, ...options };
     validateTicketAccess(mergedOptions);

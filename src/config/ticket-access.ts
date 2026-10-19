@@ -12,6 +12,7 @@ import { Observable } from 'rxjs';
 import type { EscalatedModuleOptions } from './escalated.config';
 import type { UserId } from './user-id-column';
 import { Ticket } from '../entities/ticket.entity';
+import { embedOrigin } from './widget-embed';
 
 export interface AccountIdentity {
   type: string;
@@ -140,7 +141,8 @@ export class TicketAccess {
   }
 
   async requestActor(request: any): Promise<TicketActor | null> {
-    if (!this.enabled()) return null;
+    // A widget embedded on another site is always a guest.
+    if (!this.enabled() || embedOrigin(request)) return null;
     const user = this.options.userResolver?.(request) ?? request.user;
     const id = request.apiUserId ?? user?.id;
     return id == null ? null : this.resolveUser(id);

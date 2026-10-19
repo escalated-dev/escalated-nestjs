@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | URL base per i link                      |
 | `maxFileSize`         | `number`   | `10485760`    | Dimensione max upload in byte                |
 | `webhookMaxRetries`   | `number`   | `3`           | Tentativi di ripetizione webhook                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | Origini CORS per il widget                 |
+| `widgetOrigins`       | `string[]` | `[]`          | Origini CORS per il widget                 |
 | `adminGuard`          | `class`    | --            | Guard personalizzato per rotte admin           |
 | `agentGuard`          | `class`    | --            | Guard personalizzato per rotte agente           |
 | `customerGuard`       | `class`    | --            | Guard personalizzato per rotte cliente        |

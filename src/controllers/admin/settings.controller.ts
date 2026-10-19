@@ -5,6 +5,7 @@ import {
   Put,
   Delete,
   Body,
+  BadRequestException,
   Param,
   Query,
   ParseIntPipe,
@@ -18,6 +19,10 @@ import { TagService } from '../../services/tag.service';
 import { CustomFieldService } from '../../services/custom-field.service';
 import { RoleService } from '../../services/role.service';
 import { AuditLogService } from '../../services/audit-log.service';
+import {
+  WIDGET_ALLOWED_ORIGINS_SETTING,
+  invalidOriginEntries,
+} from '../../services/widget-origins.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
@@ -43,8 +48,36 @@ export class AdminSettingsController {
   @Put('settings')
   @AuditAction('update', 'settings')
   async updateSettings(@Body() body: { key: string; value: any; type?: string; group?: string }[]) {
-    await this.settingsService.setMany(body);
+    const settings = (Array.isArray(body) ? body : []).map((setting) =>
+      setting?.key === WIDGET_ALLOWED_ORIGINS_SETTING
+        ? this.widgetOriginsSetting(setting)
+        : setting,
+    );
+    await this.settingsService.setMany(settings);
     return { success: true };
+  }
+
+  /**
+   * `widget_allowed_origins`: one origin per line (or comma separated), each
+   * `scheme://host[:port]` or `https://*.example.com`. A list is stored as
+   * newline-separated text. Rejects the whole update if any entry is invalid.
+   */
+  private widgetOriginsSetting<T extends { value: any }>(setting: T): T {
+    const value = setting.value ?? '';
+    const isList = Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+    if (typeof value !== 'string' && !isList) {
+      throw new BadRequestException([
+        `${WIDGET_ALLOWED_ORIGINS_SETTING} must be text with one origin per line`,
+      ]);
+    }
+    const invalid = invalidOriginEntries(value);
+    if (invalid.length > 0) {
+      throw new BadRequestException([
+        `${WIDGET_ALLOWED_ORIGINS_SETTING} must list origins such as https://shop.example.com ` +
+          `or https://*.example.com, without a path; not valid: ${invalid.join(', ')}`,
+      ]);
+    }
+    return { ...setting, value: isList ? value.join('\n') : value, type: 'string' };
   }
 
   // Departments

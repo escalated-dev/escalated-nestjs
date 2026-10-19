@@ -167,7 +167,14 @@ export interface EscalatedModuleOptions {
   /** Webhook retry attempts (default: 3) */
   webhookMaxRetries?: number;
 
-  /** Widget allowed origins (CORS) */
+  /**
+   * Other sites that may embed the widget: `scheme://host[:port]` origins,
+   * optionally `https://*.example.com` for every subdomain (not the apex).
+   * Merged with `ESCALATED_WIDGET_ALLOWED_ORIGINS` (comma separated) and the
+   * `widget_allowed_origins` admin setting. A bare `*` and entries with a path
+   * are ignored. Empty by default: no other site gets CORS access until listed.
+   * See docs/embedding-the-widget.md.
+   */
   widgetOrigins?: string[];
 
   /**
@@ -270,7 +277,7 @@ export const defaultOptions: EscalatedModuleOptions = {
   maxFileSize: 10 * 1024 * 1024,
   allowedFileTypes: ['image/*', 'application/pdf', 'text/*', '.doc', '.docx', '.xls', '.xlsx'],
   webhookMaxRetries: 3,
-  widgetOrigins: ['*'],
+  widgetOrigins: [],
   fallbackLanguage: 'en',
   guestRateLimit: {
     enabled: true,

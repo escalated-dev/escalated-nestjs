@@ -30,6 +30,7 @@ export class ChatSessionService {
     visitorEmail?: string,
     initialMessage?: string,
     departmentId?: number,
+    metadata?: Record<string, string | number | boolean> | null,
   ): Promise<ChatSession> {
     const route = await this.chatRoutingService.resolve(departmentId);
     const ticket = await this.ticketService.create(
@@ -39,6 +40,7 @@ export class ChatSessionService {
         priority: 'medium',
         channel: 'chat',
         departmentId: route.departmentId ?? departmentId,
+        metadata: metadata ?? null,
       },
       0, // system/guest requester
     );

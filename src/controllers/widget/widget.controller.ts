@@ -18,6 +18,9 @@ import { KnowledgeBaseService } from '../../services/knowledge-base.service';
 import { SatisfactionRatingService } from '../../services/satisfaction-rating.service';
 import { ContactService } from '../../services/contact.service';
 import { SettingsService } from '../../services/settings.service';
+import { DepartmentService } from '../../services/department.service';
+import { embedOrigin } from '../../services/widget-origins.service';
+import { sanitizeWidgetMetadata } from '../../services/widget-metadata';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
 import { GuestThrottle, GuestThrottleGuard } from '../../guards/guest-throttle.guard';
@@ -46,6 +49,8 @@ interface WidgetCreateTicketBody {
   subject: string;
   description: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  /** Host parameters from the embedding page (order number, page URL, ...). */
+  metadata?: Record<string, unknown>;
 }
 
 @Controller('escalated/widget')
@@ -57,6 +62,7 @@ export class WidgetController {
     private readonly satisfactionService: SatisfactionRatingService,
     private readonly contactService: ContactService,
     private readonly settingsService: SettingsService,
+    private readonly departmentService: DepartmentService,
     private readonly eventEmitter: EventEmitter2,
     @Inject(ESCALATED_OPTIONS)
     private readonly options: EscalatedModuleOptions,
@@ -85,6 +91,36 @@ export class WidgetController {
     }
   }
 
+  /**
+   * What the widget needs before it renders. The widget routes are always
+   * mounted, so the widget is always enabled; colour, position and greeting
+   * come from the `widget_color`, `widget_position` and `widget_greeting`
+   * settings.
+   */
+  @Get('config')
+  async config() {
+    const [color, position, greeting, departments] = await Promise.all([
+      this.settingsService.getTyped('widget_color', '#4F46E5'),
+      this.settingsService.getTyped('widget_position', 'bottom-right'),
+      this.settingsService.getTyped('widget_greeting', 'Hi there! How can we help?'),
+      this.departmentService.findAll(),
+    ]);
+
+    return {
+      enabled: true,
+      color,
+      position,
+      greeting,
+      departments: departments
+        .filter((department) => department.isActive !== false)
+        .map(({ id, name }) => ({ id, name })),
+      kb_enabled: this.options.enableKnowledgeBase !== false,
+      guest_tickets_enabled: true,
+      // Tickets and chats keep host parameters sent as `metadata`.
+      accepts_metadata: true,
+    };
+  }
+
   @Post('tickets')
   @GuestThrottle('ticket')
   @UseGuards(GuestThrottleGuard, PublicSubmitThrottleGuard)
@@ -92,8 +128,10 @@ export class WidgetController {
     let contactId: number | null = null;
     let requesterId: UserId;
 
+    const metadata = sanitizeWidgetMetadata(body.metadata, embedOrigin(req));
     const policy = await this.resolveGuestPolicy();
-    const authenticatedUserId: UserId | undefined = req?.user?.id;
+    // A request embedded on another site is always a guest.
+    const authenticatedUserId: UserId | undefined = embedOrigin(req) ? undefined : req?.user?.id;
 
     if (body.email) {
       const contact = await this.contactService.findOrCreateByEmail(body.email, body.name);
@@ -117,6 +155,7 @@ export class WidgetController {
         priority: body.priority || 'medium',
         channel: 'widget',
         contactId,
+        metadata,
       },
       requesterId,
     );

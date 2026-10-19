@@ -10,6 +10,7 @@ import { KnowledgeBaseService } from '../../src/services/knowledge-base.service'
 import { SatisfactionRatingService } from '../../src/services/satisfaction-rating.service';
 import { ContactService } from '../../src/services/contact.service';
 import { SettingsService } from '../../src/services/settings.service';
+import { DepartmentService } from '../../src/services/department.service';
 import { ESCALATED_OPTIONS } from '../../src/config/escalated.config';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
@@ -63,6 +64,7 @@ async function buildModule(
       { provide: TicketService, useValue: ticketService },
       { provide: ContactService, useValue: contactService },
       { provide: SettingsService, useValue: settingsService },
+      { provide: DepartmentService, useValue: { findAll: jest.fn().mockResolvedValue([]) } },
       {
         provide: ReplyService,
         useValue: {

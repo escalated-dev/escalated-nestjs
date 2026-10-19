@@ -107,7 +107,7 @@ export class AppModule {}
 | `appUrl`              | `string`   | --            | 링크 기본 URL                      |
 | `maxFileSize`         | `number`   | `10485760`    | 최대 업로드 크기 (바이트)                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook 재시도 횟수                  |
-| `widgetOrigins`       | `string[]` | `['*']`       | 위젯 CORS 출처                 |
+| `widgetOrigins`       | `string[]` | `[]`          | 위젯 CORS 출처                 |
 | `adminGuard`          | `class`    | --            | 관리자 경로용 커스텀 가드           |
 | `agentGuard`          | `class`    | --            | 에이전트 경로용 커스텀 가드           |
 | `customerGuard`       | `class`    | --            | 고객 경로용 커스텀 가드        |

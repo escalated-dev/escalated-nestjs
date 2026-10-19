@@ -185,6 +185,20 @@ describe('TicketService', () => {
       expect(tagRepo.findBy).toHaveBeenCalled();
     });
 
+    it('persists metadata when provided and null otherwise', async () => {
+      await service.create({ subject: 's', description: 'd', metadata: { plan: 'pro' } }, 0);
+      await service.create({ subject: 's', description: 'd' }, 0);
+
+      expect(ticketRepo.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ metadata: { plan: 'pro' } }),
+      );
+      expect(ticketRepo.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ metadata: null }),
+      );
+    });
+
     it('persists contactId when provided', async () => {
       const dto = { subject: 's', description: 'd', contactId: 42 };
       await service.create(dto, 0);
