@@ -55,11 +55,12 @@ jobs:
 
       - run: npm ci
 
-      - name: Build
-        run: npm run build
-
+      # Same order as CI (test.yml): tests run before dist/ exists.
       - name: Test
         run: npm test -- --runInBand
+
+      - name: Build
+        run: npm run build
 
       # Packs, installs the tarball into a clean consumer and boots EscalatedModule.
       - name: Installed-package check
