@@ -48,7 +48,7 @@
     "typeorm": "^0.3.0"
   },
   "dependencies": {
-    "@escalated-dev/locale": "github:escalated-dev/escalated-locale#v0.1.8",
+    "@escalated-dev/locale": "^0.1.8",
     "@nestjs-modules/mailer": "^3.0.2",
     "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/platform-socket.io": "^11.2.7",
