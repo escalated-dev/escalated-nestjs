@@ -47,6 +47,14 @@ export class ChatSession {
   @Column({ type: Date })
   lastActivityAt: Date;
 
+  /**
+   * SHA-256 of the token the widget visitor uses to reach this chat. The token
+   * itself is only returned once, when the chat starts.
+   */
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 64, nullable: true, select: false })
+  visitorTokenHash: string | null;
+
   @ManyToOne(() => Ticket, { nullable: true })
   @JoinColumn({ name: 'ticketId' })
   ticket: Ticket;

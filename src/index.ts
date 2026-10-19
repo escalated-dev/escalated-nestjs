@@ -44,6 +44,7 @@ export {
 } from './config/ticket-access';
 export { TicketAccessAndRouting1791918000000 } from './migrations/1791918000000-TicketAccessAndRouting';
 export { WidgetTicketMetadata1792281600000 } from './migrations/1792281600000-WidgetTicketMetadata';
+export { WidgetChatVisitorToken1792368000000 } from './migrations/1792368000000-WidgetChatVisitorToken';
 
 // Widget embedding
 export { WidgetCorsMiddleware } from './middleware/widget-cors.middleware';

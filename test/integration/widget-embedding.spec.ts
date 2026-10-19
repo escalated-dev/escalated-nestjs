@@ -58,6 +58,7 @@ function makeStubs(settings: Record<string, string>) {
     contacts: { findOrCreateByEmail: jest.fn(async () => ({ id: 99, email: 'jane@example.com' })) },
     chat: {
       start: jest.fn(async () => ({ id: 5, ticketId: 1, status: 'waiting', visitorName: 'John' })),
+      issueVisitorToken: jest.fn(async () => 'visitor-token'),
     },
     departments: {
       findAll: jest.fn(async () => [
@@ -368,6 +369,7 @@ describe('cross-origin widget embedding', () => {
         kb_enabled: true,
         guest_tickets_enabled: true,
         accepts_metadata: true,
+        status_lookup_enabled: false,
       });
     });
 
