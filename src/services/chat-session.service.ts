@@ -2,13 +2,34 @@ import { Injectable, NotFoundException, BadRequestException, Optional } from '@n
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { createHash, randomBytes } from 'crypto';
 import { ChatSession } from '../entities/chat-session.entity';
+import { AgentProfile } from '../entities/agent-profile.entity';
+import { Reply } from '../entities/reply.entity';
 import { TicketService } from './ticket.service';
 import { ReplyService } from './reply.service';
 import { ChatRoutingService } from './chat-routing.service';
 import { ESCALATED_EVENTS } from '../events/escalated.events';
 import { TicketAccess } from '../config/ticket-access';
 import { UserId } from '../config/user-id-column';
+
+/** One line of a chat transcript, in the shape the shared widget reads. */
+export interface ChatTranscriptMessage {
+  id: number;
+  body: string;
+  is_agent: boolean;
+  author: { name: string };
+  created_at: string;
+}
+
+function hashVisitorToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+/** Visitor messages are stored with no user (0); anything else is staff. */
+function isStaffAuthor(userId: UserId | null | undefined): boolean {
+  return userId !== null && userId !== undefined && userId !== '' && String(userId) !== '0';
+}
 
 @Injectable()
 export class ChatSessionService {
@@ -20,6 +41,9 @@ export class ChatSessionService {
     private readonly chatRoutingService: ChatRoutingService,
     private readonly eventEmitter: EventEmitter2,
     @Optional() private readonly access?: TicketAccess,
+    @Optional()
+    @InjectRepository(AgentProfile)
+    private readonly agentProfileRepo?: Repository<AgentProfile>,
   ) {}
 
   /**
@@ -161,6 +185,86 @@ export class ChatSessionService {
       throw new NotFoundException(`Chat session not found: ${id}`);
     }
     return session;
+  }
+
+  /**
+   * Give the visitor of a chat a fresh, unguessable token. Only its hash is
+   * stored, so the token is returned once and cannot be read back.
+   */
+  async issueVisitorToken(session: ChatSession): Promise<string> {
+    const token = randomBytes(32).toString('base64url');
+    await this.chatSessionRepo.update(session.id, { visitorTokenHash: hashVisitorToken(token) });
+    return token;
+  }
+
+  /** The chat a visitor token belongs to; 404 for anything else. */
+  async findByVisitorToken(token: string): Promise<ChatSession> {
+    const session = token
+      ? await this.chatSessionRepo.findOne({
+          where: { visitorTokenHash: hashVisitorToken(token) },
+        })
+      : null;
+    if (!session) {
+      throw new NotFoundException('Chat session not found');
+    }
+    return session;
+  }
+
+  /**
+   * The public transcript of a chat: the visitor's opening message, then every
+   * non-internal reply, oldest first.
+   */
+  async transcript(session: ChatSession): Promise<{
+    messages: ChatTranscriptMessage[];
+    agent: { name: string } | null;
+  }> {
+    const ticket = await this.ticketService.findById(session.ticketId);
+    const replies: Reply[] = (await this.replyService.findByTicketId(session.ticketId, false))
+      .filter((reply) => reply.type !== 'note')
+      .slice(-100);
+    const names = await this.staffNames([...replies.map((reply) => reply.userId), session.agentId]);
+    const staffName = (id: UserId) => names.get(String(id)) ?? 'Agent';
+
+    const messages: ChatTranscriptMessage[] = replies.map((reply) => ({
+      id: reply.id,
+      body: reply.body,
+      is_agent: isStaffAuthor(reply.userId),
+      author: { name: isStaffAuthor(reply.userId) ? staffName(reply.userId) : session.visitorName },
+      created_at: new Date(reply.createdAt).toISOString(),
+    }));
+    if (ticket.description) {
+      messages.unshift({
+        id: 0,
+        body: ticket.description,
+        is_agent: false,
+        author: { name: session.visitorName },
+        created_at: new Date(ticket.createdAt).toISOString(),
+      });
+    }
+
+    return {
+      messages,
+      agent: isStaffAuthor(session.agentId) ? { name: staffName(session.agentId!) } : null,
+    };
+  }
+
+  /** Records visitor activity for the typing signal; ended chats refuse it. */
+  async visitorTyping(session: ChatSession): Promise<void> {
+    if (session.status === 'ended') {
+      throw new BadRequestException('Chat session has ended.');
+    }
+    await this.chatSessionRepo.update(session.id, { lastActivityAt: new Date() });
+  }
+
+  private async staffNames(ids: Array<UserId | null | undefined>): Promise<Map<string, string>> {
+    const staff = [...new Set(ids.filter(isStaffAuthor))] as UserId[];
+    if (!staff.length || !this.agentProfileRepo) return new Map();
+    const profiles = await this.agentProfileRepo.find({ where: { userId: In(staff) } });
+    return new Map(
+      profiles
+        .filter((profile) => profile.displayName)
+        .map((profile) => [String(profile.userId), profile.displayName]),
+    );
   }
 
   async findByTicketId(ticketId: number): Promise<ChatSession | null> {

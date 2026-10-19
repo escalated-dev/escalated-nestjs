@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Inject,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -21,6 +22,7 @@ import { SettingsService } from '../../services/settings.service';
 import { DepartmentService } from '../../services/department.service';
 import { embedOrigin } from '../../services/widget-origins.service';
 import { sanitizeWidgetMetadata } from '../../services/widget-metadata';
+import { widgetDepartmentId } from './widget-input';
 import { GuestAccessGuard } from '../../guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from '../../guards/public-submit-throttle.guard';
 import { GuestThrottle, GuestThrottleGuard } from '../../guards/guest-throttle.guard';
@@ -49,6 +51,8 @@ interface WidgetCreateTicketBody {
   subject: string;
   description: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  /** An active department; empty means none. */
+  department_id?: number | string | null;
   /** Host parameters from the embedding page (order number, page URL, ...). */
   metadata?: Record<string, unknown>;
 }
@@ -118,6 +122,10 @@ export class WidgetController {
       guest_tickets_enabled: true,
       // Tickets and chats keep host parameters sent as `metadata`.
       accepts_metadata: true,
+      // Looking a ticket up needs mailbox verification, which this backend
+      // does not offer; widgets hide their Status tab. There is deliberately
+      // no lookup by a claimed email address.
+      status_lookup_enabled: false,
     };
   }
 
@@ -129,6 +137,7 @@ export class WidgetController {
     let requesterId: UserId;
 
     const metadata = sanitizeWidgetMetadata(body.metadata, embedOrigin(req));
+    const departmentId = await widgetDepartmentId(this.departmentService, body.department_id);
     const policy = await this.resolveGuestPolicy();
     // A request embedded on another site is always a guest.
     const authenticatedUserId: UserId | undefined = embedOrigin(req) ? undefined : req?.user?.id;
@@ -154,6 +163,7 @@ export class WidgetController {
         description: body.description,
         priority: body.priority || 'medium',
         channel: 'widget',
+        departmentId,
         contactId,
         metadata,
       },
@@ -168,6 +178,9 @@ export class WidgetController {
     }
 
     return {
+      message: 'Ticket created successfully.',
+      reference: ticket.referenceNumber,
+      guest_access_token: ticket.guestAccessToken,
       ticket,
       guestAccessToken: ticket.guestAccessToken,
     };
@@ -192,6 +205,45 @@ export class WidgetController {
   ) {
     const ticket = req.guestTicket;
     return this.replyService.create(id, { body: body.body, type: 'reply' }, ticket.requesterId);
+  }
+
+  /**
+   * Knowledge-base search in the shape the shared widget reads. Queries
+   * shorter than two characters find nothing.
+   */
+  @Get('articles')
+  async articles(@Query('q') query?: string) {
+    this.ensureKnowledgeBase();
+    const q = typeof query === 'string' ? query.trim().slice(0, 200) : '';
+    if (q.length < 2) return { articles: [] };
+
+    const articles = await this.kbService.searchArticles(q);
+    return {
+      articles: articles.map((article) => ({
+        title: article.title,
+        slug: article.slug,
+        excerpt: excerptOf(article.excerpt || article.content),
+      })),
+    };
+  }
+
+  /** One published article, in the shape the shared widget reads. */
+  @Get('articles/:slug')
+  async article(@Param('slug') slug: string) {
+    this.ensureKnowledgeBase();
+    const article = await this.kbService.findArticleBySlug(slug);
+    return {
+      title: article.title,
+      slug: article.slug,
+      body: article.content,
+      category: article.category?.name ?? null,
+    };
+  }
+
+  private ensureKnowledgeBase(): void {
+    if (this.options.enableKnowledgeBase === false) {
+      throw new NotFoundException('Knowledge base is disabled');
+    }
   }
 
   // KB search for widget
@@ -219,4 +271,13 @@ export class WidgetController {
   ) {
     return this.satisfactionService.submitByToken(token, body.rating, body.comment);
   }
+}
+
+/** Plain-text preview of an article: tags stripped, whitespace collapsed, 150 characters. */
+function excerptOf(text: string | null | undefined): string {
+  const plain = (text ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return plain.length > 150 ? `${plain.slice(0, 147).trimEnd()}...` : plain;
 }

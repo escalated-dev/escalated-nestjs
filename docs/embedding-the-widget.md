@@ -110,7 +110,8 @@ Returns what the widget needs before it renders:
   "departments": [{ "id": 1, "name": "Sales" }],
   "kb_enabled": true,
   "guest_tickets_enabled": true,
-  "accepts_metadata": true
+  "accepts_metadata": true,
+  "status_lookup_enabled": false
 }
 ```
 
@@ -118,6 +119,39 @@ The widget routes are always mounted, so `enabled` is always true. `color`,
 `position` and `greeting` come from the `widget_color`, `widget_position` and
 `widget_greeting` settings. `departments` lists active departments.
 `kb_enabled` follows the `enableKnowledgeBase` option.
+`status_lookup_enabled` is `false`: looking up a ticket needs mailbox
+verification, which this backend does not offer, so the widget hides its
+Status tab. There is no lookup by a claimed email address.
+
+### Widget routes
+
+The shared widget calls these routes, relative to `/escalated/widget`.
+Validation errors answer 422 with `{ message, errors: { field: [message] } }`.
+
+| Route | Request | Answer |
+|---|---|---|
+| `GET /articles?q=` | `q`, 2 characters or more | `{ articles: [{ title, slug, excerpt }] }` (published articles only) |
+| `GET /articles/:slug` | | `{ title, slug, body, category }` |
+| `POST /tickets` | `name`, `email`, `subject`, `description`, `department_id?`, `metadata?` | 201 `{ message, reference, guest_access_token, ticket, guestAccessToken }` |
+| `GET /chat/availability` | `department_id?` | `{ available, queueDepth }` |
+| `POST /chat/start` | `name`, `email`, `department_id?`, `message?`, `metadata?` | 201 `{ id, session_id, ticketId, status, visitorName, createdAt }` |
+| `GET /chat/:id/messages` | | `{ messages: [{ id, body, is_agent, author: { name }, created_at }], agent, typing, ended }` |
+| `POST /chat/:id/messages` | `{ body }` | the stored reply |
+| `POST /chat/:id/typing` | | `{ message }` |
+| `POST /chat/:id/end` | | `{ id, status, endedAt }` |
+| `POST /chat/:id/rate` | `{ rating: 1-5, comment? }`, after the chat ends | `{ message }` |
+
+`department_id` must name an active department; empty means none. The older
+`departmentId` field on chat start and `kb/search`, `kb/articles/:slug` keep
+working.
+
+The chat `id` is a random token issued when the chat starts. Only its SHA-256
+is stored, it is the only way to reach the chat from the widget, and an
+unknown token answers 404. Numeric session ids are not accepted on the
+`/chat/:id/*` routes. Existing installations add the token column with the
+exported `WidgetChatVisitorToken1792368000000` migration; chats started before
+it have no token and cannot be continued from the widget. `typing` is always
+`null`: agents' typing goes over the websocket gateway and is not stored.
 
 ### Host parameters
 
@@ -135,11 +169,14 @@ rejected with 400. Treat all of it as unverified visitor input.
 Existing installations add the column with the exported migration:
 
 ```ts
-import { WidgetTicketMetadata1792281600000 } from '@escalated-dev/escalated-nestjs';
+import {
+  WidgetChatVisitorToken1792368000000,
+  WidgetTicketMetadata1792281600000,
+} from '@escalated-dev/escalated-nestjs';
 
 new DataSource({
   // ...
-  migrations: [WidgetTicketMetadata1792281600000],
+  migrations: [WidgetTicketMetadata1792281600000, WidgetChatVisitorToken1792368000000],
 });
 ```
 

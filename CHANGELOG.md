@@ -29,11 +29,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sanitised flat map, with `embedded_on` set from the request's Origin) in a
   new nullable `metadata` column on tickets. Existing installations run the
   exported `WidgetTicketMetadata1792281600000` migration.
+- The widget API matches the shared widget: `GET /escalated/widget/articles`
+  and `/articles/:slug`, a top-level `reference` and `guest_access_token` on
+  `POST /tickets` (existing keys kept), `department_id` on ticket create, chat
+  start and availability (validated against active departments), and
+  `GET /chat/:id/messages`, `POST /chat/:id/typing` and `/chat/:id/rate`.
+  `/config` returns `status_lookup_enabled: false`, so the widget hides its
+  Status tab.
 
 ### Changed
 
 - `widgetOrigins` defaults to `[]` instead of `['*']`. The old value was never
   applied; a bare `*` is now ignored rather than allowing every site.
+
+### Security
+
+- Widget chat routes no longer accept the sequential session id. `POST
+  /chat/start` returns a random token as `id` (the numeric id moves to
+  `session_id`), only its SHA-256 is stored, and `/chat/:id/*` answers 404 for
+  anything else. Before, anyone could post into or end another visitor's chat
+  by guessing its number. Existing installations run the exported
+  `WidgetChatVisitorToken1792368000000` migration; chats started before it
+  cannot be continued from the widget.
 
 ### Fixed
 
