@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTokenService } from '../../services/api-token.service';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
+import { requireUserId } from '../../config/request-user';
 
 @UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/api-tokens')
@@ -29,7 +30,7 @@ export class AdminApiTokenController {
     @Body() body: { name: string; abilities?: string[]; expiresAt?: string },
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.apiTokenService.create({
       name: body.name,
       userId,

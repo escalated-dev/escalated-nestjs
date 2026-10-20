@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { ImportService } from '../../services/import.service';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
+import { requireUserId } from '../../config/request-user';
 
 @UseGuards(EscalatedAdminGuard)
 @Controller('escalated/admin/import')
@@ -9,7 +10,7 @@ export class AdminImportController {
 
   @Post('tickets')
   async importTickets(@Body('data') data: any[], @Req() req: any) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.importService.importTickets(data, userId);
   }
 

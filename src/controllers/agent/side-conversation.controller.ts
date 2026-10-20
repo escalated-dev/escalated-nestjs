@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Body, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { SideConversationService } from '../../services/side-conversation.service';
 import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
+import { requireUserId } from '../../config/request-user';
 
 @UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets/:ticketId/side-conversations')
@@ -18,7 +19,7 @@ export class AgentSideConversationController {
     @Body() body: { subject: string; body: string; participants?: number[] },
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.sideConversationService.create({
       ticketId,
       subject: body.subject,
@@ -34,7 +35,7 @@ export class AgentSideConversationController {
     @Body('body') body: string,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.sideConversationService.addReply(id, userId, body);
   }
 
