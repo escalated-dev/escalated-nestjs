@@ -1,6 +1,6 @@
 {
   "name": "@escalated-dev/escalated-nestjs",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Embedded helpdesk module for NestJS applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
