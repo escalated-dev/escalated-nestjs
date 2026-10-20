@@ -14,6 +14,9 @@ import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escala
 
 export type EscalatedRouteGroup = 'admin' | 'agent' | 'customer';
 
+/** Request property naming the route group whose host guard admitted the request. */
+export const ESCALATED_ROUTE_GROUP = 'escalatedRouteGroup';
+
 /** A host guard as accepted by `adminGuard` / `agentGuard` / `customerGuard`. */
 export type EscalatedHostGuard = Type<CanActivate> | CanActivate;
 
@@ -49,8 +52,13 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const hostGuards = this.groups
-      .map((group) => this.options?.[OPTION_FOR_GROUP[group]] as EscalatedHostGuard | undefined)
-      .filter((guard): guard is EscalatedHostGuard => Boolean(guard));
+      .map((group) => ({
+        group,
+        guard: this.options?.[OPTION_FOR_GROUP[group]] as EscalatedHostGuard | undefined,
+      }))
+      .filter((entry): entry is { group: EscalatedRouteGroup; guard: EscalatedHostGuard } =>
+        Boolean(entry.guard),
+      );
 
     if (hostGuards.length === 0) {
       this.warnOnce(
@@ -64,9 +72,13 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
     // With several groups (attachments are shared by agents and customers) any
     // one guard admitting the request is enough. The last refusal wins otherwise.
     let refusal: unknown;
-    for (const hostGuard of hostGuards) {
+    for (const { group, guard } of hostGuards) {
       try {
-        if (await this.runHostGuard(hostGuard, context)) {
+        if (await this.runHostGuard(guard, context)) {
+          // Shared routes (attachments) authorise differently per group.
+          if (context.getType() === 'http') {
+            context.switchToHttp().getRequest()[ESCALATED_ROUTE_GROUP] = group;
+          }
           return true;
         }
       } catch (error) {

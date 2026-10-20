@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { AttachmentController } from '../../src/controllers/agent/attachment.controller';
 
 describe('AttachmentController', () => {
+  const agentRequest = { escalatedRouteGroup: 'agent' };
   const makeResponse = () =>
     ({
       set: jest.fn(),
@@ -20,6 +21,7 @@ describe('AttachmentController', () => {
         mimeType: 'application/pdf',
         ...attachment,
       })),
+      ownerOf: jest.fn(async () => ({ ticket: { id: 1, requesterId: 5 }, isPublic: true })),
     } as any);
   }
 
@@ -31,7 +33,7 @@ describe('AttachmentController', () => {
     const controller = makeController({ filePath });
     const res = makeResponse();
 
-    await controller.download(1, res);
+    await controller.download(1, res, agentRequest);
 
     expect(res.sendFile).toHaveBeenCalledWith(filePath);
   });
@@ -47,7 +49,7 @@ describe('AttachmentController', () => {
       const controller = makeController({ filePath: join('attachments', 'report.pdf') });
       const res = makeResponse();
 
-      await controller.download(1, res);
+      await controller.download(1, res, agentRequest);
 
       expect(res.sendFile).toHaveBeenCalledWith(join(root, 'attachments', 'report.pdf'));
     } finally {
@@ -66,7 +68,9 @@ describe('AttachmentController', () => {
       const controller = makeController({ filePath: join('..', 'secret.txt') });
       const res = makeResponse();
 
-      await expect(controller.download(1, res)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(controller.download(1, res, agentRequest)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(res.sendFile).not.toHaveBeenCalled();
     } finally {
       process.chdir(previousCwd);
@@ -84,7 +88,7 @@ describe('AttachmentController', () => {
     });
     const res = makeResponse();
 
-    await controller.download(1, res);
+    await controller.download(1, res, agentRequest);
 
     expect(res.set).toHaveBeenCalledWith({
       'Content-Type': 'application/pdf',
