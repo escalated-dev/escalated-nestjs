@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   agent can no longer bypass department visibility by naming another agent.
 
 ### Changed
+- The bundled widget is now `@escalated-dev/escalated` 0.12.3. It keeps its script settings when `embed.js` is placed in the page `<head>`, and Enter no longer picks a stale mention suggestion.
 - **Behaviour change for misconfigured hosts:** agent and admin routes that
   act as a user (ticket replies, notes, assignment, side conversations,
   macros, API tokens, imports, 2FA, agent chat) now answer `401` when the host
