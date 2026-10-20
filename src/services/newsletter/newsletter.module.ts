@@ -1,6 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { escalatedRepositoryProviders } from '../../config/connection';
+import { ESCALATED_OPTIONS, EscalatedModuleOptions } from '../../config/escalated.config';
 import { AgentProfile } from '../../entities/agent-profile.entity';
 import { Contact } from '../../entities/contact.entity';
 import { EscalatedSettings } from '../../entities/escalated-settings.entity';
@@ -72,12 +73,16 @@ const newsletterServices = [
 
 @Module({})
 export class NewsletterModule {
-  static forRoot(connection?: string): DynamicModule {
+  static forRoot(options: EscalatedModuleOptions = {}): DynamicModule {
+    const connection = options.connection;
     return {
       module: NewsletterModule,
       imports: [TypeOrmModule.forFeature(newsletterEntities, connection)],
       controllers: newsletterControllers,
       providers: [
+        // The newsletter services, controllers and guard read the package
+        // options; this module does not see EscalatedModule's providers.
+        { provide: ESCALATED_OPTIONS, useValue: options },
         ...escalatedRepositoryProviders(newsletterEntities, connection),
         ...newsletterServices,
         NewsletterEnabledGuard,

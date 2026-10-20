@@ -42,7 +42,7 @@ export class CustomerTicketController {
     const ticket = await this.ticketService.findById(id);
     const userId = req.user?.id;
 
-    if (ticket.requesterId !== userId) {
+    if (String(ticket.requesterId) !== String(userId)) {
       throw new ForbiddenException('You can only view your own tickets');
     }
 
@@ -92,7 +92,7 @@ export class CustomerTicketController {
     if (!userId) throw new ForbiddenException();
 
     const ticket = await this.ticketService.findById(id);
-    if (ticket.requesterId !== userId) {
+    if (String(ticket.requesterId) !== String(userId)) {
       throw new ForbiddenException('You can only reply to your own tickets');
     }
 
@@ -110,6 +110,11 @@ export class CustomerTicketController {
   ) {
     const userId = req.user?.id;
     if (!userId) throw new ForbiddenException();
+
+    const ticket = await this.ticketService.findById(id);
+    if (String(ticket.requesterId) !== String(userId)) {
+      throw new ForbiddenException('You can only rate your own tickets');
+    }
 
     return this.satisfactionService.create({
       ticketId: id,

@@ -88,7 +88,9 @@ are calculated from ticket creation.
 Follower notification recipient IDs and chat assignment candidates are checked
 against access. Hosts sending their own notifications should call `allowsUser`
 at delivery time. Guest-contact email remains governed by the guest ownership
-flow. WebSocket connections use the host-authenticated request identity; guest
-clients supply `handshake.auth.guestToken`. Subscriptions and each delivery check
+flow. WebSocket connections use the host-authenticated identity (`websocketAuth`,
+`userResolver` or the handshake request's `user`); guest clients supply
+`handshake.auth.guestToken` or `handshake.auth.chatToken`. Unidentified
+sockets are refused in every visibility mode. Subscriptions and each delivery check
 the current ticket membership/account, including broad creation and queue events.
 Raw broadcast streams must not be exposed separately to restricted clients.

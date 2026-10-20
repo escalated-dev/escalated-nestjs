@@ -5,22 +5,34 @@ import {
   Res,
   ParseIntPipe,
   NotFoundException,
+  ForbiddenException,
+  Optional,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { basename, isAbsolute, relative, resolve } from 'path';
 import { existsSync } from 'fs';
 import { AttachmentService } from '../../services/attachment.service';
-import { EscalatedAgentOrCustomerGuard } from '../../guards/escalated-route.guard';
+import {
+  ESCALATED_ROUTE_GROUP,
+  EscalatedAgentOrCustomerGuard,
+} from '../../guards/escalated-route.guard';
+import { TicketAccess } from '../../config/ticket-access';
+import { requireUserId } from '../../config/request-user';
 
 @UseGuards(EscalatedAgentOrCustomerGuard)
 @Controller('escalated/attachments')
 export class AttachmentController {
-  constructor(private readonly attachmentService: AttachmentService) {}
+  constructor(
+    private readonly attachmentService: AttachmentService,
+    @Optional() private readonly access?: TicketAccess,
+  ) {}
 
   @Get(':id/download')
-  async download(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+  async download(@Param('id', ParseIntPipe) id: number, @Res() res: Response, @Req() req: any) {
     const attachment = await this.attachmentService.findById(id);
+    await this.authorize(req, attachment);
 
     const filePath = this.resolveStoredPath(attachment.filePath);
     if (!existsSync(filePath)) {
@@ -33,6 +45,27 @@ export class AttachmentController {
     });
 
     return res.sendFile(filePath);
+  }
+
+  /**
+   * Mirrors Laravel's AttachmentAccess: agents need access to the ticket;
+   * customers only get public attachments of tickets they requested.
+   */
+  private async authorize(req: any, attachment: any): Promise<void> {
+    const { ticket, isPublic } = await this.attachmentService.ownerOf(attachment);
+    if (!ticket) throw new NotFoundException('Attachment not found');
+
+    if (req?.[ESCALATED_ROUTE_GROUP] === 'agent') {
+      if (this.access && !(await this.access.allows(this.access.currentActor(), ticket))) {
+        throw new NotFoundException('Attachment not found');
+      }
+      return;
+    }
+
+    const userId = requireUserId(req);
+    if (!isPublic || String(ticket.requesterId) !== String(userId)) {
+      throw new ForbiddenException('You can only download attachments on your own tickets');
+    }
   }
 
   private resolveStoredPath(storedPath: string): string {

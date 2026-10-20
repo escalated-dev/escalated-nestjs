@@ -18,6 +18,7 @@ import {
   Reply,
   TicketLink,
   SlaPolicy,
+  ChatSession,
 } from '../../src/entities';
 
 jest.setTimeout(60000);
@@ -139,6 +140,57 @@ describe('configurable ticket access over HTTP', () => {
     const result = await fetch(`${base}/escalated/agent/tickets`);
     expect(result.status).toBe(200);
     expect((await result.json()).data.map((ticket: Ticket) => ticket.id)).toEqual([visible.id]);
+  });
+
+  it('takes the chat agent from authentication and scopes chats to visible tickets', async () => {
+    const chats = source.getRepository(ChatSession);
+    const hiddenChat = await chats.save({
+      ticketId: hidden.id,
+      visitorName: 'Hidden visitor',
+      status: 'waiting',
+      lastActivityAt: new Date(),
+    });
+    const visibleChat = await chats.save({
+      ticketId: visible.id,
+      visitorName: 'Visible visitor',
+      status: 'waiting',
+      lastActivityAt: new Date(),
+    });
+    try {
+      // A restricted agent naming an administrator must not bypass visibility.
+      const smuggled = await fetch(`${base}/escalated/agent/chat/${hiddenChat.id}/accept`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ agentId: 9 }),
+      });
+      expect(smuggled.status).toBe(404);
+      expect((await chats.findOneByOrFail({ id: hiddenChat.id })).agentId).toBeNull();
+      expect((await fetch(`${base}/escalated/agent/chat/${hiddenChat.id}`)).status).toBe(404);
+      const ended = await fetch(`${base}/escalated/agent/chat/${hiddenChat.id}/end`, {
+        method: 'POST',
+      });
+      expect(ended.status).toBe(404);
+
+      const accepted = await fetch(`${base}/escalated/agent/chat/${visibleChat.id}/accept`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ agentId: 9 }),
+      });
+      expect(accepted.status).toBe(201);
+      expect(String((await chats.findOneByOrFail({ id: visibleChat.id })).agentId)).toBe('1');
+      const message = await fetch(`${base}/escalated/agent/chat/${visibleChat.id}/messages`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ body: 'Hello', agentId: 9 }),
+      });
+      expect(message.status).toBe(201);
+      expect(String((await message.json()).userId)).toBe('1');
+      const active = await fetch(`${base}/escalated/agent/chat/active?agentId=9`);
+      expect((await active.json()).map((chat: ChatSession) => chat.id)).toEqual([visibleChat.id]);
+    } finally {
+      await chats.delete({ id: In([hiddenChat.id, visibleChat.id]) });
+      await source.getRepository(Reply).delete({ ticketId: visible.id });
+    }
   });
 
   it('scopes search', async () => {

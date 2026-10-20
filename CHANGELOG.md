@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- WebSocket gateway (`enableWebsockets: true`): every connection must now
+  identify a host user (new `websocketAuth` option, else `userResolver` on the
+  handshake request, else a handshake `user`) or present a guest token
+  (`handshake.auth.guestToken`) or widget chat token (`handshake.auth.chatToken`);
+  anything else is disconnected. This applies with the default
+  `visibility: 'all'`, not only with restricted access. New tickets, the chat
+  queue, SLA and assignment events go to agent sockets only; internal notes are
+  never sent to guest or customer sockets; guest tokens are stripped from every
+  payload. Agent roles come from `ticketAccess.resolveUser`; without it an
+  identified user is treated as a customer.
+- Attachment downloads check ownership like Laravel's `AttachmentAccess`:
+  customers only get attachments on tickets they requested, never ones on
+  internal notes; agents are checked against ticket access.
+- Customers can no longer rate another customer's ticket
+  (`POST /escalated/customer/tickets/:id/rate`).
+- Agent live chat takes the agent from authentication. `agentId` in the body
+  or query of `accept`, `messages` and `active` is ignored, so a restricted
+  agent can no longer bypass department visibility by naming another agent.
+
+### Changed
+- **Behaviour change for misconfigured hosts:** agent and admin routes that
+  act as a user (ticket replies, notes, assignment, side conversations,
+  macros, API tokens, imports, 2FA, agent chat) now answer `401` when the host
+  guard admits a request without setting `req.user.id` (or an API token's
+  `req.apiUserId`). They previously acted as user id `1`.
+
+### Fixed
+- `sla.breached` fires once per missed deadline instead of every scheduler
+  tick. Tickets get `slaFirstResponseBreached` and `slaResolutionBreached`
+  flags (as in Laravel); existing installations run the exported
+  `SlaBreachFlags1792454400000` migration, which backfills tickets already
+  breached.
+- Customers are no longer emailed copies of their own replies (inbound email,
+  widget); only replies by someone else are sent to the requester.
+- The module boots with `enableNewsletters: true` (the newsletter module could
+  not resolve the package options).
+
 ## [1.2.2] - 2026-10-19
 
 ## [1.2.1] - 2026-10-19

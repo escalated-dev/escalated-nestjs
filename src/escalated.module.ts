@@ -351,9 +351,7 @@ export class EscalatedModule implements NestModule {
         // Newsletter system (optional, disabled by default). When the flag is
         // false the module isn't added to imports — entities don't register
         // and services don't instantiate.
-        ...(mergedOptions.enableNewsletters
-          ? [NewsletterModule.forRoot(mergedOptions.connection)]
-          : []),
+        ...(mergedOptions.enableNewsletters ? [NewsletterModule.forRoot(mergedOptions)] : []),
       ],
       controllers: conditionalControllers,
       providers: [

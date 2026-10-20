@@ -5,6 +5,8 @@ import { EscalatedSchedulerService } from '../../src/scheduling/escalated-schedu
 import { AutomationService } from '../../src/services/automation.service';
 import { Automation } from '../../src/entities/automation.entity';
 import { AdminAutomationController } from '../../src/controllers/admin/automation.controller';
+import { NewsletterRendererService } from '../../src/services/newsletter/newsletter-renderer.service';
+import { NewsletterPermissionService } from '../../src/services/newsletter/newsletter-permission.service';
 
 /**
  * Boots the real EscalatedModule rather than hand-assembling providers, so a
@@ -31,5 +33,12 @@ describe('EscalatedModule boot', () => {
     expect(moduleRef.get(AutomationService)).toBeInstanceOf(AutomationService);
     expect(moduleRef.get(getRepositoryToken(Automation))).toBeDefined();
     expect(moduleRef.get(AdminAutomationController)).toBeInstanceOf(AdminAutomationController);
+  });
+
+  it('compiles with newsletters enabled', async () => {
+    moduleRef = await bootEscalatedModule({ escalated: { enableNewsletters: true } });
+
+    expect(moduleRef.get(NewsletterRendererService)).toBeInstanceOf(NewsletterRendererService);
+    expect(moduleRef.get(NewsletterPermissionService)).toBeInstanceOf(NewsletterPermissionService);
   });
 });

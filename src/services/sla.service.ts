@@ -94,45 +94,61 @@ export class SlaService {
     });
   }
 
+  /**
+   * Records each missed deadline once and emits `sla.breached` once for it,
+   * like Laravel's per-type breach flags. Tickets already flagged are skipped
+   * on later ticks, so webhooks and listeners do not fire every minute.
+   */
   async checkBreaches(): Promise<void> {
     const now = new Date();
 
-    // Check first response breaches
     const firstResponseBreaches = await this.ticketRepo.find({
       where: {
         firstResponseDueAt: LessThan(now),
         firstRespondedAt: IsNull(),
-        slaBreached: false,
+        slaFirstResponseBreached: false,
         isMerged: false,
       },
     });
 
     for (const ticket of firstResponseBreaches) {
-      await this.ticketRepo.update(ticket.id, { slaBreached: true });
+      if (!(await this.flagBreach(ticket, 'slaFirstResponseBreached'))) continue;
       this.eventEmitter.emit(
         ESCALATED_EVENTS.SLA_BREACHED,
         new SlaBreachedEvent(ticket, 'first_response'),
       );
     }
 
-    // Check resolution breaches
     const resolutionBreaches = await this.ticketRepo.find({
       where: {
         resolutionDueAt: LessThan(now),
         resolvedAt: IsNull(),
+        slaResolutionBreached: false,
         isMerged: false,
       },
     });
 
     for (const ticket of resolutionBreaches) {
-      if (!ticket.slaBreached) {
-        await this.ticketRepo.update(ticket.id, { slaBreached: true });
-      }
+      if (!(await this.flagBreach(ticket, 'slaResolutionBreached'))) continue;
       this.eventEmitter.emit(
         ESCALATED_EVENTS.SLA_BREACHED,
         new SlaBreachedEvent(ticket, 'resolution'),
       );
     }
+  }
+
+  /** Sets the flag only if still unset, so concurrent ticks emit once. */
+  private async flagBreach(
+    ticket: Ticket,
+    flag: 'slaFirstResponseBreached' | 'slaResolutionBreached',
+  ): Promise<boolean> {
+    const result = await this.ticketRepo.update(
+      { id: ticket.id, [flag]: false } as any,
+      { [flag]: true, slaBreached: true } as any,
+    );
+    if (result.affected === 0) return false;
+    Object.assign(ticket, { [flag]: true, slaBreached: true });
+    return true;
   }
 
   private async findMatchingPolicy(ticket: Ticket): Promise<SlaPolicy | null> {

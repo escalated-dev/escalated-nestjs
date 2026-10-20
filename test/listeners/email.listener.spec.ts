@@ -130,6 +130,29 @@ describe('EmailListener', () => {
       expect(emailService.sendReplyPosted).not.toHaveBeenCalled();
     });
 
+    it.each([
+      ['a guest (inbound email / widget)', 0],
+      ['a signed-in requester', 55],
+    ])('does not email %s a copy of their own reply', async (_who, requesterId) => {
+      contactService.findById.mockResolvedValue({ id: 42, email: 'cust@example.com', name: 'C' });
+      const ticket = { id: 1, contactId: 42, requesterId, guestAccessToken: 'tok' };
+      const reply = { id: 6, body: 'my own words', isInternal: false, type: 'reply' };
+
+      await listener.onReplyCreated(new TicketReplyCreatedEvent(reply, ticket, requesterId));
+
+      expect(emailService.sendReplyPosted).not.toHaveBeenCalled();
+    });
+
+    it('still emails agent replies on guest tickets', async () => {
+      contactService.findById.mockResolvedValue({ id: 42, email: 'cust@example.com', name: 'C' });
+      const ticket = { id: 1, contactId: 42, requesterId: 0, guestAccessToken: 'tok' };
+      const reply = { id: 7, body: 'agent answer', isInternal: false, type: 'reply' };
+
+      await listener.onReplyCreated(new TicketReplyCreatedEvent(reply, ticket, 7));
+
+      expect(emailService.sendReplyPosted).toHaveBeenCalledTimes(1);
+    });
+
     it('skips when ticket has no contactId', async () => {
       const reply = { id: 5, body: 'hi', isInternal: false };
       await listener.onReplyCreated(

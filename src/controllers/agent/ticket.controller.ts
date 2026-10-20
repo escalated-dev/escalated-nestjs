@@ -27,6 +27,7 @@ import { TicketFilterDto } from '../../dto/ticket-filter.dto';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
 import { ESCALATED_EVENTS, TicketCustomActionTriggeredEvent } from '../../events/escalated.events';
 import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
+import { requireUserId } from '../../config/request-user';
 
 @UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets')
@@ -87,7 +88,7 @@ export class AgentTicketController {
   @Post()
   @AuditAction('create', 'ticket')
   async create(@Body() dto: CreateTicketDto, @Req() req: any) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.ticketService.create(dto, userId);
   }
 
@@ -98,7 +99,7 @@ export class AgentTicketController {
     @Body() dto: UpdateTicketDto,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.ticketService.update(id, dto, userId);
   }
 
@@ -116,7 +117,7 @@ export class AgentTicketController {
     @Body() dto: CreateReplyDto,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.replyService.create(id, dto, userId);
   }
 
@@ -134,7 +135,7 @@ export class AgentTicketController {
     @Req() req: any,
   ) {
     const user = req.user ?? null;
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
 
     const action = this.ticketActions.find(actionKey);
     if (!action) {
@@ -169,7 +170,7 @@ export class AgentTicketController {
     @Param('targetId', ParseIntPipe) targetId: number,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.ticketService.merge(id, targetId, userId);
   }
 
@@ -179,7 +180,7 @@ export class AgentTicketController {
     @Body('replyIds') replyIds: number[],
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.ticketService.split(id, replyIds || [], userId);
   }
 
@@ -189,7 +190,7 @@ export class AgentTicketController {
     @Body('snoozedUntil') snoozedUntil: string,
     @Req() req: any,
   ) {
-    const userId = req.user?.id || req.apiUserId || 1;
+    const userId = requireUserId(req);
     return this.ticketService.update(id, { snoozedUntil }, userId);
   }
 

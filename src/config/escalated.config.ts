@@ -72,6 +72,20 @@ export interface EscalatedModuleOptions {
   /** Enable WebSocket broadcasting (default: false) */
   enableWebsockets?: boolean;
 
+  /**
+   * Identifies the host user behind a Socket.IO connection (e.g. by verifying
+   * a token from `socket.handshake.auth`). Return the user id, or null for a
+   * guest. When unset, `userResolver(handshake request)` is used, then a
+   * `user` set on the handshake request by host socket middleware.
+   *
+   * Agent features (agent rooms, the chat queue, new-ticket broadcasts and
+   * internal notes) also need `ticketAccess.resolveUser` to confirm the role;
+   * without it an identified user is treated as a customer. Connections with
+   * neither a user nor a guest token (`handshake.auth.guestToken` /
+   * `handshake.auth.chatToken`) are refused.
+   */
+  websocketAuth?: (socket: any) => UserId | null | undefined | Promise<UserId | null | undefined>;
+
   /** Enable knowledge base feature (default: true) */
   enableKnowledgeBase?: boolean;
 
