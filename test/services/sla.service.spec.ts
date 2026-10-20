@@ -6,6 +6,8 @@ import { SlaPolicy } from '../../src/entities/sla-policy.entity';
 import { BusinessSchedule } from '../../src/entities/business-schedule.entity';
 import { Ticket } from '../../src/entities/ticket.entity';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
+import { DataSource } from 'typeorm';
+import * as entities from '../../src/entities';
 
 describe('SlaService', () => {
   let service: SlaService;
@@ -120,7 +122,10 @@ describe('SlaService', () => {
 
       await service.checkBreaches();
 
-      expect(ticketRepo.update).toHaveBeenCalledWith(1, { slaBreached: true });
+      expect(ticketRepo.update).toHaveBeenCalledWith(
+        { id: 1, slaFirstResponseBreached: false },
+        { slaFirstResponseBreached: true, slaBreached: true },
+      );
       expect(eventEmitter.emit).toHaveBeenCalledWith(
         ESCALATED_EVENTS.SLA_BREACHED,
         expect.objectContaining({ breachType: 'first_response' }),
@@ -148,6 +153,60 @@ describe('SlaService', () => {
 
       expect(result.getHours()).toBe(10);
       expect(result.getMinutes()).toBe(30);
+    });
+  });
+});
+
+describe('SlaService breach detection on a real database', () => {
+  let source: DataSource;
+
+  beforeAll(async () => {
+    source = new DataSource({
+      type: 'better-sqlite3',
+      database: ':memory:',
+      entities: Object.values(entities).filter((value) => typeof value === 'function'),
+      synchronize: true,
+    });
+    await source.initialize();
+  });
+
+  afterAll(async () => {
+    await source?.destroy();
+  });
+
+  it('emits each breach once, not on every scheduler tick', async () => {
+    const ticket = await source.getRepository(Ticket).save({
+      referenceNumber: 'SLA-1',
+      subject: 'Late',
+      description: 'Overdue',
+      requesterId: 1,
+      firstResponseDueAt: new Date(Date.now() - 120000),
+      resolutionDueAt: new Date(Date.now() - 60000),
+    });
+    const emitted: Array<{ name: string; breachType: string }> = [];
+    const emitter = {
+      emit: (name: string, event: any) => emitted.push({ name, breachType: event.breachType }),
+    } as unknown as EventEmitter2;
+    const service = new SlaService(
+      source.getRepository(SlaPolicy),
+      source.getRepository(BusinessSchedule),
+      source.getRepository(Ticket),
+      emitter,
+    );
+
+    await service.checkBreaches();
+    await service.checkBreaches();
+    await service.checkBreaches();
+
+    expect(emitted).toEqual([
+      { name: ESCALATED_EVENTS.SLA_BREACHED, breachType: 'first_response' },
+      { name: ESCALATED_EVENTS.SLA_BREACHED, breachType: 'resolution' },
+    ]);
+    const stored = await source.getRepository(Ticket).findOneByOrFail({ id: ticket.id });
+    expect(stored).toMatchObject({
+      slaBreached: true,
+      slaFirstResponseBreached: true,
+      slaResolutionBreached: true,
     });
   });
 });

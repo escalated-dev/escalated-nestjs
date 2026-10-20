@@ -104,6 +104,14 @@ export class Ticket {
   @Column({ default: false })
   slaBreached: boolean;
 
+  /** Set once when the first-response deadline is missed (Laravel `sla_first_response_breached`). */
+  @Column({ default: false })
+  slaFirstResponseBreached: boolean;
+
+  /** Set once when the resolution deadline is missed (Laravel `sla_resolution_breached`). */
+  @Column({ default: false })
+  slaResolutionBreached: boolean;
+
   // Snooze
   @Column({ type: Date, nullable: true })
   snoozedUntil: Date;
