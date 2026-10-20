@@ -62,11 +62,7 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
         typeof auth.guestToken === 'string' && auth.guestToken ? auth.guestToken : null;
       client.data.escalatedChatToken =
         typeof auth.chatToken === 'string' && auth.chatToken ? auth.chatToken : null;
-      if (
-        userId == null &&
-        !client.data.escalatedGuestToken &&
-        !client.data.escalatedChatToken
-      ) {
+      if (userId == null && !client.data.escalatedGuestToken && !client.data.escalatedChatToken) {
         client.disconnect(true);
         return;
       }

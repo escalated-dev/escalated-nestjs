@@ -590,13 +590,25 @@ Enable WebSocket broadcasting for live ticket updates:
 ```typescript
 EscalatedModule.forRoot({
   enableWebsockets: true,
+  // Who is connecting: return the host user id, or null for a guest.
+  websocketAuth: async (socket) => verifyMyToken(socket.handshake.auth.token),
+  // Agent rooms, the chat queue and internal notes need confirmed roles.
+  ticketAccess: { resolveUser: async (id) => ({ id, isAgent: true, isAdmin: false }) },
 });
 ```
+
+Every connection must identify a host user or present a guest token
+(`auth.guestToken`, the ticket's guest access token, or `auth.chatToken`, the
+widget chat visitor token); anything else is disconnected. Without
+`websocketAuth`, `userResolver(handshakeRequest)` or a `user` set on the
+handshake request by your socket middleware is used. New tickets, queue, SLA and
+assignment events go to agents only, internal notes never reach guest or
+customer sockets, and guest tokens are never broadcast.
 
 Client-side (Socket.IO):
 
 ```javascript
-const socket = io('/escalated');
+const socket = io('/escalated', { auth: { token } });
 socket.emit('join:ticket', { ticketId: 1 });
 socket.on('ticket:updated', (data) => console.log('Updated:', data));
 socket.on('ticket:reply', (data) => console.log('New reply:', data));
