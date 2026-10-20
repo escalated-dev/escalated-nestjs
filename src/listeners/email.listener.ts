@@ -69,10 +69,16 @@ export class EmailListener {
       subject: string;
       contactId: number | null;
       guestAccessToken: string;
+      requesterId?: unknown;
     };
 
     if (reply.isInternal || reply.type === 'note') return;
     if (!ticket.contactId) return;
+    // Only notify the requester of replies written by someone else (agents),
+    // as Laravel does. Mailing customers their own replies (inbound email,
+    // widget) risks a loop with an autoresponder on their side.
+    const authorId = event.userId ?? (reply as { userId?: unknown }).userId;
+    if (authorId != null && String(authorId) === String(ticket.requesterId)) return;
 
     try {
       const contact = await this.contactService.findById(ticket.contactId);
