@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-10-21
+
+### Upgrading
+- **Breaking for guests (verified guest access):** a widget ticket with an
+  `email` and a widget chat now need the emailed code. Deploy a widget with the
+  code step first, run the exported `VerifiedGuestAccess1792627200000`
+  migration, set `guestAccess.secret` (or `ESCALATED_GUEST_ACCESS_SECRET`) to
+  the same value on every instance, and configure `mail` or
+  `guestAccess.sendCode`. Permanent guest tokens stop opening tickets unless
+  `guestAccess.legacyTokens: true` is set for a transition. See
+  `docs/guest-access.md`.
+- Register and run the exported `SlaWarningFlags1792540800000` migration
+  (adds `slaFirstResponseWarned` and `slaResolutionWarned` to tickets).
+- Webhook event names changed: public replies are sent as `reply.created`
+  (was `ticket.reply_created`) and internal notes only as `note.created`.
+  Stored subscriptions under old names keep receiving the canonical event.
+- Unassigning a ticket emits `TICKET_UNASSIGNED` instead of `TICKET_ASSIGNED`
+  with a null assignee; update host listeners that relied on the old shape.
+
 ### Added
 - The shared event vocabulary (ADR 2026-10-21). New events, each sent to
   webhooks and offered as a workflow trigger under its canonical name:
