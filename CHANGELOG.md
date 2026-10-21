@@ -47,7 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   /escalated/customer/tickets/:ticket`, the allow-listed requester payload
   without internal notes), and `reply`, `close`, `reopen` and `rate` under
   `/escalated/customer/tickets/:ticket/`.
-  Pages not rendered yet (74 of 91, tracked in
+  Admin screens: `Escalated/Admin/Settings` (with `supported_settings`, the
+  keys this backend stores: `show_powered_by` and the widget appearance and
+  allowed origins; saved by `POST /escalated/admin/settings`),
+  `Admin/Workflows/Index` and `Admin/Workflows/Form` (create and edit, on the
+  workflow admin routes and the builder's wire contract, with field errors),
+  `Admin/Departments/Index` and `Form`, and `Admin/Tags/Index`.
+  Pages not rendered yet (68 of 91, tracked in
   `test/page-name-parity.spec.ts`): `Admin/ApiTokens/Index`,
   `Admin/AuditLog/Index`, `Admin/Automations/Form`,
   `Admin/Automations/Index`, `Admin/BusinessHours/Form`,
@@ -55,7 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Admin/Capacity/Index`, `Admin/CustomFields/Form`,
   `Admin/CustomFields/Index`, `Admin/CustomObjects/Form`,
   `Admin/CustomObjects/Index`, `Admin/CustomObjects/Records`,
-  `Admin/Departments/Form`, `Admin/Departments/Index`,
   `Admin/EscalationRules/Form`, `Admin/EscalationRules/Index`,
   `Admin/Import/Connect`, `Admin/Import/Index`, `Admin/Import/Mapping`,
   `Admin/Import/Progress`, `Admin/Import/Review`,
@@ -67,20 +72,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Admin/Reports/CsatReport`, `Admin/Reports/Dashboard`,
   `Admin/Reports/ResolutionTimes`, `Admin/Reports/ResponseTimes`,
   `Admin/Reports/SlaReport`, `Admin/Reports/SlaTrends`, `Admin/Roles/Form`,
-  `Admin/Roles/Index`, `Admin/Settings`, `Admin/Settings/CsatSettings`,
+  `Admin/Roles/Index`, `Admin/Settings/CsatSettings`,
   `Admin/Settings/DataRetention`, `Admin/Settings/DatabaseConnection`,
   `Admin/Settings/EmailSettings`, `Admin/Settings/PublicTickets`,
   `Admin/Settings/Sandbox`, `Admin/Settings/SsoSettings`,
   `Admin/Settings/TwoFactor`, `Admin/Skills/Form`, `Admin/Skills/Index`,
   `Admin/SlaPolicies/Form`, `Admin/SlaPolicies/Index`,
-  `Admin/Statuses/Form`, `Admin/Statuses/Index`, `Admin/Tags/Index`,
-  `Admin/Tickets/Index`, `Admin/Tickets/Show`, `Admin/Users/Index`,
-  `Admin/Webhooks/DeliveryLog`, `Admin/Webhooks/Form`,
-  `Admin/Webhooks/Index`, `Admin/Workflows/Builder`, `Admin/Workflows/Form`,
-  `Admin/Workflows/Index`, `Admin/Workflows/Logs`,
-  `Auth/TwoFactorChallenge`, `Customer/KnowledgeBase/Article`,
-  `Customer/KnowledgeBase/Index`, `Error`, `Guest/Create`, `Guest/Show`,
-  `Plugin/Page`.
+  `Admin/Statuses/Form`, `Admin/Statuses/Index`, `Admin/Tickets/Index`,
+  `Admin/Tickets/Show`, `Admin/Users/Index`, `Admin/Webhooks/DeliveryLog`,
+  `Admin/Webhooks/Form`, `Admin/Webhooks/Index`, `Admin/Workflows/Builder`,
+  `Admin/Workflows/Logs`, `Auth/TwoFactorChallenge`,
+  `Customer/KnowledgeBase/Article`, `Customer/KnowledgeBase/Index`, `Error`,
+  `Guest/Create`, `Guest/Show`, `Plugin/Page`.
 - The shared event vocabulary (ADR 2026-10-21). New events, each sent to
   webhooks and offered as a workflow trigger under its canonical name:
   `ticket.unassigned`, `ticket.department_changed`, `ticket.priority_changed`,
@@ -121,6 +124,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET /escalated/customer/tickets/:id` and `POST .../:id/rate` also accept a
   ticket reference, and a rating must be a whole number from 1 to 5 (a
   non-numeric rating used to be stored).
+- With `ui.enabled`, the admin settings, department, tag and workflow routes
+  refuse a state-changing browser request (asking for HTML) that carries
+  neither `X-Inertia` nor `X-Requested-With`. API clients are unaffected.
 - The newsletter admin controllers' `inertia()` / `redirect()` results become
   real Inertia responses when `ui.enabled`; unchanged JSON otherwise.
 - **Breaking for guests (as in Laravel):** a widget ticket with an `email`

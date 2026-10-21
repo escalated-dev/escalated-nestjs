@@ -157,6 +157,7 @@ import { uiEnabled } from './ui/ui-options';
 import { UiDataService } from './ui/ui-data.service';
 import { AgentUiController } from './ui/controllers/agent-ui.controller';
 import { CustomerUiController } from './ui/controllers/customer-ui.controller';
+import { AdminUiController } from './ui/controllers/admin-ui.controller';
 
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
@@ -344,7 +345,7 @@ export class EscalatedModule implements NestModule {
 
     // The shared screens' own routes (headless when off, the default).
     if (uiEnabled(mergedOptions)) {
-      conditionalControllers.push(AgentUiController, CustomerUiController);
+      conditionalControllers.push(AgentUiController, CustomerUiController, AdminUiController);
     }
 
     return {

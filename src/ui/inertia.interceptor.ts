@@ -48,6 +48,22 @@ function messageOf(error: HttpException): string {
   return Array.isArray(message) ? message.join(' ') : String(message ?? error.message);
 }
 
+/**
+ * Field errors in an exception, as `UiValidationException` carries them or as
+ * the `{ errors: { field: [messages] } }` 422 body the JSON API answers with.
+ */
+function fieldErrors(error: HttpException): Record<string, string> | null {
+  if (error instanceof UiValidationException) return error.errors;
+  const errors = (error.getResponse() as any)?.errors;
+  if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return null;
+  const out: Record<string, string> = {};
+  for (const [field, value] of Object.entries(errors)) {
+    const first = Array.isArray(value) ? value[0] : value;
+    if (typeof first === 'string') out[field] = first;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 @Injectable()
 export class InertiaInterceptor implements NestInterceptor {
   private readonly responder: InertiaResponder;
@@ -85,13 +101,13 @@ export class InertiaInterceptor implements NestInterceptor {
           [400, 404, 409, 422].includes(error.getStatus())
         ) {
           const fallback = sameOriginReferer(request) ?? '/';
-          const reply =
-            error instanceof UiValidationException
-              ? this.responder.invalid(request, fallback, error.errors)
-              : this.responder.redirect(
-                  new InertiaBack(fallback, { error: messageOf(error) }),
-                  request,
-                );
+          const errors = fieldErrors(error);
+          const reply = errors
+            ? this.responder.invalid(request, fallback, errors)
+            : this.responder.redirect(
+                new InertiaBack(fallback, { error: messageOf(error) }),
+                request,
+              );
           throw new InertiaReplyException(reply);
         }
         throw error;
@@ -124,6 +140,29 @@ export class ScriptedRequestGuard {
     const request = context.switchToHttp().getRequest();
     if (['GET', 'HEAD', 'OPTIONS'].includes(String(request.method).toUpperCase())) return true;
     if (!isScriptedRequest(request)) {
+      throw new ForbiddenException('Screen forms must be sent by the Escalated client');
+    }
+    return true;
+  }
+}
+
+/**
+ * For routes shared by the JSON API and the screens: with `ui.enabled`,
+ * refuses a state-changing browser request (one asking for HTML) that a page
+ * script did not send, i.e. another site's plain form. API clients are
+ * unaffected, and nothing changes while the screens are off.
+ */
+@Injectable()
+export class BrowserFormGuard {
+  constructor(
+    @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
+  ) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    if (!uiEnabled(this.options)) return true;
+    const request = context.switchToHttp().getRequest();
+    if (['GET', 'HEAD', 'OPTIONS'].includes(String(request.method).toUpperCase())) return true;
+    if (acceptsHtml(request) && !isScriptedRequest(request)) {
       throw new ForbiddenException('Screen forms must be sent by the Escalated client');
     }
     return true;
