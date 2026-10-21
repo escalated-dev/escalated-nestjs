@@ -14,6 +14,8 @@ import {
   NotFoundException,
   ForbiddenException,
   UseGuards,
+  Inject,
+  Optional,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketService } from '../../services/ticket.service';
@@ -28,10 +30,22 @@ import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.i
 import { ESCALATED_EVENTS, TicketCustomActionTriggeredEvent } from '../../events/escalated.events';
 import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 import { requireUserId } from '../../config/request-user';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import { back, inertia } from '../../ui/inertia';
+import { EscalatedUi } from '../../ui/inertia.interceptor';
+import { wantsPage } from '../../ui/request';
+import { routeUrl } from '../../ui/routes';
+import { UiDataService } from '../../ui/ui-data.service';
+import { serializeActivity, serializeAttachment, serializeReply } from '../../ui/serializers';
 
+/**
+ * The agent ticket JSON API. With `ui.enabled`, the index and show routes also
+ * serve the agent screens to Inertia visits and browser navigations.
+ */
 @UseGuards(EscalatedAgentGuard)
 @Controller('escalated/agent/tickets')
 @UseInterceptors(AuditLogInterceptor)
+@EscalatedUi()
 export class AgentTicketController {
   constructor(
     private readonly ticketService: TicketService,
@@ -39,7 +53,18 @@ export class AgentTicketController {
     private readonly replyService: ReplyService,
     private readonly ticketActions: TicketActionRegistry,
     private readonly eventEmitter: EventEmitter2,
+    @Optional() private readonly ui?: UiDataService,
+    @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
   ) {}
+
+  /** A ticket by numeric id or, as the screens link to it, by reference. */
+  private async findTicket(id: string | number) {
+    if (typeof id === 'number' || /^\d+$/.test(String(id))) {
+      return this.ticketService.findById(Number(id));
+    }
+    if (this.ui) return this.ui.ticket(String(id));
+    throw new NotFoundException('Ticket not found');
+  }
 
   /** Serializes the visible custom actions for a ticket, adding url + method. */
   private customActionsForTicket(ticket: any, user: any): Array<Record<string, any>> {
@@ -51,13 +76,28 @@ export class AgentTicketController {
   }
 
   @Get()
-  async index(@Query() filters: TicketFilterDto) {
+  async index(@Query() filters: TicketFilterDto, @Req() req?: any): Promise<any> {
+    if (this.ui && wantsPage(this.options, req)) {
+      const query = { ...(req.query ?? {}) };
+      return inertia('Escalated/Agent/TicketIndex', {
+        tickets: await this.ui.ticketList(
+          query,
+          requireUserId(req),
+          routeUrl('escalated.agent.tickets.index'),
+        ),
+        filters: query,
+        departments: await this.ui.departmentOptions(),
+        tags: await this.ui.tagOptions(),
+      });
+    }
     return this.ticketService.findAll(filters);
   }
 
   @Get(':id')
-  async show(@Param('id', ParseIntPipe) id: number, @Req() req?: any) {
-    const ticket = await this.ticketService.findById(id);
+  async show(@Param('id') idOrReference: string | number, @Req() req?: any): Promise<any> {
+    const ticket = await this.findTicket(idOrReference);
+    const id = ticket.id;
+    if (this.ui && wantsPage(this.options, req)) return this.page(ticket, req);
     const [replies, activities, chatContext, requesterTicketCount, relatedTickets, subjects] =
       await Promise.all([
         this.replyService.findByTicketId(id, true),
@@ -129,7 +169,7 @@ export class AgentTicketController {
   @Post(':id/actions/:actionKey')
   @AuditAction('custom_action', 'ticket')
   async customAction(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string | number,
     @Param('actionKey') actionKey: string,
     @Body('payload') payload: Record<string, any>,
     @Req() req: any,
@@ -142,7 +182,7 @@ export class AgentTicketController {
       throw new NotFoundException(`Custom action "${actionKey}" not found`);
     }
 
-    const ticket = await this.ticketService.findById(id);
+    const ticket = await this.findTicket(id);
     if (!action.visible(ticket, user)) {
       throw new NotFoundException(`Custom action "${actionKey}" not found`);
     }
@@ -161,7 +201,74 @@ export class AgentTicketController {
       ),
     );
 
+    if (wantsPage(this.options, req)) {
+      return back(routeUrl('escalated.agent.tickets.show', { ticket: ticket.referenceNumber }), {
+        success: 'Custom action dispatched.',
+      });
+    }
     return { message: 'Custom action dispatched.', action: action.key() };
+  }
+
+  /** `Escalated/Agent/TicketShow`, with the props escalated-laravel's Agent TicketController@show sends. */
+  private async page(ticket: any, req: any) {
+    const ui = this.ui!;
+    const userId = requireUserId(req);
+    const id = ticket.id;
+    const [replies, activities, chat, requesterTicketCount, related, subjects] = await Promise.all([
+      this.replyService.findByTicketId(id, true),
+      this.ticketService.getActivities(id),
+      this.ticketService.getChatContext(id),
+      this.ticketService.getRequesterTicketCount(ticket.requesterId),
+      this.ticketService.getRelatedTickets(id),
+      this.ticketSubjectService.serializeForTicket(ticket),
+    ]);
+    const [serialized] = await ui.serializeTickets([ticket]);
+    const directory = await ui.directory([
+      ...replies.map((r) => r.userId),
+      ...activities.map((a) => a.userId),
+    ]);
+    const newestFirst = [...replies].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id,
+    );
+
+    return inertia('Escalated/Agent/TicketShow', {
+      ticket: {
+        ...serialized,
+        replies: newestFirst.map((reply) => serializeReply(reply, directory)),
+        activities: activities.slice(0, 20).map((a) => serializeActivity(a, directory)),
+        attachments: replies.flatMap((reply) => reply.attachments ?? []).map(serializeAttachment),
+        pinned_notes: [],
+        subjects,
+        satisfaction_rating: null,
+        chat_session_id: chat?.chat_session_id ?? null,
+        chat_started_at: chat?.chat_started_at ?? null,
+        chat_messages: (chat?.chat_messages ?? []).map((reply) => serializeReply(reply, directory)),
+        chat_metadata: chat?.chat_metadata ?? null,
+        requester_ticket_count: requesterTicketCount,
+        related_tickets: related.map((t) => ({
+          id: t.id,
+          reference: t.referenceNumber,
+          subject: t.subject,
+          status: t.status,
+        })),
+      },
+      departments: await ui.departmentOptions(),
+      tags: await ui.tagOptions(),
+      cannedResponses: (await ui.cannedResponses(userId, ticket.departmentId)).map((c) => ({
+        id: c.id,
+        title: c.title,
+        body: c.content,
+        short_code: c.shortCode ?? null,
+      })),
+      macros: (await ui.macros(userId)).map((m) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description ?? null,
+      })),
+      is_following: await ui.isFollowing(id, userId),
+      followers_count: await ui.followerCount(id),
+      customActions: this.customActionsForTicket(ticket, req?.user ?? null),
+    });
   }
 
   @Post(':id/merge/:targetId')

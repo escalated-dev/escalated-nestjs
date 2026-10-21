@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Inject, Put, Req } from '@nestjs/common';
+import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
@@ -23,6 +24,7 @@ const SETTING_KEYS = {
   tracking_enabled: 'boolean',
 } as const;
 
+@EscalatedUi()
 @Controller('admin/newsletters/settings')
 export class AdminNewsletterSettingsController {
   constructor(

@@ -152,6 +152,11 @@ import { AttachmentController } from './controllers/agent/attachment.controller'
 import { WidgetChatController } from './controllers/widget/chat.controller';
 import { WidgetScriptController } from './controllers/widget/widget-script.controller';
 
+// Screens (ui.enabled)
+import { uiEnabled } from './ui/ui-options';
+import { UiDataService } from './ui/ui-data.service';
+import { AgentUiController } from './ui/controllers/agent-ui.controller';
+
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
 
@@ -336,6 +341,11 @@ export class EscalatedModule implements NestModule {
       conditionalProviders.push(EscalatedGateway);
     }
 
+    // The shared screens' own routes (headless when off, the default).
+    if (uiEnabled(mergedOptions)) {
+      conditionalControllers.push(AgentUiController);
+    }
+
     return {
       module: EscalatedModule,
       imports: [
@@ -384,6 +394,7 @@ export class EscalatedModule implements NestModule {
         // when no connection is configured.
         ...escalatedRepositoryProviders(entities, mergedOptions.connection),
         ...services,
+        UiDataService,
         ...conditionalProviders,
         ApiTokenGuard,
         PermissionsGuard,

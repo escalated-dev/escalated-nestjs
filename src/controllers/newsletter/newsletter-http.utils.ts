@@ -2,13 +2,8 @@ import { BadRequestException, UnprocessableEntityException } from '@nestjs/commo
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 
-export function inertia(component: string, props: Record<string, unknown> = {}) {
-  return { component, props };
-}
-
-export function redirect(url: string, extra: Record<string, unknown> = {}) {
-  return { redirect: url, ...extra };
-}
+// The screens' response helpers, shared with the rest of the package UI.
+export { inertia, redirect } from '../../ui/inertia';
 
 export function discoverNewsletterThemes(themesDir?: string): string[] {
   const dirs = [

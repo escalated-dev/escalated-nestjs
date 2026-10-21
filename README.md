@@ -313,6 +313,13 @@ npx typeorm migration:run
 
 All tables are prefixed with `escalated_` to avoid conflicts.
 
+## Screens (Inertia UI)
+
+The shared Vue 3 + Inertia screens for agents, customers and admins are served
+when you set `ui: { enabled: true }`. They are off by default, which keeps the
+package API-only (escalated-laravel defaults to on; this default will flip in a
+future minor). See [docs/ui.md](docs/ui.md).
+
 ## API Endpoints
 
 ### Agent Routes (`/escalated/agent/`)
