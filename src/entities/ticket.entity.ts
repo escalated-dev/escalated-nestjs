@@ -112,6 +112,14 @@ export class Ticket {
   @Column({ default: false })
   slaResolutionBreached: boolean;
 
+  /** Set once when `sla.warning` is announced for the first-response deadline. */
+  @Column({ default: false })
+  slaFirstResponseWarned: boolean;
+
+  /** Set once when `sla.warning` is announced for the resolution deadline. */
+  @Column({ default: false })
+  slaResolutionWarned: boolean;
+
   // Snooze
   @Column({ type: Date, nullable: true })
   snoozedUntil: Date;

@@ -34,7 +34,13 @@ import {
   TicketStatusChangedEvent,
   TicketMergedEvent,
   TicketSplitEvent,
+  TicketUnassignedEvent,
+  TicketPriorityChangedEvent,
+  TicketDepartmentChangedEvent,
+  TicketTagAddedEvent,
+  TicketTagRemovedEvent,
 } from '../events/escalated.events';
+import { lifecycleEvent } from '../events/ticket-lifecycle';
 
 @Injectable()
 export class TicketService {
@@ -333,6 +339,8 @@ export class TicketService {
   async update(id: number, dto: UpdateTicketDto, userId: UserId): Promise<Ticket> {
     const ticket = await this.findById(id);
     const changes: Record<string, any> = {};
+    // Events announced once the update is written, with the updated ticket.
+    const pending: Array<(fresh: Ticket) => [string, object] | null> = [];
 
     if (dto.subject !== undefined && dto.subject !== ticket.subject) {
       changes.subject = { old: ticket.subject, new: dto.subject };
@@ -348,6 +356,33 @@ export class TicketService {
         newValue: { priority: dto.priority },
         description: `Priority changed from ${ticket.priority} to ${dto.priority}`,
       });
+      const previousPriority = ticket.priority;
+      const newPriority = dto.priority;
+      pending.push((fresh) => [
+        ESCALATED_EVENTS.TICKET_PRIORITY_CHANGED,
+        new TicketPriorityChangedEvent(fresh, previousPriority, newPriority, userId),
+      ]);
+    }
+
+    if (
+      dto.departmentId !== undefined &&
+      (dto.departmentId ?? null) !== (ticket.departmentId ?? null)
+    ) {
+      const previousDepartmentId = ticket.departmentId ?? null;
+      const newDepartmentId = dto.departmentId ?? null;
+      changes.departmentId = { old: previousDepartmentId, new: newDepartmentId };
+      await this.activityRepo.save({
+        ticketId: id,
+        userId,
+        action: 'department_changed',
+        oldValue: { departmentId: previousDepartmentId },
+        newValue: { departmentId: newDepartmentId },
+        description: 'Department changed',
+      });
+      pending.push((fresh) => [
+        ESCALATED_EVENTS.TICKET_DEPARTMENT_CHANGED,
+        new TicketDepartmentChangedEvent(fresh, previousDepartmentId, newDepartmentId, userId),
+      ]);
     }
 
     // Handle status change
@@ -356,6 +391,8 @@ export class TicketService {
       changes.statusId = { old: previousStatusId, new: dto.statusId };
 
       const newStatus = await this.statusRepo.findOne({ where: { id: dto.statusId } });
+      const previousStatus = ticket.status ?? null;
+      pending.push((fresh) => lifecycleEvent(previousStatus, newStatus, fresh, userId));
       if (newStatus?.isClosed && !ticket.closedAt) {
         (dto as any).closedAt = new Date();
         (dto as any).resolvedAt = new Date();
@@ -392,21 +429,33 @@ export class TicketService {
     // Handle assignment change
     if (dto.assigneeId !== undefined && dto.assigneeId !== ticket.assigneeId) {
       const previousAssigneeId = ticket.assigneeId;
+      const unassigning = dto.assigneeId === null || dto.assigneeId === '';
+      if (unassigning) (dto as any).assigneeId = null;
       changes.assigneeId = { old: previousAssigneeId, new: dto.assigneeId };
 
       await this.activityRepo.save({
         ticketId: id,
         userId,
-        action: 'assigned',
+        action: unassigning ? 'unassigned' : 'assigned',
         oldValue: { assigneeId: previousAssigneeId },
         newValue: { assigneeId: dto.assigneeId },
-        description: `Ticket assigned`,
+        description: unassigning ? 'Ticket unassigned' : `Ticket assigned`,
       });
 
-      this.eventEmitter.emit(
-        ESCALATED_EVENTS.TICKET_ASSIGNED,
-        new TicketAssignedEvent(ticket, previousAssigneeId, dto.assigneeId, userId),
-      );
+      if (unassigning) {
+        // Unassigning is `ticket.unassigned`, never `ticket.assigned` with a null assignee.
+        if (previousAssigneeId != null && previousAssigneeId !== '') {
+          pending.push((fresh) => [
+            ESCALATED_EVENTS.TICKET_UNASSIGNED,
+            new TicketUnassignedEvent(fresh, previousAssigneeId, userId),
+          ]);
+        }
+      } else {
+        this.eventEmitter.emit(
+          ESCALATED_EVENTS.TICKET_ASSIGNED,
+          new TicketAssignedEvent(ticket, previousAssigneeId, dto.assigneeId, userId),
+        );
+      }
     }
 
     // Handle snooze
@@ -429,8 +478,26 @@ export class TicketService {
     // Handle tags
     if (dto.tagIds) {
       const tags = await this.tagRepo.findBy({ id: In(dto.tagIds) });
+      const before = ticket.tags ?? [];
+      const added = tags.filter((tag) => !before.some((old) => old.id === tag.id));
+      const removed = before.filter((old) => !tags.some((tag) => tag.id === old.id));
       ticket.tags = tags;
       await this.ticketRepo.save(ticket);
+      if (added.length || removed.length) {
+        changes.tags = { added: added.map((t) => t.id), removed: removed.map((t) => t.id) };
+      }
+      for (const tag of added) {
+        pending.push((fresh) => [
+          ESCALATED_EVENTS.TICKET_TAG_ADDED,
+          new TicketTagAddedEvent(fresh, { id: tag.id, name: tag.name, slug: tag.slug }, userId),
+        ]);
+      }
+      for (const tag of removed) {
+        pending.push((fresh) => [
+          ESCALATED_EVENTS.TICKET_TAG_REMOVED,
+          new TicketTagRemovedEvent(fresh, { id: tag.id, name: tag.name, slug: tag.slug }, userId),
+        ]);
+      }
     }
 
     // Handle custom fields
@@ -469,7 +536,12 @@ export class TicketService {
       );
     }
 
-    return this.findById(id);
+    const fresh = await this.findById(id);
+    for (const build of pending) {
+      const event = build(fresh);
+      if (event) this.eventEmitter.emit(event[0], event[1]);
+    }
+    return fresh;
   }
 
   async merge(sourceId: number, targetId: number, userId: UserId): Promise<Ticket> {

@@ -45,6 +45,11 @@ export class EscalatedSchedulerService {
     } catch (error) {
       this.logger.error('Error checking SLA breaches', error);
     }
+    try {
+      await this.slaService.checkWarnings(this.options.slaWarningMinutes ?? 30);
+    } catch (error) {
+      this.logger.error('Error checking SLA warnings', error);
+    }
   }
 
   /** Process escalation rules every 5 minutes */

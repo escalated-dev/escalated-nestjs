@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Workflow } from '../entities/workflow.entity';
 import { WorkflowLog } from '../entities/workflow-log.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { WorkflowEngineService } from './workflow-engine.service';
+import { aliasesOf, canonicalEvent } from '../events/event-names';
 import { WorkflowExecutorService, type WorkflowAction } from './workflow-executor.service';
 
 /**
@@ -28,9 +29,11 @@ export class WorkflowRunnerService {
     private readonly executor: WorkflowExecutorService,
   ) {}
 
-  async runForEvent(triggerEvent: string, ticket: Ticket): Promise<void> {
+  async runForEvent(event: string, ticket: Ticket): Promise<void> {
+    const triggerEvent = canonicalEvent(event);
+    // Workflows saved with a legacy trigger name (`ticket.replied`, ...) still run.
     const workflows = await this.workflowRepo.find({
-      where: { triggerEvent, isActive: true },
+      where: { triggerEvent: In(aliasesOf(triggerEvent)), isActive: true },
       order: { position: 'ASC' },
     });
     if (workflows.length === 0) return;

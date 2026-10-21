@@ -9,7 +9,14 @@ import { Reply } from '../entities/reply.entity';
 import { TicketService } from './ticket.service';
 import { ReplyService } from './reply.service';
 import { ChatRoutingService } from './chat-routing.service';
-import { ESCALATED_EVENTS } from '../events/escalated.events';
+import {
+  ESCALATED_EVENTS,
+  ChatAssignedEvent,
+  ChatEndedEvent,
+  ChatMessageEvent,
+  ChatStartedEvent,
+  ChatTransferredEvent,
+} from '../events/escalated.events';
 import { TicketAccess } from '../config/ticket-access';
 import { UserId } from '../config/user-id-column';
 
@@ -89,7 +96,13 @@ export class ChatSessionService {
 
     const saved = await this.chatSessionRepo.save(session);
 
-    this.eventEmitter.emit(ESCALATED_EVENTS.CHAT_STARTED, { session: saved });
+    this.eventEmitter.emit(ESCALATED_EVENTS.CHAT_STARTED, new ChatStartedEvent(saved));
+    if (saved.agentId != null) {
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.CHAT_ASSIGNED,
+        new ChatAssignedEvent(saved, saved.agentId),
+      );
+    }
 
     return saved;
   }
@@ -120,6 +133,69 @@ export class ChatSessionService {
       session: saved,
       agentId,
     });
+    this.eventEmitter.emit(ESCALATED_EVENTS.CHAT_ASSIGNED, new ChatAssignedEvent(saved, agentId));
+
+    return saved;
+  }
+
+  /**
+   * Hand a live chat to another agent, or back to a department's queue. With
+   * an agent, the chat and its ticket are assigned to them. With only a
+   * department, the ticket moves there and the chat waits in its queue.
+   */
+  async transfer(
+    sessionId: number,
+    target: { toAgentId?: UserId | null; toDepartmentId?: number | null },
+    causerId: UserId,
+  ): Promise<ChatSession> {
+    const session = await this.findById(sessionId);
+    const toAgentId =
+      target.toAgentId === undefined || target.toAgentId === null || target.toAgentId === ''
+        ? null
+        : target.toAgentId;
+    const toDepartmentId = target.toDepartmentId ?? null;
+
+    if (session.status === 'ended') {
+      throw new BadRequestException('Chat session has ended.');
+    }
+    if (toAgentId === null && toDepartmentId === null) {
+      throw new BadRequestException('Choose an agent or a department to transfer to.');
+    }
+    if (
+      toAgentId !== null &&
+      this.access?.enabled() &&
+      !(await this.access.allowsAgent(
+        toAgentId,
+        await this.ticketService.findById(session.ticketId),
+      ))
+    )
+      throw new BadRequestException('Agent cannot access this ticket');
+
+    const fromAgentId = session.agentId ?? null;
+    const ticketChanges: Record<string, any> = {};
+    if (toDepartmentId !== null) {
+      ticketChanges.departmentId = toDepartmentId;
+      session.departmentId = toDepartmentId;
+    }
+    if (toAgentId !== null) {
+      ticketChanges.assigneeId = toAgentId;
+      session.agentId = toAgentId;
+      session.status = 'active';
+      session.acceptedAt = new Date();
+    } else {
+      ticketChanges.assigneeId = null;
+      session.agentId = null;
+      session.status = 'waiting';
+    }
+    session.lastActivityAt = new Date();
+
+    await this.ticketService.update(session.ticketId, ticketChanges as any, causerId);
+    const saved = await this.chatSessionRepo.save(session);
+
+    this.eventEmitter.emit(
+      ESCALATED_EVENTS.CHAT_TRANSFERRED,
+      new ChatTransferredEvent(saved, fromAgentId, toAgentId, toDepartmentId),
+    );
 
     return saved;
   }
@@ -131,7 +207,7 @@ export class ChatSessionService {
     sessionId: number,
     body: string,
     authorId?: UserId,
-    _authorType: string = 'visitor',
+    authorType: string = 'visitor',
   ): Promise<any> {
     const session = await this.findById(sessionId);
 
@@ -148,10 +224,10 @@ export class ChatSessionService {
     session.lastActivityAt = new Date();
     await this.chatSessionRepo.save(session);
 
-    this.eventEmitter.emit(ESCALATED_EVENTS.CHAT_MESSAGE, {
-      session,
-      reply,
-    });
+    this.eventEmitter.emit(
+      ESCALATED_EVENTS.CHAT_MESSAGE,
+      new ChatMessageEvent(session, reply, authorType),
+    );
 
     return reply;
   }
@@ -171,10 +247,7 @@ export class ChatSessionService {
 
     const saved = await this.chatSessionRepo.save(session);
 
-    this.eventEmitter.emit(ESCALATED_EVENTS.CHAT_ENDED, {
-      session: saved,
-      causerId,
-    });
+    this.eventEmitter.emit(ESCALATED_EVENTS.CHAT_ENDED, new ChatEndedEvent(saved, causerId));
 
     return saved;
   }

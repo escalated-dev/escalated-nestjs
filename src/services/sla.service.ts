@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TicketAccess } from '../config/ticket-access';
-import { Repository, LessThan, IsNull } from 'typeorm';
+import { Repository, LessThan, IsNull, Between } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SlaPolicy } from '../entities/sla-policy.entity';
 import { BusinessSchedule } from '../entities/business-schedule.entity';
 import { Ticket } from '../entities/ticket.entity';
-import { ESCALATED_EVENTS, SlaBreachedEvent } from '../events/escalated.events';
+import { ESCALATED_EVENTS, SlaBreachedEvent, SlaWarningEvent } from '../events/escalated.events';
 
 @Injectable()
 export class SlaService {
@@ -151,6 +151,70 @@ export class SlaService {
     return true;
   }
 
+  /**
+   * Emits `sla.warning` once per deadline that falls due within the next
+   * `warningMinutes` (Laravel `SlaService::checkWarnings`, but recorded so it
+   * is not repeated every tick). Returns how many warnings were sent.
+   */
+  async checkWarnings(warningMinutes = 30): Promise<number> {
+    if (!(warningMinutes > 0)) return 0;
+    const now = new Date();
+    const threshold = new Date(now.getTime() + warningMinutes * 60000);
+    let warned = 0;
+
+    const firstResponse = await this.ticketRepo.find({
+      where: {
+        firstResponseDueAt: Between(now, threshold),
+        firstRespondedAt: IsNull(),
+        resolvedAt: IsNull(),
+        slaFirstResponseBreached: false,
+        slaFirstResponseWarned: false,
+        isMerged: false,
+      },
+    });
+    for (const ticket of firstResponse) {
+      if (!(await this.flagWarning(ticket, 'slaFirstResponseWarned'))) continue;
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.SLA_WARNING,
+        new SlaWarningEvent(ticket, 'first_response', minutesUntil(ticket.firstResponseDueAt, now)),
+      );
+      warned++;
+    }
+
+    const resolution = await this.ticketRepo.find({
+      where: {
+        resolutionDueAt: Between(now, threshold),
+        resolvedAt: IsNull(),
+        slaResolutionBreached: false,
+        slaResolutionWarned: false,
+        isMerged: false,
+      },
+    });
+    for (const ticket of resolution) {
+      if (!(await this.flagWarning(ticket, 'slaResolutionWarned'))) continue;
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.SLA_WARNING,
+        new SlaWarningEvent(ticket, 'resolution', minutesUntil(ticket.resolutionDueAt, now)),
+      );
+      warned++;
+    }
+
+    return warned;
+  }
+
+  private async flagWarning(
+    ticket: Ticket,
+    flag: 'slaFirstResponseWarned' | 'slaResolutionWarned',
+  ): Promise<boolean> {
+    const result = await this.ticketRepo.update(
+      { id: ticket.id, [flag]: false } as any,
+      { [flag]: true } as any,
+    );
+    if (result.affected === 0) return false;
+    Object.assign(ticket, { [flag]: true });
+    return true;
+  }
+
   private async findMatchingPolicy(ticket: Ticket): Promise<SlaPolicy | null> {
     if (this.access?.options.targetedSlas) {
       const policies = await this.slaPolicyRepo.find({
@@ -276,4 +340,9 @@ export class SlaService {
 
     return current;
   }
+}
+
+function minutesUntil(due: Date | string | null | undefined, now: Date): number {
+  if (!due) return 0;
+  return Math.max(0, Math.floor((new Date(due).getTime() - now.getTime()) / 60000));
 }

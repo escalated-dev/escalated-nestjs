@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Req, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ChatSessionService } from '../../services/chat-session.service';
 import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 import { requireUserId } from '../../config/request-user';
@@ -36,6 +46,32 @@ export class AgentChatController {
     @Req() req: any,
   ) {
     return this.chatSessionService.sendMessage(sessionId, body.body, requireUserId(req), 'agent');
+  }
+
+  /** Body: `agent_id` and/or `department_id` (camelCase accepted). */
+  @Post(':sessionId/transfer')
+  async transfer(
+    @Param('sessionId', ParseIntPipe) sessionId: number,
+    @Body() body: Record<string, unknown>,
+    @Req() req: any,
+  ) {
+    const agent = body?.agent_id ?? body?.agentId;
+    const department = body?.department_id ?? body?.departmentId;
+    const toDepartmentId =
+      department === undefined || department === null || department === ''
+        ? null
+        : Number(department);
+    if (toDepartmentId !== null && !Number.isInteger(toDepartmentId)) {
+      throw new BadRequestException('department_id must be an integer');
+    }
+    return this.chatSessionService.transfer(
+      sessionId,
+      {
+        toAgentId: typeof agent === 'number' || typeof agent === 'string' ? agent : null,
+        toDepartmentId,
+      },
+      requireUserId(req),
+    );
   }
 
   @Post(':sessionId/end')

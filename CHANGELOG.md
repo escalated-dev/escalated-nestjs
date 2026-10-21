@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The shared event vocabulary (ADR 2026-10-21). New events, each sent to
+  webhooks and offered as a workflow trigger under its canonical name:
+  `ticket.unassigned`, `ticket.department_changed`, `ticket.priority_changed`,
+  `ticket.tag_added`, `ticket.tag_removed`, `ticket.resolved`,
+  `ticket.closed`, `ticket.reopened`, `ticket.escalated`, `note.created`,
+  `sla.warning`, and the live chat events `chat.started`, `chat.assigned`,
+  `chat.transferred`, `chat.message`, `chat.ended` (previously never sent to
+  webhooks). Workflows also fire on `sla.breached` and the chat events.
+- `POST /escalated/agent/chat/:sessionId/transfer` (`agent_id` and/or
+  `department_id`) hands a live chat to another agent or back to a
+  department's queue.
+- `slaWarningMinutes` option (default `30`; `0` turns warnings off).
+  **Upgrade:** register and run the exported `SlaWarningFlags1792540800000`
+  migration, which adds `slaFirstResponseWarned` and `slaResolutionWarned` to
+  tickets.
+
+### Changed
+- **Webhook event names:** public replies are sent as `reply.created`
+  (was `ticket.reply_created`); internal notes are sent only as `note.created`
+  (they were sent as `ticket.reply_created`). Subscriptions stored with
+  `ticket.reply_created` or any ADR legacy name keep receiving the event under
+  its canonical name, and saving a webhook stores canonical names.
+- **Unassigning** a ticket emits `TICKET_UNASSIGNED` instead of
+  `TICKET_ASSIGNED` with a null assignee. Host listeners that relied on the old
+  shape should listen to `ESCALATED_EVENTS.TICKET_UNASSIGNED`.
+- Changing a ticket's department records an activity, is included in
+  `ticket.updated` changes, and emits `ticket.department_changed` (it was
+  silent). Tag changes are included in `ticket.updated` changes.
+- Internal notes no longer fire `reply.created` workflows; they fire
+  `note.created`.
+- Chat events are emitted as `ChatStartedEvent`, `ChatAssignedEvent`,
+  `ChatTransferredEvent`, `ChatMessageEvent` and `ChatEndedEvent` instances with
+  the same fields as before. `CHAT_ACCEPTED` is deprecated and still emitted
+  beside `CHAT_ASSIGNED`.
+- A workflow `change_status` to the status the ticket already has is a no-op.
+
 ## [1.2.3] - 2026-10-20
 
 ### Security

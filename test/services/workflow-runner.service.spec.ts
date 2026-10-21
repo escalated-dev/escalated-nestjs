@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { In } from 'typeorm';
 import { Workflow } from '../../src/entities/workflow.entity';
 import { WorkflowLog } from '../../src/entities/workflow-log.entity';
 import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
@@ -42,7 +43,7 @@ describe('WorkflowRunnerService', () => {
     const ticket = buildTicket() as unknown as Ticket;
     await runner.runForEvent('ticket.created', ticket);
     expect(workflowRepo.find).toHaveBeenCalledWith({
-      where: { triggerEvent: 'ticket.created', isActive: true },
+      where: { triggerEvent: In(['ticket.created']), isActive: true },
       order: { position: 'ASC' },
     });
   });
