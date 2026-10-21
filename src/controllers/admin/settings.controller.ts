@@ -12,6 +12,9 @@ import {
   HttpCode,
   UseInterceptors,
   UseGuards,
+  Inject,
+  Optional,
+  Req,
 } from '@nestjs/common';
 import { SettingsService } from '../../services/settings.service';
 import { DepartmentService } from '../../services/department.service';
@@ -25,10 +28,27 @@ import {
 } from '../../services/widget-origins.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
+import { back, inertia, redirect } from '../../ui/inertia';
+import { EscalatedUi, BrowserFormGuard } from '../../ui/inertia.interceptor';
+import { wantsPage } from '../../ui/request';
+import { routeUrl } from '../../ui/routes';
+import { UiDataService } from '../../ui/ui-data.service';
+import {
+  SUPPORTED_SETTINGS,
+  departmentInput,
+  tagInput,
+} from '../../ui/controllers/admin-ui.controller';
 
-@UseGuards(EscalatedAdminGuard)
+/**
+ * Admin settings, departments, tags and more as a JSON API. With
+ * `ui.enabled`, the settings, department and tag routes also serve the admin
+ * screens and answer the screens' forms with redirects.
+ */
+@UseGuards(EscalatedAdminGuard, BrowserFormGuard)
 @Controller('escalated/admin')
 @UseInterceptors(AuditLogInterceptor)
+@EscalatedUi()
 export class AdminSettingsController {
   constructor(
     private readonly settingsService: SettingsService,
@@ -37,11 +57,29 @@ export class AdminSettingsController {
     private readonly customFieldService: CustomFieldService,
     private readonly roleService: RoleService,
     private readonly auditLogService: AuditLogService,
+    @Optional() private readonly ui?: UiDataService,
+    @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
   ) {}
+
+  private screen(req: any): boolean {
+    return !!this.ui && wantsPage(this.options, req);
+  }
 
   // Settings
   @Get('settings')
-  async listSettings(@Query('group') group?: string) {
+  async listSettings(@Query('group') group?: string, @Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      const settings: Record<string, unknown> = {};
+      for (const [key, { fallback }] of Object.entries(SUPPORTED_SETTINGS)) {
+        settings[key] = await this.settingsService.getTyped(key, fallback);
+      }
+      return inertia('Escalated/Admin/Settings', {
+        settings,
+        supported_settings: Object.keys(SUPPORTED_SETTINGS),
+        departments: await this.ui!.departmentOptions(),
+        update_url: routeUrl('escalated.admin.settings.update'),
+      });
+    }
     return this.settingsService.getAll(group);
   }
 
@@ -82,49 +120,93 @@ export class AdminSettingsController {
 
   // Departments
   @Get('departments')
-  async listDepartments() {
+  async listDepartments(@Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      return inertia('Escalated/Admin/Departments/Index', {
+        departments: await this.ui!.departmentsWithCounts(),
+      });
+    }
     return this.departmentService.findAll();
   }
 
   @Post('departments')
   @AuditAction('create', 'department')
-  async createDepartment(@Body() body: any) {
+  async createDepartment(@Body() body: any, @Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      await this.departmentService.create(departmentInput(body));
+      return redirect(routeUrl('escalated.admin.departments.index'), {
+        success: 'Department created.',
+      });
+    }
     return this.departmentService.create(body);
   }
 
   @Put('departments/:id')
   @AuditAction('update', 'department')
-  async updateDepartment(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  async updateDepartment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: any,
+    @Req() req?: any,
+  ): Promise<any> {
+    if (this.screen(req)) {
+      await this.departmentService.update(id, departmentInput(body));
+      return redirect(routeUrl('escalated.admin.departments.index'), {
+        success: 'Department updated.',
+      });
+    }
     return this.departmentService.update(id, body);
   }
 
   @Delete('departments/:id')
   @HttpCode(204)
-  async deleteDepartment(@Param('id', ParseIntPipe) id: number) {
+  async deleteDepartment(@Param('id', ParseIntPipe) id: number, @Req() req?: any): Promise<any> {
     await this.departmentService.delete(id);
+    if (this.screen(req)) {
+      return redirect(routeUrl('escalated.admin.departments.index'), {
+        success: 'Department deleted.',
+      });
+    }
   }
 
   // Tags
   @Get('tags')
-  async listTags() {
+  async listTags(@Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      return inertia('Escalated/Admin/Tags/Index', { tags: await this.ui!.tagsWithCounts() });
+    }
     return this.tagService.findAll();
   }
 
   @Post('tags')
   @AuditAction('create', 'tag')
-  async createTag(@Body() body: any) {
+  async createTag(@Body() body: any, @Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      await this.tagService.create(tagInput(body));
+      return back(routeUrl('escalated.admin.tags.index'), { success: 'Tag created.' });
+    }
     return this.tagService.create(body);
   }
 
   @Put('tags/:id')
-  async updateTag(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  async updateTag(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: any,
+    @Req() req?: any,
+  ): Promise<any> {
+    if (this.screen(req)) {
+      await this.tagService.update(id, tagInput(body));
+      return back(routeUrl('escalated.admin.tags.index'), { success: 'Tag updated.' });
+    }
     return this.tagService.update(id, body);
   }
 
   @Delete('tags/:id')
   @HttpCode(204)
-  async deleteTag(@Param('id', ParseIntPipe) id: number) {
+  async deleteTag(@Param('id', ParseIntPipe) id: number, @Req() req?: any): Promise<any> {
     await this.tagService.delete(id);
+    if (this.screen(req)) {
+      return back(routeUrl('escalated.admin.tags.index'), { success: 'Tag deleted.' });
+    }
   }
 
   // Custom Fields

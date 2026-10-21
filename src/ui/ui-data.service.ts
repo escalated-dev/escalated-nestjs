@@ -357,6 +357,75 @@ export class UiDataService {
     };
   }
 
+  serializeDepartment(department: Department, counts: { tickets?: number; agents?: number } = {}) {
+    return {
+      id: department.id,
+      name: department.name,
+      slug: department.slug,
+      description: department.description ?? null,
+      is_active: department.isActive !== false,
+      tickets_count: counts.tickets ?? 0,
+      agents_count: counts.agents ?? 0,
+      created_at: department.createdAt ? new Date(department.createdAt).toISOString() : null,
+      updated_at: department.updatedAt ? new Date(department.updatedAt).toISOString() : null,
+    };
+  }
+
+  private counts(rows: Array<{ id: unknown; count: unknown }>): Map<number, number> {
+    return new Map(rows.map((row) => [Number(row.id), Number(row.count)]));
+  }
+
+  /** `Escalated/Admin/Departments/Index`: every department with ticket and agent counts. */
+  async departmentsWithCounts() {
+    const [departments, tickets, agents] = await Promise.all([
+      this.departments.find({ order: { sortOrder: 'ASC', name: 'ASC' } }),
+      this.tickets
+        .createQueryBuilder('ticket')
+        .select('ticket.departmentId', 'id')
+        .addSelect('COUNT(ticket.id)', 'count')
+        .where('ticket.departmentId IS NOT NULL')
+        .groupBy('ticket.departmentId')
+        .getRawMany(),
+      this.profiles
+        .createQueryBuilder('profile')
+        .innerJoin('profile.departments', 'department')
+        .select('department.id', 'id')
+        .addSelect('COUNT(profile.id)', 'count')
+        .groupBy('department.id')
+        .getRawMany(),
+    ]);
+    const ticketCounts = this.counts(tickets);
+    const agentCounts = this.counts(agents);
+    return departments.map((d) =>
+      this.serializeDepartment(d, {
+        tickets: ticketCounts.get(d.id),
+        agents: agentCounts.get(d.id),
+      }),
+    );
+  }
+
+  /** `Escalated/Admin/Tags/Index`: every tag with its ticket count. */
+  async tagsWithCounts() {
+    const [tags, tickets] = await Promise.all([
+      this.tagRepo.find({ order: { name: 'ASC' } }),
+      this.tickets
+        .createQueryBuilder('ticket')
+        .innerJoin('ticket.tags', 'tag')
+        .select('tag.id', 'id')
+        .addSelect('COUNT(ticket.id)', 'count')
+        .groupBy('tag.id')
+        .getRawMany(),
+    ]);
+    const counts = this.counts(tickets);
+    return tags.map((tag) => ({
+      id: tag.id,
+      name: tag.name,
+      slug: tag.slug,
+      color: tag.color,
+      tickets_count: counts.get(tag.id) ?? 0,
+    }));
+  }
+
   async isFollowing(ticketId: number, userId: UserId): Promise<boolean> {
     return this.followers.existsBy({ ticketId, userId });
   }

@@ -135,6 +135,26 @@ Customer (`customerGuard`):
 - `POST /escalated/customer/tickets/:ticket/` `reply`, `close`, `reopen`,
   `rate`
 
+Admin (`adminGuard`):
+
+- `GET /escalated/admin/settings` - `Escalated/Admin/Settings`, with
+  `supported_settings` (`show_powered_by`, `widget_color`, `widget_position`,
+  `widget_greeting`, `widget_allowed_origins`, the keys this backend stores
+  and reads, so the page hides the rest); `POST /escalated/admin/settings`
+  saves them
+- `GET /escalated/admin/workflows` - `Admin/Workflows/Index`;
+  `/workflows/create` and `/workflows/:id/edit` - `Admin/Workflows/Form`; the
+  builder's `POST`, `PUT`, `DELETE`, `toggle` and `reorder` redirect back to the
+  list (see docs/workflows.md for the wire contract)
+- `GET /escalated/admin/departments` - `Admin/Departments/Index` (with
+  `tickets_count`, `agents_count`); `/departments/create` and
+  `/departments/:id/edit` - `Admin/Departments/Form`
+- `GET /escalated/admin/tags` - `Admin/Tags/Index` (with `tickets_count`)
+
+On these shared JSON routes, a state-changing browser request (one asking for
+HTML) without `X-Inertia` / `X-Requested-With` is refused while the screens
+are on; API clients are unaffected.
+
 The pages the frontend ships that no screen serves yet are listed, exactly, in
 `NOT_YET_RENDERED` in `test/page-name-parity.spec.ts`. Not yet supported:
 attachments on screen replies (multipart), pinned notes, presence and typing,

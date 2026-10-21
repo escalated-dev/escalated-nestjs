@@ -14,6 +14,7 @@ export interface NamedRoute {
 const GET = ['GET', 'HEAD'];
 const POST = ['POST'];
 const PUT = ['PUT'];
+const DELETE = ['DELETE'];
 
 export const ESCALATED_UI_PREFIX = 'escalated';
 
@@ -47,6 +48,49 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/agent/tickets/{ticket}/follow',
     methods: POST,
   },
+  // Admin
+  'escalated.admin.settings': { uri: 'escalated/admin/settings', methods: GET },
+  'escalated.admin.settings.update': { uri: 'escalated/admin/settings', methods: POST },
+  'escalated.admin.departments.index': { uri: 'escalated/admin/departments', methods: GET },
+  'escalated.admin.departments.create': { uri: 'escalated/admin/departments/create', methods: GET },
+  'escalated.admin.departments.store': { uri: 'escalated/admin/departments', methods: POST },
+  'escalated.admin.departments.edit': {
+    uri: 'escalated/admin/departments/{department}/edit',
+    methods: GET,
+  },
+  'escalated.admin.departments.update': {
+    uri: 'escalated/admin/departments/{department}',
+    methods: PUT,
+  },
+  'escalated.admin.departments.destroy': {
+    uri: 'escalated/admin/departments/{department}',
+    methods: DELETE,
+  },
+  'escalated.admin.tags.index': { uri: 'escalated/admin/tags', methods: GET },
+  'escalated.admin.tags.store': { uri: 'escalated/admin/tags', methods: POST },
+  'escalated.admin.tags.update': { uri: 'escalated/admin/tags/{tag}', methods: PUT },
+  'escalated.admin.tags.destroy': { uri: 'escalated/admin/tags/{tag}', methods: DELETE },
+  'escalated.admin.workflows.index': { uri: 'escalated/admin/workflows', methods: GET },
+  'escalated.admin.workflows.create': { uri: 'escalated/admin/workflows/create', methods: GET },
+  'escalated.admin.workflows.store': { uri: 'escalated/admin/workflows', methods: POST },
+  'escalated.admin.workflows.edit': {
+    uri: 'escalated/admin/workflows/{workflow}/edit',
+    methods: GET,
+  },
+  'escalated.admin.workflows.update': {
+    uri: 'escalated/admin/workflows/{workflow}',
+    methods: PUT,
+  },
+  'escalated.admin.workflows.destroy': {
+    uri: 'escalated/admin/workflows/{workflow}',
+    methods: DELETE,
+  },
+  'escalated.admin.workflows.toggle': {
+    uri: 'escalated/admin/workflows/{workflow}/toggle',
+    methods: POST,
+  },
+  'escalated.admin.workflows.reorder': { uri: 'escalated/admin/workflows/reorder', methods: POST },
+
   // Customer
   'escalated.customer.tickets.index': { uri: 'escalated', methods: GET },
   'escalated.customer.tickets.create': { uri: 'escalated/create', methods: GET },
