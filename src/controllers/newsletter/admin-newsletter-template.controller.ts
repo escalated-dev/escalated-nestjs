@@ -11,6 +11,7 @@ import {
   Put,
   Req,
 } from '@nestjs/common';
+import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
@@ -26,6 +27,7 @@ import {
   userIdFromRequest,
 } from './newsletter-http.utils';
 
+@EscalatedUi()
 @Controller('admin/newsletters/templates')
 export class AdminNewsletterTemplateController {
   constructor(

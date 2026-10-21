@@ -13,6 +13,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
 import { randomBytes } from 'crypto';
@@ -57,6 +58,7 @@ interface NewsletterForm {
   scheduled_at: Date | null;
 }
 
+@EscalatedUi()
 @Controller('admin/newsletters')
 export class AdminNewsletterController {
   constructor(

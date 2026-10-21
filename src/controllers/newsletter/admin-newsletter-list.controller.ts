@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { readFileSync } from 'fs';
@@ -32,6 +33,7 @@ import {
   userIdFromRequest,
 } from './newsletter-http.utils';
 
+@EscalatedUi()
 @Controller('admin/newsletters/lists')
 export class AdminNewsletterListController {
   constructor(

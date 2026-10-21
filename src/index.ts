@@ -53,3 +53,10 @@ export * from './events/event-names';
 // Widget embedding
 export { WidgetCorsMiddleware } from './middleware/widget-cors.middleware';
 export { WIDGET_EMBED_ORIGIN, embedOrigin } from './config/widget-embed';
+
+// Screens (ui.enabled)
+export { EscalatedUiOptions, EscalatedUiUser, InertiaPageObject } from './ui/ui-options';
+export { InertiaPage, InertiaRedirect, inertia, redirect, back } from './ui/inertia';
+export { EscalatedUi, InertiaInterceptor, InertiaReplyFilter } from './ui/inertia.interceptor';
+export { defaultRootView, ROUTE_HELPER } from './ui/root-view';
+export { escalatedRoutes } from './ui/routes';

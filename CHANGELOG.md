@@ -27,6 +27,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with a null assignee; update host listeners that relied on the old shape.
 
 ### Added
+- **The shared screens (Inertia UI), behind `ui.enabled`** (default `false`,
+  so API-only hosts are unchanged; escalated-laravel defaults to `true`, and
+  this default will flip in a future minor). A full Inertia protocol layer:
+  HTML first visits from a host-overridable root view (`ui.rootView`), JSON
+  page objects for `X-Inertia` visits, the asset version check (`409` +
+  `X-Inertia-Location`), partial reloads, `303` redirects back after forms
+  with flash messages and field `errors` (in an `escalated_flash` cookie), and
+  Laravel's shared props (`auth.user`, `flash`, `errors`, `escalated.prefix`,
+  `is_agent`, `is_admin`, ...) plus a `ziggy` route table and a `route()`
+  helper for the shared components. See `docs/ui.md`.
+- Agent screens: `Escalated/Agent/Dashboard` (`GET /escalated/agent`),
+  `Agent/TicketIndex` and `Agent/TicketShow`, and the ticket actions the ticket
+  screen posts: `reply`, `note`, `assign`, `status`, `priority`, `tags`,
+  `department`, `macro`, `follow` under `/escalated/agent/tickets/:ticket/`.
+  Pages not rendered yet (77 of 91, tracked in
+  `test/page-name-parity.spec.ts`): `Admin/ApiTokens/Index`,
+  `Admin/AuditLog/Index`, `Admin/Automations/Form`,
+  `Admin/Automations/Index`, `Admin/BusinessHours/Form`,
+  `Admin/BusinessHours/Index`, `Admin/CannedResponses/Index`,
+  `Admin/Capacity/Index`, `Admin/CustomFields/Form`,
+  `Admin/CustomFields/Index`, `Admin/CustomObjects/Form`,
+  `Admin/CustomObjects/Index`, `Admin/CustomObjects/Records`,
+  `Admin/Departments/Form`, `Admin/Departments/Index`,
+  `Admin/EscalationRules/Form`, `Admin/EscalationRules/Index`,
+  `Admin/Import/Connect`, `Admin/Import/Index`, `Admin/Import/Mapping`,
+  `Admin/Import/Progress`, `Admin/Import/Review`,
+  `Admin/KnowledgeBase/Articles/Form`, `Admin/KnowledgeBase/Articles/Index`,
+  `Admin/KnowledgeBase/Categories/Index`, `Admin/Macros/Index`,
+  `Admin/Plugins/Index`, `Admin/Reports`, `Admin/Reports/AgentDetail`,
+  `Admin/Reports/AgentMetrics`, `Admin/Reports/AgentRanking`,
+  `Admin/Reports/Cohorts`, `Admin/Reports/Comparison`,
+  `Admin/Reports/CsatReport`, `Admin/Reports/Dashboard`,
+  `Admin/Reports/ResolutionTimes`, `Admin/Reports/ResponseTimes`,
+  `Admin/Reports/SlaReport`, `Admin/Reports/SlaTrends`, `Admin/Roles/Form`,
+  `Admin/Roles/Index`, `Admin/Settings`, `Admin/Settings/CsatSettings`,
+  `Admin/Settings/DataRetention`, `Admin/Settings/DatabaseConnection`,
+  `Admin/Settings/EmailSettings`, `Admin/Settings/PublicTickets`,
+  `Admin/Settings/Sandbox`, `Admin/Settings/SsoSettings`,
+  `Admin/Settings/TwoFactor`, `Admin/Skills/Form`, `Admin/Skills/Index`,
+  `Admin/SlaPolicies/Form`, `Admin/SlaPolicies/Index`,
+  `Admin/Statuses/Form`, `Admin/Statuses/Index`, `Admin/Tags/Index`,
+  `Admin/Tickets/Index`, `Admin/Tickets/Show`, `Admin/Users/Index`,
+  `Admin/Webhooks/DeliveryLog`, `Admin/Webhooks/Form`,
+  `Admin/Webhooks/Index`, `Admin/Workflows/Builder`, `Admin/Workflows/Form`,
+  `Admin/Workflows/Index`, `Admin/Workflows/Logs`,
+  `Auth/TwoFactorChallenge`, `Customer/Create`, `Customer/Index`,
+  `Customer/KnowledgeBase/Article`, `Customer/KnowledgeBase/Index`,
+  `Customer/Show`, `Error`, `Guest/Create`, `Guest/Show`, `Plugin/Page`.
 - The shared event vocabulary (ADR 2026-10-21). New events, each sent to
   webhooks and offered as a workflow trigger under its canonical name:
   `ticket.unassigned`, `ticket.department_changed`, `ticket.priority_changed`,
@@ -61,6 +109,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`guestRateLimit.chatsPerMinute`, default 5).
 
 ### Changed
+- `GET /escalated/agent/tickets/:id` and `POST .../:id/actions/:action` also
+  accept a ticket reference. A value that is neither an id nor a reference now
+  answers `404` instead of `400`.
+- The newsletter admin controllers' `inertia()` / `redirect()` results become
+  real Inertia responses when `ui.enabled`; unchanged JSON otherwise.
 - **Breaking for guests (as in Laravel):** a widget ticket with an `email`
   and a widget chat need the emailed code (`verification_id`,
   `verification_code`); deploy a widget with the code step first. Widget

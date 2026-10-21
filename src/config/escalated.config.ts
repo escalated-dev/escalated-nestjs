@@ -4,6 +4,7 @@ import { UserId } from './user-id-column';
 import type { ThrottlerStorage } from '@nestjs/throttler';
 
 import type { AccountIdentity, AccountReference, TicketActor } from './ticket-access';
+import type { EscalatedUiOptions } from '../ui/ui-options';
 
 export interface EscalatedModuleOptions {
   visibility?: 'all' | 'department';
@@ -211,6 +212,14 @@ export interface EscalatedModuleOptions {
       purpose: 'ticket' | 'chat' | 'lookup',
     ) => Promise<void> | void;
   };
+
+  /**
+   * The shared Vue 3 + Inertia screens (`@escalated-dev/escalated`) for agents,
+   * customers and admins. Off by default, which keeps the package API-only;
+   * escalated-laravel defaults this to on, and a future minor will too. See
+   * docs/ui.md.
+   */
+  ui?: EscalatedUiOptions;
 
   /** App name for branding */
   appName?: string;
