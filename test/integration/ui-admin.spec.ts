@@ -115,9 +115,9 @@ describe('admin screens (ui.enabled)', () => {
         widget_allowed_origins: 'https://shop.example.com\nhttps://*.example.org',
       });
       expect(next.props.escalated.show_powered_by).toBe(false);
-      expect(
-        await source.getRepository(EscalatedSettings).countBy({ key: 'chat_enabled' }),
-      ).toBe(0);
+      expect(await source.getRepository(EscalatedSettings).countBy({ key: 'chat_enabled' })).toBe(
+        0,
+      );
     });
 
     it('sends invalid settings back with errors and saves nothing', async () => {
@@ -194,7 +194,11 @@ describe('admin screens (ui.enabled)', () => {
 
       const edit = await page(base, `/escalated/admin/departments/${dept.id}/edit`, asAdmin);
       expect(edit.component).toBe('Escalated/Admin/Departments/Form');
-      expect(edit.props.department).toMatchObject({ id: dept.id, name: 'Returns', slug: 'returns' });
+      expect(edit.props.department).toMatchObject({
+        id: dept.id,
+        name: 'Returns',
+        slug: 'returns',
+      });
 
       const updated = await form(
         `/escalated/admin/departments/${dept.id}`,

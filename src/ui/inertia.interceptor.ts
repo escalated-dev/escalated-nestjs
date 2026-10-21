@@ -105,9 +105,9 @@ export class InertiaInterceptor implements NestInterceptor {
           const reply = errors
             ? this.responder.invalid(request, fallback, errors)
             : this.responder.redirect(
-                  new InertiaBack(fallback, { error: messageOf(error) }),
-                  request,
-                );
+                new InertiaBack(fallback, { error: messageOf(error) }),
+                request,
+              );
           throw new InertiaReplyException(reply);
         }
         throw error;

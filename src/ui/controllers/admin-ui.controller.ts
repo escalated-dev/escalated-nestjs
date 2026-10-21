@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Department } from '../../entities/department.entity';
 import { Tag } from '../../entities/tag.entity';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
@@ -99,7 +108,8 @@ export class AdminUiController {
       const value = body[key];
       if (kind === 'boolean') {
         const flag = boolean(value);
-        if (flag === null) errors[key] = `The ${key.replace(/_/g, ' ')} field must be true or false.`;
+        if (flag === null)
+          errors[key] = `The ${key.replace(/_/g, ' ')} field must be true or false.`;
         else writes.push([key, String(flag), 'boolean']);
         continue;
       }
@@ -115,7 +125,14 @@ export class AdminUiController {
         if (text.length > 5000 || invalid.length) {
           errors[key] = `Not a valid origin: ${invalid.join(', ') || 'too long'}.`;
         } else {
-          writes.push([key, text.split(/[\s,]+/).filter(Boolean).join('\n'), 'string']);
+          writes.push([
+            key,
+            text
+              .split(/[\s,]+/)
+              .filter(Boolean)
+              .join('\n'),
+            'string',
+          ]);
         }
         continue;
       }
@@ -140,4 +157,3 @@ export class AdminUiController {
     });
   }
 }
-
