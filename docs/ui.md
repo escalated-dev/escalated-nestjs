@@ -123,6 +123,18 @@ Agent (`agentGuard`):
   `department` (`department_id`), `macro` (`macro_id`), `follow`, and
   `actions/:action` (custom ticket actions)
 
+Customer (`customerGuard`):
+
+- `GET /escalated` and `GET /escalated/customer/tickets` -
+  `Escalated/Customer/Index` (the customer's own tickets; filters `status`,
+  `priority`, `ticket_type`, `search`, `sort_by`, `sort_dir`)
+- `GET /escalated/create` - `Escalated/Customer/Create`; `POST /escalated`
+  creates the ticket and redirects to it
+- `GET /escalated/customer/tickets/:ticket` - `Escalated/Customer/Show`
+  (Laravel's allow-listed requester payload: no internal notes, no assignee)
+- `POST /escalated/customer/tickets/:ticket/` `reply`, `close`, `reopen`,
+  `rate`
+
 The pages the frontend ships that no screen serves yet are listed, exactly, in
 `NOT_YET_RENDERED` in `test/page-name-parity.spec.ts`. Not yet supported:
 attachments on screen replies (multipart), pinned notes, presence and typing,

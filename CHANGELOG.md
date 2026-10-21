@@ -41,7 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Agent/TicketIndex` and `Agent/TicketShow`, and the ticket actions the ticket
   screen posts: `reply`, `note`, `assign`, `status`, `priority`, `tags`,
   `department`, `macro`, `follow` under `/escalated/agent/tickets/:ticket/`.
-  Pages not rendered yet (77 of 91, tracked in
+  Customer screens: `Escalated/Customer/Index` (`GET /escalated` and the
+  customer ticket list), `Customer/Create` (`GET /escalated/create`, posting
+  to `POST /escalated`), `Customer/Show` (`GET
+  /escalated/customer/tickets/:ticket`, the allow-listed requester payload
+  without internal notes), and `reply`, `close`, `reopen` and `rate` under
+  `/escalated/customer/tickets/:ticket/`.
+  Pages not rendered yet (74 of 91, tracked in
   `test/page-name-parity.spec.ts`): `Admin/ApiTokens/Index`,
   `Admin/AuditLog/Index`, `Admin/Automations/Form`,
   `Admin/Automations/Index`, `Admin/BusinessHours/Form`,
@@ -72,9 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Admin/Webhooks/DeliveryLog`, `Admin/Webhooks/Form`,
   `Admin/Webhooks/Index`, `Admin/Workflows/Builder`, `Admin/Workflows/Form`,
   `Admin/Workflows/Index`, `Admin/Workflows/Logs`,
-  `Auth/TwoFactorChallenge`, `Customer/Create`, `Customer/Index`,
-  `Customer/KnowledgeBase/Article`, `Customer/KnowledgeBase/Index`,
-  `Customer/Show`, `Error`, `Guest/Create`, `Guest/Show`, `Plugin/Page`.
+  `Auth/TwoFactorChallenge`, `Customer/KnowledgeBase/Article`,
+  `Customer/KnowledgeBase/Index`, `Error`, `Guest/Create`, `Guest/Show`,
+  `Plugin/Page`.
 - The shared event vocabulary (ADR 2026-10-21). New events, each sent to
   webhooks and offered as a workflow trigger under its canonical name:
   `ticket.unassigned`, `ticket.department_changed`, `ticket.priority_changed`,
@@ -112,6 +118,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET /escalated/agent/tickets/:id` and `POST .../:id/actions/:action` also
   accept a ticket reference. A value that is neither an id nor a reference now
   answers `404` instead of `400`.
+- `GET /escalated/customer/tickets/:id` and `POST .../:id/rate` also accept a
+  ticket reference, and a rating must be a whole number from 1 to 5 (a
+  non-numeric rating used to be stored).
 - The newsletter admin controllers' `inertia()` / `redirect()` results become
   real Inertia responses when `ui.enabled`; unchanged JSON otherwise.
 - **Breaking for guests (as in Laravel):** a widget ticket with an `email`
