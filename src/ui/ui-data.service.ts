@@ -10,6 +10,9 @@ import { Reply } from '../entities/reply.entity';
 import { Tag } from '../entities/tag.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketFollower } from '../entities/ticket-follower.entity';
+import { SatisfactionRating } from '../entities/satisfaction-rating.entity';
+import { ReplyService } from '../services/reply.service';
+import { serializeAttachment } from './serializers';
 import { TicketService } from '../services/ticket.service';
 import { CannedResponseService } from '../services/canned-response.service';
 import { MacroService } from '../services/macro.service';
@@ -58,6 +61,9 @@ export class UiDataService {
     @InjectRepository(AgentProfile) private readonly profiles: Repository<AgentProfile>,
     @InjectRepository(Contact) private readonly contacts: Repository<Contact>,
     @InjectRepository(TicketFollower) private readonly followers: Repository<TicketFollower>,
+    @InjectRepository(SatisfactionRating)
+    private readonly ratings: Repository<SatisfactionRating>,
+    private readonly replyService: ReplyService,
     private readonly ticketService: TicketService,
     private readonly cannedResponseService: CannedResponseService,
     private readonly macroService: MacroService,
@@ -301,6 +307,54 @@ export class UiDataService {
   /** Macros the agent may apply: shared ones and their own. */
   async macros(userId: UserId) {
     return this.macroService.findAll(userId);
+  }
+
+  /**
+   * `Escalated/Customer/Show`'s ticket: the allow-listed fields of Laravel's
+   * `CustomerTicketPayload::customerWeb`. No internal notes, no assignee or
+   * metadata, and staff by display name only.
+   */
+  async customerTicket(ticket: Ticket) {
+    const replies = (await this.replyService.findByTicketId(ticket.id, false)).filter(
+      (reply) => !reply.isInternal,
+    );
+    const directory = await this.directory(replies.map((reply) => reply.userId));
+    const rating = await this.ratings.findOne({ where: { ticketId: ticket.id } });
+    const newestFirst = [...replies].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id,
+    );
+    const iso = (value: Date | null | undefined) => (value ? new Date(value).toISOString() : null);
+    return {
+      reference: ticket.referenceNumber,
+      subject: ticket.subject,
+      description: ticket.description ?? '',
+      status: ticket.status?.slug ?? null,
+      priority: ticket.priority,
+      channel: ticket.channel ?? null,
+      department: ticket.department ? { name: ticket.department.name } : null,
+      attachments: replies.flatMap((reply) => reply.attachments ?? []).map(serializeAttachment),
+      replies: newestFirst.map((reply) => ({
+        id: reply.id,
+        body: reply.body,
+        is_internal_note: false,
+        is_pinned: false,
+        author: {
+          name:
+            String(reply.userId) === String(ticket.requesterId)
+              ? 'You'
+              : directory.get(String(reply.userId))?.name || 'Support',
+        },
+        attachments: (reply.attachments ?? []).map(serializeAttachment),
+        created_at: iso(reply.createdAt),
+      })),
+      satisfaction_rating: rating
+        ? { rating: rating.rating, comment: rating.comment ?? null }
+        : null,
+      resolved_at: iso(ticket.resolvedAt),
+      closed_at: iso(ticket.closedAt),
+      created_at: iso(ticket.createdAt),
+      updated_at: iso(ticket.updatedAt),
+    };
   }
 
   async isFollowing(ticketId: number, userId: UserId): Promise<boolean> {

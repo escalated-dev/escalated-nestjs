@@ -22,7 +22,7 @@ export class SatisfactionRatingService {
     comment?: string;
     ratingToken?: string;
   }): Promise<SatisfactionRating> {
-    if (data.rating < 1 || data.rating > 5) {
+    if (!Number.isInteger(data.rating) || data.rating < 1 || data.rating > 5) {
       throw new BadRequestException('Rating must be between 1 and 5');
     }
 

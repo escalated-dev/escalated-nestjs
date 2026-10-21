@@ -47,6 +47,30 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/agent/tickets/{ticket}/follow',
     methods: POST,
   },
+  // Customer
+  'escalated.customer.tickets.index': { uri: 'escalated', methods: GET },
+  'escalated.customer.tickets.create': { uri: 'escalated/create', methods: GET },
+  'escalated.customer.tickets.store': { uri: 'escalated', methods: POST },
+  'escalated.customer.tickets.show': {
+    uri: 'escalated/customer/tickets/{ticket}',
+    methods: GET,
+  },
+  'escalated.customer.tickets.reply': {
+    uri: 'escalated/customer/tickets/{ticket}/reply',
+    methods: POST,
+  },
+  'escalated.customer.tickets.close': {
+    uri: 'escalated/customer/tickets/{ticket}/close',
+    methods: POST,
+  },
+  'escalated.customer.tickets.reopen': {
+    uri: 'escalated/customer/tickets/{ticket}/reopen',
+    methods: POST,
+  },
+  'escalated.customer.tickets.rate': {
+    uri: 'escalated/customer/tickets/{ticket}/rate',
+    methods: POST,
+  },
   'escalated.agent.tickets.custom-action': {
     uri: 'escalated/agent/tickets/{ticket}/actions/{action}',
     methods: POST,
