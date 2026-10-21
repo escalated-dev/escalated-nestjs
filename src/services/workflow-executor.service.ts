@@ -148,7 +148,13 @@ export class WorkflowExecutorService {
     );
   }
 
+  /** The builder sends the tag name; a slug or id also works. */
   private async resolveTag(value: string): Promise<Tag | null> {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const nameHit = await this.tagRepo.findOne({ where: { name: trimmed } });
+    if (nameHit) return nameHit;
+    value = trimmed;
     const slugHit = await this.tagRepo.findOne({ where: { slug: value } });
     if (slugHit) return slugHit;
     const asId = Number(value);

@@ -414,16 +414,11 @@ export class TicketService {
         this.access,
         ticket,
       );
-      this.eventEmitter.emit(
+      const newStatusId = dto.statusId;
+      pending.unshift((fresh) => [
         ESCALATED_EVENTS.TICKET_STATUS_CHANGED,
-        new TicketStatusChangedEvent(
-          ticket,
-          previousStatusId,
-          dto.statusId,
-          userId,
-          followerUserIds,
-        ),
-      );
+        new TicketStatusChangedEvent(fresh, previousStatusId, newStatusId, userId, followerUserIds),
+      ]);
     }
 
     // Handle assignment change
@@ -451,10 +446,11 @@ export class TicketService {
           ]);
         }
       } else {
-        this.eventEmitter.emit(
+        const newAssigneeId = dto.assigneeId;
+        pending.push((fresh) => [
           ESCALATED_EVENTS.TICKET_ASSIGNED,
-          new TicketAssignedEvent(ticket, previousAssigneeId, dto.assigneeId, userId),
-        );
+          new TicketAssignedEvent(fresh, previousAssigneeId, newAssigneeId, userId),
+        ]);
       }
     }
 
@@ -529,17 +525,17 @@ export class TicketService {
       await this.ticketRepo.update(id, updateData);
     }
 
-    if (Object.keys(changes).length > 0) {
-      this.eventEmitter.emit(
-        ESCALATED_EVENTS.TICKET_UPDATED,
-        new TicketUpdatedEvent(ticket, changes, userId),
-      );
-    }
-
+    // Every event carries the ticket as written, not the copy read before the change.
     const fresh = await this.findById(id);
     for (const build of pending) {
       const event = build(fresh);
       if (event) this.eventEmitter.emit(event[0], event[1]);
+    }
+    if (Object.keys(changes).length > 0) {
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.TICKET_UPDATED,
+        new TicketUpdatedEvent(fresh, changes, userId),
+      );
     }
     return fresh;
   }

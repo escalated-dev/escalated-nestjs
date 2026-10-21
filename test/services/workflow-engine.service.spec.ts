@@ -61,4 +61,20 @@ describe('WorkflowEngineService', () => {
     expect(result.matched).toBe(true);
     expect(result.actions[0].value).toBe('Note for ESC-001');
   });
+
+  it('reads tags as a list and assigned_to as the assignee', () => {
+    const ticket = { tags: ['VIP', 'vip'], assigneeId: '21' };
+    const check = (field: string, operator: string, value: string) =>
+      engine.evaluateConditions({ all: [{ field, operator, value }] }, ticket);
+    expect(check('tags', 'contains', 'vip')).toBe(true);
+    expect(check('tags', 'not_contains', 'billing')).toBe(true);
+    expect(check('tags', 'is_empty', '')).toBe(false);
+    expect(check('assigned_to', 'equals', '21')).toBe(true);
+    expect(
+      engine.evaluateConditions(
+        { all: [{ field: 'tags', operator: 'is_empty', value: '' }] },
+        { tags: [] },
+      ),
+    ).toBe(true);
+  });
 });

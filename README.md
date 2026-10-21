@@ -358,6 +358,7 @@ Protected by `adminGuard`.
 | CRUD    | `/api-tokens`           | Manage API tokens         |
 | CRUD    | `/agents`               | Manage agent profiles     |
 | CRUD    | `/macros`               | Manage macros             |
+| CRUD    | `/workflows`            | Manage workflows (see [Workflows](docs/workflows.md)) |
 | CRUD    | `/canned-responses`     | Manage canned responses   |
 | CRUD    | `/kb/categories`        | Manage KB categories      |
 | CRUD    | `/kb/articles`          | Manage KB articles        |

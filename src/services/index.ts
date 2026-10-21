@@ -30,6 +30,7 @@ export { ContactService } from './contact.service';
 export { WorkflowEngineService } from './workflow-engine.service';
 export { WorkflowExecutorService } from './workflow-executor.service';
 export { WorkflowRunnerService } from './workflow-runner.service';
+export { WorkflowAdminService } from './workflow-admin.service';
 export { AutomationService } from './automation.service';
 export {
   WidgetOriginsService,

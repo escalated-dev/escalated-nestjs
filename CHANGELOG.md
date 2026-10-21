@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Upgrade:** register and run the exported `SlaWarningFlags1792540800000`
   migration, which adds `slaFirstResponseWarned` and `slaResolutionWarned` to
   tickets.
+- Workflow admin JSON API under `/escalated/admin/workflows` (admin guard):
+  index, show, store, update, destroy, toggle, reorder, logs and the builder's
+  form options. It accepts exactly the body the shared builder posts
+  (escalated-developer-context `domain-model/workflow-admin-contract.md`) and
+  answers `422` with `errors` per field. See `docs/workflows.md`.
 
 ### Changed
 - **Webhook event names:** public replies are sent as `reply.created`
@@ -43,6 +48,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same fields as before. `CHAT_ACCEPTED` is deprecated and still emitted
   beside `CHAT_ASSIGNED`.
 - A workflow `change_status` to the status the ticket already has is a no-op.
+
+### Fixed
+- Workflow conditions on `status` (the status slug), `assigned_to`, `tags`
+  (tag names), `hours_since_created` and `hours_since_updated` are evaluated;
+  they never matched before. Conditions read the ticket as stored, after the
+  change that fired the trigger.
+- `add_tag`/`remove_tag` workflow actions find the tag by name, as the builder
+  sends it (slug and id still work).
+- `ticket.status_changed`, `ticket.assigned` and `ticket.updated` events carry
+  the updated ticket instead of the copy read before the change.
 
 ## [1.2.3] - 2026-10-20
 
