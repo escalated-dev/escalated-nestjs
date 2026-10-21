@@ -44,9 +44,11 @@ function htmlWrap(inner: string): string {
 
 export function renderTicketCreated(data: TicketCreatedData): RenderedEmail {
   const { ticket, contact, appName, appUrl, guestAccessToken } = data;
-  const portalLink = appUrl
-    ? `${appUrl}/tickets/${ticket.id}?guest_token=${guestAccessToken}`
-    : null;
+  // No link once the permanent token is gone (verified guest access).
+  const portalLink =
+    appUrl && guestAccessToken
+      ? `${appUrl}/tickets/${ticket.id}?guest_token=${guestAccessToken}`
+      : null;
 
   const subject = `[${ticket.referenceNumber}] We received your request — ${ticket.subject}`;
   const text =
@@ -73,9 +75,11 @@ export function renderTicketCreated(data: TicketCreatedData): RenderedEmail {
 
 export function renderReplyPosted(data: ReplyPostedData): RenderedEmail {
   const { ticket, reply, contact, appName, appUrl, guestAccessToken } = data;
-  const portalLink = appUrl
-    ? `${appUrl}/tickets/${ticket.id}?guest_token=${guestAccessToken}`
-    : null;
+  // No link once the permanent token is gone (verified guest access).
+  const portalLink =
+    appUrl && guestAccessToken
+      ? `${appUrl}/tickets/${ticket.id}?guest_token=${guestAccessToken}`
+      : null;
 
   const subject = `[${ticket.referenceNumber}] Re: ${ticket.subject}`;
   const text =

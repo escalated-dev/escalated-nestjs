@@ -16,6 +16,7 @@ import {
 import { SlaService } from '../../src/services/sla.service';
 import { EscalationService } from '../../src/services/escalation.service';
 import { CANONICAL_EVENTS, LEGACY_EVENT_NAMES } from '../../src/events/event-names';
+import { GuestOutbox } from './guest-codes';
 
 jest.setTimeout(60000);
 
@@ -51,6 +52,8 @@ describe('shared event vocabulary', () => {
   let billing: Department;
   let seq = 0;
   const realFetch = globalThis.fetch;
+  const outbox = new GuestOutbox();
+  const chatProof = (email: string) => outbox.proof(`${base}/escalated/widget`, email, 'chat');
 
   const agent = (method: string, path: string, body?: unknown, who = AGENT) =>
     realFetch(`${base}${path}`, {
@@ -108,6 +111,7 @@ describe('shared event vocabulary', () => {
         adminGuard: guardFor('admin'),
         agentGuard: guardFor('agent'),
         customerGuard: guardFor('customer'),
+        guestAccess: outbox.options(),
       },
     });
     source = moduleRef.get(DataSource);
@@ -328,6 +332,7 @@ describe('shared event vocabulary', () => {
       name: 'Visitor',
       email: 'visitor@example.com',
       message: 'Hi',
+      ...(await chatProof('visitor@example.com')),
     });
     expect(started.status).toBe(201);
     const { id: token, session_id: sessionId } = await started.json();
@@ -366,7 +371,11 @@ describe('shared event vocabulary', () => {
   });
 
   it('refuses a transfer with no target', async () => {
-    const started = await publicCall('POST', '/escalated/widget/chat/start', { name: 'V' });
+    const started = await publicCall('POST', '/escalated/widget/chat/start', {
+      name: 'V',
+      email: 'v@example.com',
+      ...(await chatProof('v@example.com')),
+    });
     const { session_id: sessionId } = await started.json();
     const res = await agent('POST', `/escalated/agent/chat/${sessionId}/transfer`, {});
     expect(res.status).toBe(400);

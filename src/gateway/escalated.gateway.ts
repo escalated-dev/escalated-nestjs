@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { createHash, timingSafeEqual } from 'crypto';
+import { GuestAccessService } from '../services/guest-access.service';
 import { TicketAccess, TicketActor } from '../config/ticket-access';
 import { embedOrigin } from '../config/widget-embed';
 import { Ticket } from '../entities/ticket.entity';
@@ -18,7 +19,13 @@ import { ESCALATED_EVENTS } from '../events/escalated.events';
 import { UserId } from '../config/user-id-column';
 
 /** Payload fields that grant access and must never be broadcast. */
-const SECRET_FIELDS = ['guestAccessToken', 'guest_access_token', 'visitorTokenHash'];
+const SECRET_FIELDS = [
+  'guestAccessToken',
+  'guest_access_token',
+  'guestAccessHash',
+  'guestVerifiedEmail',
+  'visitorTokenHash',
+];
 
 interface DeliveryOptions {
   /** Only agent/admin sockets receive it (internal notes, queues, new tickets). */
@@ -51,7 +58,10 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   private readonly logger = new Logger(EscalatedGateway.name);
 
-  constructor(@Optional() private readonly access?: TicketAccess) {}
+  constructor(
+    @Optional() private readonly access?: TicketAccess,
+    @Optional() private readonly guestAccess?: GuestAccessService,
+  ) {}
 
   async handleConnection(client: Socket): Promise<void> {
     try {
@@ -293,7 +303,15 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
       if (actor.isAgent) return this.access.allows(actor, ticket);
       if (String(actor.id) === String(ticket.requesterId)) return true;
     }
-    return tokensMatch(client.data?.escalatedGuestToken, ticket.guestAccessToken);
+    // A guest grant for this ticket, or (only with `guestAccess.legacyTokens`)
+    // its permanent pre-verification token.
+    const token = client.data?.escalatedGuestToken;
+    if (!token) return false;
+    if (this.guestAccess) {
+      const granted = await this.guestAccess.ticketForToken(token);
+      return !!granted && granted.id === ticket.id;
+    }
+    return tokensMatch(token, ticket.guestAccessToken);
   }
 
   private async findChat(sessionId: unknown): Promise<any | null> {

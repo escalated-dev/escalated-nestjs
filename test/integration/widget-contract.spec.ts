@@ -9,6 +9,7 @@ import { KbCategory } from '../../src/entities/kb-category.entity';
 import { SatisfactionRating } from '../../src/entities/satisfaction-rating.entity';
 import { Ticket } from '../../src/entities/ticket.entity';
 import { ChatSessionService } from '../../src/services/chat-session.service';
+import { GuestOutbox } from './guest-codes';
 
 jest.setTimeout(60000);
 
@@ -22,6 +23,10 @@ describe('shared widget API contract', () => {
   let source: DataSource;
   let base: string;
   let sales: Department;
+  const outbox = new GuestOutbox();
+  /** The proof fields the widget sends after the guest enters the emailed code. */
+  const proof = (email: string, purpose: 'ticket' | 'chat' | 'lookup') =>
+    outbox.proof(`${base}/escalated/widget`, email, purpose);
 
   const call = async (method: string, path: string, body?: unknown) => {
     const res = await fetch(`${base}/escalated/widget${path}`, {
@@ -38,7 +43,7 @@ describe('shared widget API contract', () => {
 
   beforeEach(async () => {
     const moduleRef = await bootEscalatedModule({
-      escalated: { enableWebsockets: false },
+      escalated: { enableWebsockets: false, guestAccess: outbox.options() },
     });
     source = moduleRef.get(DataSource);
     await source.initialize();
@@ -77,16 +82,16 @@ describe('shared widget API contract', () => {
   });
 
   describe('GET /config', () => {
-    it('turns the Status tab off, since mailbox verification is not implemented', async () => {
+    it('asks for email verification and turns the Status tab on', async () => {
       const { status, data } = await call('GET', '/config');
 
       expect(status).toBe(200);
       expect(data).toMatchObject({
-        status_lookup_enabled: false,
+        guest_verification_required: true,
+        status_lookup_enabled: true,
         accepts_metadata: true,
         departments: [{ id: sales.id, name: 'Sales' }],
       });
-      expect(data).not.toHaveProperty('guest_verification_required');
     });
   });
 
@@ -139,36 +144,37 @@ describe('shared widget API contract', () => {
   });
 
   describe('POST /tickets', () => {
-    const ticketBody = () => ({
+    const ticketBody = async () => ({
       name: 'Jane Doe',
       email: 'jane@example.com',
       subject: 'Order missing',
       description: 'It never arrived.',
       department_id: sales.id,
       metadata: { order: 'A-100' },
+      ...(await proof('jane@example.com', 'ticket')),
     });
 
     it('returns the reference at the top level and files the ticket in the department', async () => {
-      const { status, data } = await call('POST', '/tickets', ticketBody());
+      const { status, data } = await call('POST', '/tickets', await ticketBody());
 
       expect(status).toBe(201);
       const ticket = await source.getRepository(Ticket).findOneByOrFail({});
       expect(data).toMatchObject({
         message: expect.any(String),
         reference: ticket.referenceNumber,
-        guest_access_token: ticket.guestAccessToken,
-        // Existing keys stay for current clients.
-        guestAccessToken: ticket.guestAccessToken,
-        ticket: { id: ticket.id },
+        ticket_reference: ticket.referenceNumber,
+        guest_access_token: expect.any(String),
+        expires_at: expect.any(String),
       });
       expect(ticket.departmentId).toBe(sales.id);
       expect(ticket.metadata).toEqual({ order: 'A-100' });
     });
 
     it('rejects an unknown or inactive department with a field error', async () => {
+      const body = await ticketBody();
       for (const departmentId of [9999, sales.id + 1]) {
         const { status, data } = await call('POST', '/tickets', {
-          ...ticketBody(),
+          ...body,
           department_id: departmentId,
         });
         expect(status).toBe(422);
@@ -178,7 +184,10 @@ describe('shared widget API contract', () => {
     });
 
     it('treats an empty department as none', async () => {
-      const { status } = await call('POST', '/tickets', { ...ticketBody(), department_id: null });
+      const { status } = await call('POST', '/tickets', {
+        ...(await ticketBody()),
+        department_id: null,
+      });
 
       expect(status).toBe(201);
       expect((await source.getRepository(Ticket).findOneByOrFail({})).departmentId).toBeNull();
@@ -192,6 +201,7 @@ describe('shared widget API contract', () => {
         email: 'john@example.com',
         department_id: sales.id,
         message: 'Hi, is anyone there?',
+        ...(await proof('john@example.com', 'chat')),
         ...extra,
       });
 

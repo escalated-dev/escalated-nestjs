@@ -39,4 +39,5 @@ export { Workflow } from './workflow.entity';
 export { WorkflowLog } from './workflow-log.entity';
 export { Automation } from './automation.entity';
 export { Contact } from './contact.entity';
+export { GuestVerification } from './guest-verification.entity';
 export { InboundEmail } from './inbound-email.entity';

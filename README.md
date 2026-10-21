@@ -153,6 +153,7 @@ two can live on different connections — there is no foreign key that would hav
 to span them.
 | `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
+| `guestAccess`         | `object`   | --            | Verified guest access: `secret`, `ttlMinutes`, code budgets, `legacyTokens`, `sendCode` (see [docs/guest-access.md](docs/guest-access.md)) |
 | `slaWarningMinutes`   | `number`   | `30`          | Minutes before an SLA deadline that `sla.warning` fires (`0` = off) |
 | `widgetOrigins`       | `string[]` | `[]`          | Sites that may embed the widget (see [Embedding the widget](docs/embedding-the-widget.md)) |
 | `adminGuard`          | `class`    | --            | Guard for `/escalated/admin/*`. Unset refuses every admin route (see Route guards) |
@@ -211,7 +212,7 @@ export class AppModule {}
 
 None of the three guards apply to these routes, which are public or carry their own authentication:
 
-- `/escalated/widget/*`, including widget chat (public; a guest reads their ticket with its guest access token)
+- `/escalated/widget/*`, including widget chat, and `/escalated/guest/*` (public; guests prove their email with a code and read their ticket with an expiring grant, see [Verified guest access](docs/guest-access.md))
 - `/escalated/customer/kb/*` (published knowledge base articles)
 - `/escalated/webhook/email/*` (`X-Escalated-Inbound-Secret`, see below)
 - `/escalated/api/v1/auth/*` (your `apiAuth` callbacks)
@@ -390,9 +391,11 @@ Public. No route-group guard applies.
 | ------ | ---------------------- | ------------------------- |
 | GET    | `/config`              | Widget settings (colour, position, greeting, departments, `accepts_metadata`) |
 | GET    | `/embed.js`            | Standalone widget script for other sites |
-| POST   | `/tickets`             | Create ticket (public). The requester comes from `email` (guest policy) or from a host-authenticated `req.user`; a `requesterId` in the body is ignored. Optional `metadata` |
-| GET    | `/tickets/:id`         | View ticket (guest token) |
-| POST   | `/tickets/:id/replies` | Reply (guest token)       |
+| POST   | `/verification`        | Email a guest a one-time code (`ticket`, `chat` or `lookup`) |
+| POST   | `/lookup`              | Find a ticket by reference and proven email; answers fresh grants |
+| POST   | `/tickets`             | Create ticket (public). A guest sends `email` plus the code (`verification_id`, `verification_code`) and gets an expiring grant; a host-authenticated `req.user` needs no code. A `requesterId` in the body is ignored. Optional `metadata` |
+| GET    | `/tickets/:reference`  | View ticket (`Authorization: Bearer <grant>`) |
+| POST   | `/tickets/:reference/replies` | Reply (`Authorization: Bearer <grant>`) |
 | GET    | `/kb/search`           | Search KB                 |
 | POST   | `/rate/:token`         | Submit CSAT               |
 

@@ -14,6 +14,8 @@ import { DepartmentService } from '../../src/services/department.service';
 import { ESCALATED_OPTIONS } from '../../src/config/escalated.config';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 import { ESCALATED_EVENTS } from '../../src/events/escalated.events';
+import { GuestTicketsService } from '../../src/services/guest-tickets.service';
+import { GuestAccessService } from '../../src/services/guest-access.service';
 
 import { Ticket } from '../../src/entities/ticket.entity';
 
@@ -61,6 +63,7 @@ async function buildModule(
     controllers: [WidgetController],
     providers: [
       { provide: getRepositoryToken(Ticket), useValue: { findOne: jest.fn() } },
+      { provide: GuestAccessService, useValue: { ticketForToken: jest.fn() } },
       { provide: TicketService, useValue: ticketService },
       { provide: ContactService, useValue: contactService },
       { provide: SettingsService, useValue: settingsService },
@@ -89,6 +92,17 @@ async function buildModule(
       { provide: ESCALATED_OPTIONS, useValue: options },
       { provide: EventEmitter2, useValue: eventEmitter },
       { provide: ThrottlerStorage, useClass: ThrottlerStorageService },
+      {
+        // Proof of the email is covered by test/integration/verified-guest-access.spec.ts.
+        provide: GuestTicketsService,
+        useValue: {
+          withProof: jest.fn((_body: unknown, _purpose: string, run: () => unknown) => run()),
+          grantFor: jest.fn().mockResolvedValue({
+            guest_access_token: 'grant',
+            expires_at: '2030-01-01T00:00:00.000Z',
+          }),
+        },
+      },
     ],
   }).compile();
 
@@ -128,7 +142,7 @@ describe('WidgetController', () => {
         }),
         0,
       );
-      expect(result.guestAccessToken).toBe('abc-123');
+      expect(result).toMatchObject({ reference: 'TK-ABC', guest_access_token: 'grant' });
     });
 
     it('passes name as null when the submitter omits it', async () => {

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/throttler';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 
-export type GuestThrottleScope = 'ticket' | 'reply';
+export type GuestThrottleScope = 'ticket' | 'reply' | 'chat' | 'verification';
 
 export const GUEST_THROTTLE_SCOPE = 'escalated:guest-throttle-scope';
 
@@ -16,7 +16,12 @@ export const GuestThrottle = (scope: GuestThrottleScope) =>
   SetMetadata(GUEST_THROTTLE_SCOPE, scope);
 
 const WINDOW_MS = 60_000;
-const DEFAULT_LIMITS: Record<GuestThrottleScope, number> = { ticket: 5, reply: 10 };
+const DEFAULT_LIMITS: Record<GuestThrottleScope, number> = {
+  ticket: 5,
+  reply: 10,
+  chat: 5,
+  verification: 10,
+};
 
 /**
  * Per-client-IP rate limit for the unauthenticated guest endpoints. Every
@@ -47,9 +52,13 @@ export class GuestThrottleGuard implements CanActivate {
       return true;
     }
 
-    const limit =
-      (scope === 'ticket' ? config.ticketsPerMinute : config.repliesPerMinute) ??
-      DEFAULT_LIMITS[scope];
+    const configured: Record<GuestThrottleScope, number | undefined> = {
+      ticket: config.ticketsPerMinute,
+      reply: config.repliesPerMinute,
+      chat: config.chatsPerMinute,
+      verification: config.verificationsPerMinute,
+    };
+    const limit = configured[scope] ?? DEFAULT_LIMITS[scope];
 
     const http = context.switchToHttp();
     const req = http.getRequest<{ ip?: string; socket?: { remoteAddress?: string } }>();

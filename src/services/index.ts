@@ -31,6 +31,8 @@ export { WorkflowEngineService } from './workflow-engine.service';
 export { WorkflowExecutorService } from './workflow-executor.service';
 export { WorkflowRunnerService } from './workflow-runner.service';
 export { WorkflowAdminService } from './workflow-admin.service';
+export { GuestAccessService } from './guest-access.service';
+export { GuestTicketsService } from './guest-tickets.service';
 export { AutomationService } from './automation.service';
 export {
   WidgetOriginsService,

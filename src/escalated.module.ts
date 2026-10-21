@@ -61,6 +61,7 @@ import {
   ChatSession,
   ChatRoutingRule,
   Contact,
+  GuestVerification,
   Workflow,
   WorkflowLog,
   InboundEmail,
@@ -102,6 +103,8 @@ import {
   WorkflowExecutorService,
   WorkflowRunnerService,
   WorkflowAdminService,
+  GuestAccessService,
+  GuestTicketsService,
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
@@ -136,6 +139,7 @@ import { AdminApiTokenController } from './controllers/admin/api-token.controlle
 import { AdminImportController } from './controllers/admin/import.controller';
 import { AdminMacroController } from './controllers/admin/macro.controller';
 import { AdminWorkflowController } from './controllers/admin/workflow.controller';
+import { GuestController } from './controllers/guest.controller';
 import { AdminSkillController } from './controllers/admin/skill.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
@@ -206,6 +210,7 @@ const entities = [
   ChatSession,
   ChatRoutingRule,
   Contact,
+  GuestVerification,
   Workflow,
   WorkflowLog,
   InboundEmail,
@@ -246,6 +251,8 @@ const services = [
   WorkflowExecutorService,
   WorkflowRunnerService,
   WorkflowAdminService,
+  GuestAccessService,
+  GuestTicketsService,
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
@@ -277,6 +284,7 @@ const controllers = [
   CustomerTicketController,
   CustomerKnowledgeBaseController,
   WidgetController,
+  GuestController,
   AgentChatController,
   WidgetChatController,
   WidgetScriptController,

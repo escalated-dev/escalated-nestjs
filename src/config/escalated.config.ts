@@ -152,7 +152,9 @@ export interface EscalatedModuleOptions {
 
   /**
    * Per-client-IP rate limits on the unauthenticated guest endpoints
-   * (`POST widget/tickets`, `POST widget/tickets/:id/replies`). A request over
+   * (`POST widget/tickets`, `POST widget/tickets/:id/replies`,
+   * `POST widget/chat/start`, and `verification`/`lookup` on the widget and
+   * guest routes). A request over
    * the limit gets `429` with `Retry-After`. The client IP is `req.ip`; behind
    * a proxy the host must configure its HTTP adapter's `trust proxy`, or every
    * guest shares the proxy's address.
@@ -164,12 +166,50 @@ export interface EscalatedModuleOptions {
     ticketsPerMinute?: number;
     /** Guest replies per IP per minute. Default 10. */
     repliesPerMinute?: number;
+    /** Widget chats started per IP per minute. Default 5. */
+    chatsPerMinute?: number;
+    /** Guest code requests and lookups per IP per minute. Default 10. */
+    verificationsPerMinute?: number;
     /**
      * Where the counters live. Default: the in-memory `@nestjs/throttler`
      * store, which is per process. A multi-instance deployment should pass a
      * shared `ThrottlerStorage` (e.g. a Redis-backed one).
      */
     storage?: ThrottlerStorage;
+  };
+
+  /**
+   * Verified guest access (docs/guest-access.md): guests prove their email
+   * with an emailed code and open tickets with expiring grants.
+   */
+  guestAccess?: {
+    /**
+     * Key for the email and code digests and the grant encryption. Default:
+     * `ESCALATED_GUEST_ACCESS_SECRET`, else `inbound.replySecret`. Without one
+     * a random per-process key is used, so grants do not survive a restart
+     * and are not shared between instances.
+     */
+    secret?: string;
+    /** Grant lifetime in minutes. Default 1440 (24 h), clamped to 5 minutes .. 7 days. */
+    ttlMinutes?: number;
+    /** Codes one client IP may request for one mailbox per hour. Default 3. */
+    challengesPerClientPerHour?: number;
+    /** Codes one mailbox may receive per hour, across clients. Default 10. */
+    challengesPerMailboxPerHour?: number;
+    /**
+     * Keep accepting the permanent guest tokens issued before verified access
+     * (`?guest_token=`, `X-Guest-Token`), during a transition. Default false.
+     */
+    legacyTokens?: boolean;
+    /**
+     * Delivers a code. Default: the package mailer (`mail`). Hosts may send it
+     * their own way.
+     */
+    sendCode?: (
+      email: string,
+      code: string,
+      purpose: 'ticket' | 'chat' | 'lookup',
+    ) => Promise<void> | void;
   };
 
   /** App name for branding */

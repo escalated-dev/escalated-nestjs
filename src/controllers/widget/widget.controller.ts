@@ -4,12 +4,13 @@ import {
   Controller,
   Get,
   Inject,
+  HttpCode,
   NotFoundException,
   Param,
-  ParseIntPipe,
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -29,6 +30,9 @@ import { GuestThrottle, GuestThrottleGuard } from '../../guards/guest-throttle.g
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import { UserId } from '../../config/user-id-column';
 import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalated.events';
+import { GuestTicketsService } from '../../services/guest-tickets.service';
+import { privateGuestResponse } from '../../services/guest-access.service';
+import { clientIp, withRetryAfter } from './guest-http';
 
 /**
  * Shape accepted by POST /escalated/widget/tickets. The route is public, so the
@@ -70,6 +74,7 @@ export class WidgetController {
     private readonly eventEmitter: EventEmitter2,
     @Inject(ESCALATED_OPTIONS)
     private readonly options: EscalatedModuleOptions,
+    private readonly guestTickets: GuestTicketsService,
   ) {}
 
   /**
@@ -122,17 +127,50 @@ export class WidgetController {
       guest_tickets_enabled: true,
       // Tickets and chats keep host parameters sent as `metadata`.
       accepts_metadata: true,
-      // Looking a ticket up needs mailbox verification, which this backend
-      // does not offer; widgets hide their Status tab. There is deliberately
-      // no lookup by a claimed email address.
-      status_lookup_enabled: false,
+      // Guests prove their email with a code before creating a ticket,
+      // starting a chat or looking a ticket up (docs/guest-access.md).
+      guest_verification_required: true,
+      status_lookup_enabled: true,
     };
+  }
+
+  /** Email a one-time code: `{ email, purpose: ticket | chat | lookup }`. */
+  @Post('verification')
+  @HttpCode(202)
+  @GuestThrottle('verification')
+  @UseGuards(GuestThrottleGuard)
+  async verification(@Body() body: unknown, @Req() req: any, @Res({ passthrough: true }) res: any) {
+    privateGuestResponse(res);
+    return withRetryAfter(res, () => this.guestTickets.requestCode(body, clientIp(req)));
+  }
+
+  /** Tickets with this reference and the proven email, each with a fresh grant. */
+  @Post('lookup')
+  @HttpCode(200)
+  @GuestThrottle('verification')
+  @UseGuards(GuestThrottleGuard)
+  async lookup(@Body() body: unknown, @Res({ passthrough: true }) res: any) {
+    privateGuestResponse(res);
+    return this.guestTickets.lookup(body);
   }
 
   @Post('tickets')
   @GuestThrottle('ticket')
   @UseGuards(GuestThrottleGuard, PublicSubmitThrottleGuard)
-  async createTicket(@Body() body: WidgetCreateTicketBody, @Req() req?: any) {
+  async createTicket(
+    @Body() body: WidgetCreateTicketBody,
+    @Req() req?: any,
+    @Res({ passthrough: true }) res?: any,
+  ) {
+    privateGuestResponse(res);
+    // A guest proves the email first; a host-authenticated user needs no code.
+    if (body?.email) {
+      return this.guestTickets.withProof(body, 'ticket', () => this.fileTicket(body, req));
+    }
+    return this.fileTicket(body, req);
+  }
+
+  private async fileTicket(body: WidgetCreateTicketBody, req?: any) {
     let contactId: number | null = null;
     let requesterId: UserId;
 
@@ -177,34 +215,39 @@ export class WidgetController {
       );
     }
 
-    return {
+    const created = {
       message: 'Ticket created successfully.',
       reference: ticket.referenceNumber,
-      guest_access_token: ticket.guestAccessToken,
-      ticket,
-      guestAccessToken: ticket.guestAccessToken,
+      ticket_reference: ticket.referenceNumber,
     };
+    if (!body.email) return created;
+    // The email was just proven: the guest gets an expiring grant.
+    return { ...created, ...(await this.guestTickets.grantFor(ticket, body.email)) };
   }
 
-  @Get('tickets/:id')
+  /**
+   * The ticket a grant opens (`Authorization: Bearer <grant>`), by reference
+   * or id: its status and the latest public replies.
+   */
+  @Get('tickets/:ticket')
   @UseGuards(GuestAccessGuard)
-  async showTicket(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    const ticket = req.guestTicket || (await this.ticketService.findById(id));
-    const replies = await this.replyService.findByTicketId(id, false);
-    return { ticket, replies };
+  async showTicket(@Req() req: any, @Res({ passthrough: true }) res: any) {
+    privateGuestResponse(res);
+    return this.guestTickets.status(req.guestTicket);
   }
 
-  @Post('tickets/:id/replies')
+  @Post('tickets/:ticket/replies')
   @GuestThrottle('reply')
   // Throttle runs first so requests with a wrong guest token are counted too.
   @UseGuards(GuestThrottleGuard, GuestAccessGuard)
-  async addReply(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { body: string },
-    @Req() req: any,
-  ) {
+  async addReply(@Body() body: unknown, @Req() req: any, @Res({ passthrough: true }) res: any) {
+    privateGuestResponse(res);
     const ticket = req.guestTicket;
-    return this.replyService.create(id, { body: body.body, type: 'reply' }, ticket.requesterId);
+    return this.replyService.create(
+      ticket.id,
+      { body: this.guestTickets.replyBody(body), type: 'reply' },
+      ticket.requesterId,
+    );
   }
 
   /**

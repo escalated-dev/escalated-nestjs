@@ -3,6 +3,8 @@ import { bootEscalatedModule } from './boot-escalated-module';
 import { TicketService } from '../../src/services/ticket.service';
 import { ContactService } from '../../src/services/contact.service';
 import { SettingsService } from '../../src/services/settings.service';
+import { GuestTicketsService } from '../../src/services/guest-tickets.service';
+import { guestProofSkipped } from './guest-codes';
 
 jest.setTimeout(60000);
 
@@ -29,7 +31,9 @@ describe('POST /escalated/widget/tickets requester identity', () => {
           .overrideProvider(ContactService)
           .useValue(contacts)
           .overrideProvider(SettingsService)
-          .useValue({ getTyped: jest.fn(async (_key: string, fallback: unknown) => fallback) }),
+          .useValue({ getTyped: jest.fn(async (_key: string, fallback: unknown) => fallback) })
+          .overrideProvider(GuestTicketsService)
+          .useValue(guestProofSkipped()),
     });
 
     app = moduleRef.createNestApplication({ logger: false });

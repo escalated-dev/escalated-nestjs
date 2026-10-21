@@ -9,6 +9,8 @@ import { SettingsService } from '../../src/services/settings.service';
 import { ChatSessionService } from '../../src/services/chat-session.service';
 import { DepartmentService } from '../../src/services/department.service';
 import { KnowledgeBaseService } from '../../src/services/knowledge-base.service';
+import { GuestTicketsService } from '../../src/services/guest-tickets.service';
+import { guestProofSkipped } from './guest-codes';
 
 jest.setTimeout(60000);
 
@@ -111,7 +113,9 @@ async function start(
         .overrideProvider(DepartmentService)
         .useValue(stubs.departments)
         .overrideProvider(KnowledgeBaseService)
-        .useValue(stubs.kb),
+        .useValue(stubs.kb)
+        .overrideProvider(GuestTicketsService)
+        .useValue(guestProofSkipped()),
   });
 
   const app = moduleRef.createNestApplication({ logger: false });
@@ -369,7 +373,8 @@ describe('cross-origin widget embedding', () => {
         kb_enabled: true,
         guest_tickets_enabled: true,
         accepts_metadata: true,
-        status_lookup_enabled: false,
+        guest_verification_required: true,
+        status_lookup_enabled: true,
       });
     });
 
