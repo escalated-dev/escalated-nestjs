@@ -347,7 +347,9 @@ export class UiDataService {
         attachments: (reply.attachments ?? []).map(serializeAttachment),
         created_at: iso(reply.createdAt),
       })),
-      satisfaction_rating: rating ? { rating: rating.rating, comment: rating.comment ?? null } : null,
+      satisfaction_rating: rating
+        ? { rating: rating.rating, comment: rating.comment ?? null }
+        : null,
       resolved_at: iso(ticket.resolvedAt),
       closed_at: iso(ticket.closedAt),
       created_at: iso(ticket.createdAt),

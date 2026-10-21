@@ -76,9 +76,7 @@ describe('customer screens (ui.enabled)', () => {
       await makeTicket();
       const screen = await page(base, '/escalated/customer/tickets', asCustomer);
       expect(screen.component).toBe('Escalated/Customer/Index');
-      expect(
-        screen.props.tickets.data.every((t: any) => t.requester_id === CUSTOMER),
-      ).toBe(true);
+      expect(screen.props.tickets.data.every((t: any) => t.requester_id === CUSTOMER)).toBe(true);
 
       const json = await apiFetch(base, '/escalated/customer/tickets', asCustomer);
       expect(await json.json()).toHaveProperty('total');
@@ -107,7 +105,9 @@ describe('customer screens (ui.enabled)', () => {
         },
       });
       expect(res.status).toBe(303);
-      const ticket = await source.getRepository(Ticket).findOneByOrFail({ subject: 'Cannot log in' });
+      const ticket = await source
+        .getRepository(Ticket)
+        .findOneByOrFail({ subject: 'Cannot log in' });
       expect(ticket).toMatchObject({
         requesterId: CUSTOMER,
         priority: 'high',

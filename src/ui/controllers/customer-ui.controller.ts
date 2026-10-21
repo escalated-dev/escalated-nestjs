@@ -29,7 +29,14 @@ import { UiDataService } from '../ui-data.service';
 export const CUSTOMER_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
 const TICKET_TYPES = ['question', 'problem', 'incident', 'task'];
 /** The list filters a customer can set (escalated-laravel Customer\TicketController@index). */
-export const CUSTOMER_FILTERS = ['status', 'priority', 'ticket_type', 'search', 'sort_by', 'sort_dir'];
+export const CUSTOMER_FILTERS = [
+  'status',
+  'priority',
+  'ticket_type',
+  'search',
+  'sort_by',
+  'sort_dir',
+];
 
 export function customerFilters(query: Record<string, any>): Record<string, any> {
   const filters: Record<string, any> = {};
