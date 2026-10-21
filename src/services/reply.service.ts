@@ -11,7 +11,11 @@ import { resolveFollowerUserIds } from './follower-recipients';
 import { CreateReplyDto } from '../dto/create-reply.dto';
 import { TicketAccess } from '../config/ticket-access';
 import { UserId } from '../config/user-id-column';
-import { ESCALATED_EVENTS, TicketReplyCreatedEvent } from '../events/escalated.events';
+import {
+  ESCALATED_EVENTS,
+  TicketReplyCreatedEvent,
+  NoteCreatedEvent,
+} from '../events/escalated.events';
 
 @Injectable()
 export class ReplyService {
@@ -95,6 +99,13 @@ export class ReplyService {
       ESCALATED_EVENTS.TICKET_REPLY_CREATED,
       new TicketReplyCreatedEvent(saved, ticket, userId, followerUserIds),
     );
+
+    if (saved.isInternal) {
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.NOTE_CREATED,
+        new NoteCreatedEvent(saved, ticket, userId),
+      );
+    }
 
     return saved;
   }

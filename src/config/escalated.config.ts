@@ -20,6 +20,12 @@ export interface EscalatedModuleOptions {
   };
   targetedSlas?: boolean;
 
+  /**
+   * Minutes before an SLA deadline at which `sla.warning` fires, once per
+   * deadline (default: 30). Set 0 to turn warnings off.
+   */
+  slaWarningMinutes?: number;
+
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
   routePrefix?: string;
 
@@ -291,6 +297,7 @@ export const defaultOptions: EscalatedModuleOptions = {
   maxFileSize: 10 * 1024 * 1024,
   allowedFileTypes: ['image/*', 'application/pdf', 'text/*', '.doc', '.docx', '.xls', '.xlsx'],
   webhookMaxRetries: 3,
+  slaWarningMinutes: 30,
   widgetOrigins: [],
   fallbackLanguage: 'en',
   guestRateLimit: {

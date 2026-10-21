@@ -153,6 +153,7 @@ two can live on different connections — there is no foreign key that would hav
 to span them.
 | `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
+| `slaWarningMinutes`   | `number`   | `30`          | Minutes before an SLA deadline that `sla.warning` fires (`0` = off) |
 | `widgetOrigins`       | `string[]` | `[]`          | Sites that may embed the widget (see [Embedding the widget](docs/embedding-the-widget.md)) |
 | `adminGuard`          | `class`    | --            | Guard for `/escalated/admin/*`. Unset refuses every admin route (see Route guards) |
 | `agentGuard`          | `class`    | --            | Guard for `/escalated/agent/*`. Unset refuses every agent route |
@@ -439,13 +440,17 @@ export class NotificationService {
 }
 ```
 
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`, `TICKET_CUSTOM_ACTION_TRIGGERED`.
+Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_STATUS_CHANGED`, `TICKET_RESOLVED`, `TICKET_CLOSED`, `TICKET_REOPENED`, `TICKET_ASSIGNED`, `TICKET_UNASSIGNED`, `TICKET_ESCALATED`, `TICKET_PRIORITY_CHANGED`, `TICKET_DEPARTMENT_CHANGED`, `TICKET_TAG_ADDED`, `TICKET_TAG_REMOVED`, `TICKET_REPLY_CREATED` (every reply, internal notes included), `NOTE_CREATED` (internal notes), `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_WARNING`, `SLA_BREACHED`, `CHAT_STARTED`, `CHAT_ASSIGNED`, `CHAT_TRANSFERRED`, `CHAT_MESSAGE`, `CHAT_ENDED`, `TICKET_CUSTOM_ACTION_TRIGGERED`. Unassigning a ticket emits `TICKET_UNASSIGNED`, not `TICKET_ASSIGNED`. `CHAT_ACCEPTED` is deprecated and still emitted beside `CHAT_ASSIGNED`.
+
+`sla.warning` fires once per deadline that falls due within `slaWarningMinutes` (default `30`, `0` turns it off). `ticket.escalated` fires the first time each escalation rule matches a ticket. Existing installations run the exported `SlaWarningFlags1792540800000` migration, which adds the warning flags to tickets.
 
 Escalated registers `EventEmitterModule` with `wildcard: true` and the `.` delimiter, so a listener can use a pattern such as `@OnEvent('escalated.ticket.*')`. A listener name that contains `*` is treated as a pattern; names without `*` match exactly, as before.
 
 ### Outbound webhooks
 
-Webhooks managed under `/escalated/admin/webhooks` receive `ticket.created`, `ticket.updated`, `ticket.assigned`, `ticket.status_changed`, `ticket.reply_created`, `ticket.merged`, `ticket.split` and `sla.breached`, as a JSON `POST` signed with `X-Escalated-Signature` (HMAC-SHA256 of the body with the webhook's secret). Subscribe to `*` for all of them.
+Webhooks managed under `/escalated/admin/webhooks` receive the shared event vocabulary (escalated-developer-context ADR 2026-10-21, exported as `CANONICAL_EVENTS`): `ticket.created`, `ticket.updated`, `ticket.status_changed`, `ticket.resolved`, `ticket.closed`, `ticket.reopened`, `ticket.assigned`, `ticket.unassigned`, `ticket.escalated`, `ticket.priority_changed`, `ticket.department_changed`, `ticket.tag_added`, `ticket.tag_removed`, `reply.created`, `note.created`, `sla.warning`, `sla.breached`, `chat.started`, `chat.assigned`, `chat.transferred`, `chat.message` and `chat.ended`, plus `ticket.merged` and `ticket.split`. Each is a JSON `POST` signed with `X-Escalated-Signature` (HMAC-SHA256 of the body with the webhook's secret). Subscribe to `*` for all of them. Chat payloads carry `chat: { session_id, ticket_id, status, agent_id, department_id, ... }`, never the visitor's token or email.
+
+Names from earlier releases are read as their canonical name (`LEGACY_EVENT_NAMES`): a subscription stored as `ticket.reply_created` or `ticket.replied` receives `reply.created`, `ticket.tagged` receives `ticket.tag_added`, and so on. Saving a webhook stores canonical names. Workflows saved with a legacy trigger keep running.
 
 A webhook URL must use `http` or `https` and must resolve only to public addresses. Loopback, private, link-local (including cloud metadata) and reserved targets are refused when the webhook is saved (`400`) and checked again before every delivery attempt. Redirects are not followed.
 

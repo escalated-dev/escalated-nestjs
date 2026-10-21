@@ -12,8 +12,13 @@ import { resolveFollowerUserIds } from './follower-recipients';
 import {
   ESCALATED_EVENTS,
   TicketAssignedEvent,
+  TicketDepartmentChangedEvent,
+  TicketPriorityChangedEvent,
   TicketStatusChangedEvent,
+  TicketTagAddedEvent,
+  TicketTagRemovedEvent,
 } from '../events/escalated.events';
+import { lifecycleEvent } from '../events/ticket-lifecycle';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { UserId } from '../config/user-id-column';
 
@@ -79,13 +84,27 @@ export class WorkflowExecutorService {
   }
 
   private async changePriority(ticket: Ticket, priority: string): Promise<void> {
+    const previous = ticket.priority;
     await this.ticketRepo.update(ticket.id, { priority });
+    if (previous === priority) return;
+    ticket.priority = priority;
+    this.eventEmitter.emit(
+      ESCALATED_EVENTS.TICKET_PRIORITY_CHANGED,
+      new TicketPriorityChangedEvent({ ...ticket }, previous, priority, 0),
+    );
   }
 
   private async setDepartment(ticket: Ticket, value: string): Promise<void> {
     const departmentId = Number(value);
     if (!Number.isFinite(departmentId)) return;
+    const previous = ticket.departmentId ?? null;
     await this.ticketRepo.update(ticket.id, { departmentId });
+    if (previous === departmentId) return;
+    ticket.departmentId = departmentId;
+    this.eventEmitter.emit(
+      ESCALATED_EVENTS.TICKET_DEPARTMENT_CHANGED,
+      new TicketDepartmentChangedEvent({ ...ticket }, previous, departmentId, 0),
+    );
   }
 
   private async addTag(ticket: Ticket, value: string): Promise<void> {
@@ -104,6 +123,10 @@ export class WorkflowExecutorService {
       tags.push(tag);
       fresh.tags = tags;
       await this.ticketRepo.save(fresh);
+      this.eventEmitter.emit(
+        ESCALATED_EVENTS.TICKET_TAG_ADDED,
+        new TicketTagAddedEvent(fresh, { id: tag.id, name: tag.name, slug: tag.slug }, 0),
+      );
     }
   }
 
@@ -115,8 +138,14 @@ export class WorkflowExecutorService {
         where: { id: ticket.id },
         relations: { tags: true },
       })) ?? ticket;
-    fresh.tags = (fresh.tags ?? []).filter((t) => t.id !== tag.id);
+    const before = fresh.tags ?? [];
+    if (!before.some((t) => t.id === tag.id)) return;
+    fresh.tags = before.filter((t) => t.id !== tag.id);
     await this.ticketRepo.save(fresh);
+    this.eventEmitter.emit(
+      ESCALATED_EVENTS.TICKET_TAG_REMOVED,
+      new TicketTagRemovedEvent(fresh, { id: tag.id, name: tag.name, slug: tag.slug }, 0),
+    );
   }
 
   private async resolveTag(value: string): Promise<Tag | null> {
@@ -143,6 +172,12 @@ export class WorkflowExecutorService {
       return;
     }
     const previousStatusId = ticket.statusId;
+    if (previousStatusId === status.id) return;
+    const previousStatus =
+      ticket.status ??
+      (previousStatusId != null
+        ? await this.statusRepo.findOne({ where: { id: previousStatusId } })
+        : null);
     await this.ticketRepo.update(ticket.id, { statusId: status.id });
     const followerUserIds = await resolveFollowerUserIds(this.followerRepo, ticket.id, 0);
     this.eventEmitter.emit(
@@ -155,6 +190,8 @@ export class WorkflowExecutorService {
         followerUserIds,
       ),
     );
+    const lifecycle = lifecycleEvent(previousStatus, status, { ...ticket, statusId: status.id }, 0);
+    if (lifecycle) this.eventEmitter.emit(lifecycle[0], lifecycle[1]);
   }
 
   private async assignAgent(ticket: Ticket, value: string): Promise<void> {

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { In } from 'typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TicketService } from '../../src/services/ticket.service';
 import { WorkflowListener } from '../../src/listeners/workflow.listener';
@@ -137,7 +138,7 @@ describe('integration: TicketService.create → Workflow routing', () => {
     await new Promise((r) => setImmediate(r));
 
     expect(workflowRepo.find).toHaveBeenCalledWith({
-      where: { triggerEvent: 'ticket.created', isActive: true },
+      where: { triggerEvent: In(['ticket.created']), isActive: true },
       order: { position: 'ASC' },
     });
     expect(executorMock.execute).toHaveBeenCalledWith(expect.objectContaining({ id: 10 }), [

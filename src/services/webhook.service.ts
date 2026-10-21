@@ -6,6 +6,38 @@ import * as crypto from 'crypto';
 import { Webhook } from '../entities/webhook.entity';
 import { WebhookDelivery } from '../entities/webhook-delivery.entity';
 import { assertPublicWebhookUrl, UnsafeWebhookUrlError } from './webhook-url-safety';
+import { canonicalEvents } from '../events/event-names';
+
+/**
+ * Event class name to the webhook event name (ADR 2026-10-21). Merged and split
+ * tickets are sent as well; they are not in the shared vocabulary yet.
+ */
+const WEBHOOK_EVENT_NAMES: Readonly<Record<string, string>> = {
+  TicketCreatedEvent: 'ticket.created',
+  TicketUpdatedEvent: 'ticket.updated',
+  TicketStatusChangedEvent: 'ticket.status_changed',
+  TicketResolvedEvent: 'ticket.resolved',
+  TicketClosedEvent: 'ticket.closed',
+  TicketReopenedEvent: 'ticket.reopened',
+  TicketAssignedEvent: 'ticket.assigned',
+  TicketUnassignedEvent: 'ticket.unassigned',
+  TicketEscalatedEvent: 'ticket.escalated',
+  TicketPriorityChangedEvent: 'ticket.priority_changed',
+  TicketDepartmentChangedEvent: 'ticket.department_changed',
+  TicketTagAddedEvent: 'ticket.tag_added',
+  TicketTagRemovedEvent: 'ticket.tag_removed',
+  TicketReplyCreatedEvent: 'reply.created',
+  NoteCreatedEvent: 'note.created',
+  SlaWarningEvent: 'sla.warning',
+  SlaBreachedEvent: 'sla.breached',
+  ChatStartedEvent: 'chat.started',
+  ChatAssignedEvent: 'chat.assigned',
+  ChatTransferredEvent: 'chat.transferred',
+  ChatMessageEvent: 'chat.message',
+  ChatEndedEvent: 'chat.ended',
+  TicketMergedEvent: 'ticket.merged',
+  TicketSplitEvent: 'ticket.split',
+};
 
 @Injectable()
 export class WebhookService {
@@ -31,6 +63,7 @@ export class WebhookService {
 
   async create(data: Partial<Webhook>): Promise<Webhook> {
     await this.assertSavableUrl(data.url);
+    if (data.events !== undefined) data.events = canonicalEvents(data.events);
     if (!data.secret) {
       data.secret = crypto.randomBytes(32).toString('hex');
     }
@@ -43,6 +76,7 @@ export class WebhookService {
     if (data.url !== undefined) {
       await this.assertSavableUrl(data.url);
     }
+    if (data.events !== undefined) data.events = canonicalEvents(data.events);
     await this.webhookRepo.update(id, data);
     return this.findById(id);
   }
@@ -63,7 +97,9 @@ export class WebhookService {
     });
 
     for (const webhook of webhooks) {
-      if (webhook.events.includes(eventName) || webhook.events.includes('*')) {
+      const subscribed = Array.isArray(webhook.events) ? webhook.events : [];
+      // Stored legacy names (`ticket.reply_created`, `ticket.tagged`, ...) read as canonical.
+      if (subscribed.includes('*') || canonicalEvents(subscribed).includes(eventName)) {
         await this.dispatch(webhook, eventName, event);
       }
     }
@@ -200,14 +236,9 @@ export class WebhookService {
   }
 
   private resolveEventName(event: any): string | null {
-    if (event?.constructor?.name === 'TicketCreatedEvent') return 'ticket.created';
-    if (event?.constructor?.name === 'TicketUpdatedEvent') return 'ticket.updated';
-    if (event?.constructor?.name === 'TicketAssignedEvent') return 'ticket.assigned';
-    if (event?.constructor?.name === 'TicketStatusChangedEvent') return 'ticket.status_changed';
-    if (event?.constructor?.name === 'TicketReplyCreatedEvent') return 'ticket.reply_created';
-    if (event?.constructor?.name === 'TicketMergedEvent') return 'ticket.merged';
-    if (event?.constructor?.name === 'TicketSplitEvent') return 'ticket.split';
-    if (event?.constructor?.name === 'SlaBreachedEvent') return 'sla.breached';
-    return null;
+    const name = WEBHOOK_EVENT_NAMES[event?.constructor?.name] ?? null;
+    // Internal notes go out as `note.created` (NoteCreatedEvent), never as a reply.
+    if (name === 'reply.created' && event.reply?.isInternal) return null;
+    return name;
   }
 }

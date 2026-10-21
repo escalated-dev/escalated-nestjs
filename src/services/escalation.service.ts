@@ -1,10 +1,13 @@
 import { accountIdentity, caseSensitiveEquals } from '../config/ticket-access';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EscalationRule } from '../entities/escalation-rule.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { SlaPolicy } from '../entities/sla-policy.entity';
+import { TicketActivity } from '../entities/ticket-activity.entity';
+import { ESCALATED_EVENTS, TicketEscalatedEvent } from '../events/escalated.events';
 
 @Injectable()
 export class EscalationService {
@@ -15,6 +18,10 @@ export class EscalationService {
     private readonly ticketRepo: Repository<Ticket>,
     @InjectRepository(SlaPolicy)
     private readonly slaPolicyRepo: Repository<SlaPolicy>,
+    @Optional() private readonly eventEmitter?: EventEmitter2,
+    @Optional()
+    @InjectRepository(TicketActivity)
+    private readonly activityRepo?: Repository<TicketActivity>,
   ) {}
 
   async findAll(slaPolicyId?: number): Promise<EscalationRule[]> {
@@ -56,6 +63,7 @@ export class EscalationService {
       const tickets = await this.getEscalationCandidates(rule, now);
       for (const ticket of tickets) {
         await this.executeActions(ticket, rule);
+        await this.announce(ticket, rule);
       }
     }
   }
@@ -109,6 +117,32 @@ export class EscalationService {
       }
     }
     return qb.getMany();
+  }
+
+  /**
+   * Records the escalation on the ticket and emits `ticket.escalated` the
+   * first time a rule matches it. Rules re-apply their actions on every run,
+   * but the event is not repeated.
+   */
+  private async announce(ticket: Ticket, rule: EscalationRule): Promise<void> {
+    if (!this.activityRepo) return;
+    const earlier = await this.activityRepo.find({
+      where: { ticketId: ticket.id, action: 'escalated' },
+    });
+    if (earlier.some((activity) => Number(activity.newValue?.ruleId) === rule.id)) return;
+
+    await this.activityRepo.save({
+      ticketId: ticket.id,
+      userId: null,
+      action: 'escalated',
+      newValue: { ruleId: rule.id },
+      description: `Escalated by rule "${rule.name}"`,
+    });
+    const fresh = (await this.ticketRepo.findOne({ where: { id: ticket.id } })) ?? ticket;
+    this.eventEmitter?.emit(
+      ESCALATED_EVENTS.TICKET_ESCALATED,
+      new TicketEscalatedEvent(fresh, rule.name),
+    );
   }
 
   private async executeActions(ticket: Ticket, rule: EscalationRule): Promise<void> {
