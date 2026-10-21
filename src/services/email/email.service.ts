@@ -54,6 +54,27 @@ export class EmailService {
     return !!(this.mailer && this.options.mail);
   }
 
+  /** A mail transport is configured. */
+  canSend(): boolean {
+    return this.mailConfigured;
+  }
+
+  /** The eight-digit code a guest enters to prove they can read `to`. */
+  async sendGuestCode(to: string, code: string): Promise<void> {
+    const text =
+      `Your verification code is ${code}.\n\n` +
+      'It expires in 10 minutes. If you did not ask for it, you can ignore this email.\n';
+    await this.dispatch(
+      to,
+      {
+        subject: `Your ${this.appName()} verification code`,
+        text,
+        html: `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 10 minutes. If you did not ask for it, you can ignore this email.</p>`,
+      } as RenderedEmail,
+      {},
+    );
+  }
+
   private appName(): string {
     return this.options.appName ?? 'Support';
   }

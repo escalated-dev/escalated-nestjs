@@ -5,7 +5,8 @@ import { bootEscalatedModule } from './boot-escalated-module';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 import { TicketService } from '../../src/services/ticket.service';
 import { ReplyService } from '../../src/services/reply.service';
-import { Ticket } from '../../src/entities';
+import { Contact, Ticket } from '../../src/entities';
+import { GuestAccessService } from '../../src/services/guest-access.service';
 
 jest.setTimeout(60000);
 
@@ -67,7 +68,19 @@ describe('websocket gateway authentication and scoping', () => {
   let url: string;
   let tickets: TicketService;
   let replies: ReplyService;
+  let guestAccess: GuestAccessService;
   const clients: Client[] = [];
+
+  /** A guest grant for `ticket`, as verified guest access issues it. */
+  const grantFor = async (ticket: Ticket) => {
+    const contact = await source
+      .getRepository(Contact)
+      .save({ email: `guest${ticket.id}@example.com`, metadata: {} });
+    await source.getRepository(Ticket).update(ticket.id, { contactId: contact.id });
+    ticket.contactId = contact.id;
+    guestAccess.markVerified(ticket, contact.email);
+    return (await guestAccess.issue(ticket)).token;
+  };
 
   const open = async (auth: Record<string, unknown>) => {
     const client = await connect(url, auth);
@@ -84,6 +97,7 @@ describe('websocket gateway authentication and scoping', () => {
     ({ app, source, url } = started);
     tickets = started.moduleRef.get(TicketService);
     replies = started.moduleRef.get(ReplyService);
+    guestAccess = started.moduleRef.get(GuestAccessService);
   });
 
   afterEach(() => {
@@ -121,7 +135,7 @@ describe('websocket gateway authentication and scoping', () => {
   it('lets a guest join only the ticket its token belongs to, and hides internal notes', async () => {
     const own = await newTicket(0, 'Guest ticket');
     const other = await newTicket(OTHER_CUSTOMER, 'Someone else');
-    const guest = await open({ guestToken: own.guestAccessToken });
+    const guest = await open({ guestToken: await grantFor(own) });
     guest.socket.emit('join:ticket', { ticketId: own.id });
     guest.socket.emit('join:ticket', { ticketId: other.id });
     guest.socket.emit('join:agent', { agentId: AGENT });

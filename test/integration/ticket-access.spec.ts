@@ -77,6 +77,8 @@ describe('configurable ticket access over HTTP', () => {
           resolveUser: async (id: number) => ({ id, isAgent: true, isAdmin: id === 9 }),
         },
         agentGuard: { canActivate: () => true },
+        // The hidden ticket's permanent token stays valid, so only scoping can refuse it.
+        guestAccess: { legacyTokens: true, secret: 'test' },
       } as any,
     });
     source = moduleRef.get(DataSource);
@@ -212,7 +214,8 @@ describe('configurable ticket access over HTTP', () => {
 
   it('scopes widget lookups even with a valid private token', async () => {
     const result = await fetch(`${base}/escalated/widget/tickets/${hidden.id}?guest_token=secret`);
-    expect(result.status).toBe(404);
+    expect(result.status).toBe(403);
+    expect(await result.text()).not.toContain('Hidden');
   });
 
   it('resolves no user for a widget request embedded on another site', async () => {

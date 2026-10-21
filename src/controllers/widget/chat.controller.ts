@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ChatSessionService } from '../../services/chat-session.service';
 import { DepartmentService } from '../../services/department.service';
@@ -16,6 +17,8 @@ import { ChatSession } from '../../entities/chat-session.entity';
 import { embedOrigin } from '../../services/widget-origins.service';
 import { sanitizeWidgetMetadata } from '../../services/widget-metadata';
 import { widgetDepartmentId, widgetValidationError } from './widget-input';
+import { GuestTicketsService } from '../../services/guest-tickets.service';
+import { GuestThrottle, GuestThrottleGuard } from '../../guards/guest-throttle.guard';
 
 /**
  * Live chat for widget visitors. A chat is reached only through the
@@ -28,6 +31,7 @@ export class WidgetChatController {
     private readonly chatSessionService: ChatSessionService,
     private readonly departmentService: DepartmentService,
     private readonly satisfactionService: SatisfactionRatingService,
+    private readonly guestTickets: GuestTicketsService,
   ) {}
 
   @Get('availability')
@@ -41,7 +45,13 @@ export class WidgetChatController {
     return { available: true, queueDepth };
   }
 
+  /**
+   * Starts a chat. The visitor proves their email with a `chat` code
+   * (`verification_id`, `verification_code`); see docs/guest-access.md.
+   */
   @Post('start')
+  @GuestThrottle('chat')
+  @UseGuards(GuestThrottleGuard)
   async start(
     @Body()
     body: {
@@ -54,9 +64,15 @@ export class WidgetChatController {
       departmentId?: number;
       /** Host parameters from the embedding page, kept on the chat's ticket. */
       metadata?: Record<string, unknown>;
+      verification_id?: string;
+      verification_code?: string;
     },
     @Req() req?: any,
   ) {
+    return this.guestTickets.withProof(body, 'chat', () => this.startChat(body, req));
+  }
+
+  private async startChat(body: any, req?: any) {
     const metadata = sanitizeWidgetMetadata(body.metadata, embedOrigin(req));
     const departmentId = await widgetDepartmentId(
       this.departmentService,

@@ -28,8 +28,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   form options. It accepts exactly the body the shared builder posts
   (escalated-developer-context `domain-model/workflow-admin-contract.md`) and
   answers `422` with `errors` per field. See `docs/workflows.md`.
+- Verified guest access, as in escalated-laravel (`docs/guest-access.md`):
+  `POST verification` and `POST lookup` on `/escalated/widget` and the new
+  `/escalated/guest` routes, emailed eight-digit codes (10 minutes, 5
+  guesses, single use, per-mailbox budgets), and expiring, encrypted guest
+  grants whose nonce is stored only as a hash. Widget `/config` now answers
+  `guest_verification_required: true` and `status_lookup_enabled: true`.
+  New `guestAccess` options. **Upgrade:** run the exported
+  `VerifiedGuestAccess1792627200000` migration, set `guestAccess.secret` (or
+  `ESCALATED_GUEST_ACCESS_SECRET`) to the same value on every instance, and
+  configure `mail` or `guestAccess.sendCode`.
+- `POST /escalated/widget/chat/start` is rate limited per client IP
+  (`guestRateLimit.chatsPerMinute`, default 5).
 
 ### Changed
+- **Breaking for guests (as in Laravel):** a widget ticket with an `email`
+  and a widget chat need the emailed code (`verification_id`,
+  `verification_code`); deploy a widget with the code step first. Widget
+  ticket creation answers `{ message, reference, ticket_reference,
+  guest_access_token, expires_at }`, where the token is an expiring grant. The
+  `ticket` object and `guestAccessToken` are gone. `GET` and `POST replies` on
+  `/escalated/widget/tickets/:reference` take the grant
+  (`Authorization: Bearer`) and answer the status shape the widget reads.
+  Permanent guest tokens stop opening tickets unless
+  `guestAccess.legacyTokens: true` is set for a transition.
 - **Webhook event names:** public replies are sent as `reply.created`
   (was `ticket.reply_created`); internal notes are sent only as `note.created`
   (they were sent as `ticket.reply_created`). Subscriptions stored with

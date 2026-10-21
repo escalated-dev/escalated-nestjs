@@ -6,6 +6,9 @@ import { ReplyService } from '../../src/services/reply.service';
 import { ContactService } from '../../src/services/contact.service';
 import { SettingsService } from '../../src/services/settings.service';
 import { Ticket } from '../../src/entities/ticket.entity';
+import { GuestTicketsService } from '../../src/services/guest-tickets.service';
+import { GuestAccessService } from '../../src/services/guest-access.service';
+import { guestProofSkipped } from './guest-codes';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 
 jest.setTimeout(60000);
@@ -45,7 +48,14 @@ describe('guest endpoint rate limiting', () => {
           .overrideProvider(SettingsService)
           .useValue({ getTyped: jest.fn(async (_key: string, fallback: unknown) => fallback) })
           .overrideProvider(getRepositoryToken(Ticket))
-          .useValue(ticketRepo),
+          .useValue(ticketRepo)
+          .overrideProvider(GuestTicketsService)
+          .useValue(guestProofSkipped())
+          .overrideProvider(GuestAccessService)
+          .useValue({
+            ticketForToken: async (token: string) =>
+              ticketRepo.findOne({ where: { guestAccessToken: token } }),
+          }),
     });
 
     app = moduleRef.createNestApplication({ logger: false });

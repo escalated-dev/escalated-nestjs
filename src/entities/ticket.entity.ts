@@ -132,8 +132,26 @@ export class Ticket {
   isMerged: boolean;
 
   // Guest access
+  /**
+   * The permanent token issued before verified guest access. It opens nothing
+   * unless `guestAccess.legacyTokens` is on; issuing a grant clears it.
+   */
   @Column({ length: 255, nullable: true })
   guestAccessToken: string;
+
+  /** Keyed digest of the guest email proven with an emailed code. */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  guestVerifiedEmail: string | null;
+
+  @Column({ type: Date, nullable: true })
+  guestEmailVerifiedAt: Date | null;
+
+  /** SHA-256 of the current guest grant's nonce; a new grant replaces it. */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  guestAccessHash: string | null;
+
+  @Column({ type: Date, nullable: true })
+  guestAccessExpiresAt: Date | null;
 
   /**
    * Host parameters sent with a widget ticket or chat (order number, page URL,

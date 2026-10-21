@@ -80,7 +80,8 @@ the live chat routes under `/escalated/widget/chat/*`. For a request whose
 - treats the visitor as a guest even if the same browser is signed in to your
   app: `req.user` is removed, ticket access resolves no user, and a ticket
   without an email is refused instead of being filed as the signed-in user.
-  Guest tokens (`X-Guest-Token` or `?guest_token=`) work as before.
+  Guest grants (`Authorization: Bearer`, see [guest access](guest-access.md))
+  work as before.
 
 `Access-Control-Allow-Credentials` is never sent, so browsers send no cookies
 with these requests.
@@ -111,7 +112,8 @@ Returns what the widget needs before it renders:
   "kb_enabled": true,
   "guest_tickets_enabled": true,
   "accepts_metadata": true,
-  "status_lookup_enabled": false
+  "guest_verification_required": true,
+  "status_lookup_enabled": true
 }
 ```
 
@@ -119,9 +121,10 @@ The widget routes are always mounted, so `enabled` is always true. `color`,
 `position` and `greeting` come from the `widget_color`, `widget_position` and
 `widget_greeting` settings. `departments` lists active departments.
 `kb_enabled` follows the `enableKnowledgeBase` option.
-`status_lookup_enabled` is `false`: looking up a ticket needs mailbox
-verification, which this backend does not offer, so the widget hides its
-Status tab. There is no lookup by a claimed email address.
+`guest_verification_required` is `true`: guests prove their email with an
+emailed code before creating a ticket, starting a chat or looking a ticket up,
+and `status_lookup_enabled` is `true`, so the widget shows its Status tab. See
+[verified guest access](guest-access.md).
 
 ### Widget routes
 
@@ -132,9 +135,13 @@ Validation errors answer 422 with `{ message, errors: { field: [message] } }`.
 |---|---|---|
 | `GET /articles?q=` | `q`, 2 characters or more | `{ articles: [{ title, slug, excerpt }] }` (published articles only) |
 | `GET /articles/:slug` | | `{ title, slug, body, category }` |
-| `POST /tickets` | `name`, `email`, `subject`, `description`, `department_id?`, `metadata?` | 201 `{ message, reference, guest_access_token, ticket, guestAccessToken }` |
+| `POST /verification` | `{ email, purpose: ticket \| chat \| lookup }` | 202 `{ verification_id, expires_in, message }` |
+| `POST /lookup` | `email`, `reference`, `verification_id`, `verification_code` | `{ data: [{ reference, subject, guest_access_token, expires_at }] }` |
+| `POST /tickets` | `name`, `email`, `subject`, `description`, `department_id?`, `metadata?`, `verification_id`, `verification_code` | 201 `{ message, reference, ticket_reference, guest_access_token, expires_at }` |
+| `GET /tickets/:reference` | `Authorization: Bearer <grant>` | `{ reference, subject, status, status_label, status_color, created_at, department, replies }` |
+| `POST /tickets/:reference/replies` | `{ body }`, `Authorization: Bearer <grant>` | the stored reply |
 | `GET /chat/availability` | `department_id?` | `{ available, queueDepth }` |
-| `POST /chat/start` | `name`, `email`, `department_id?`, `message?`, `metadata?` | 201 `{ id, session_id, ticketId, status, visitorName, createdAt }` |
+| `POST /chat/start` | `name`, `email`, `department_id?`, `message?`, `metadata?`, `verification_id`, `verification_code` | 201 `{ id, session_id, ticketId, status, visitorName, createdAt }` |
 | `GET /chat/:id/messages` | | `{ messages: [{ id, body, is_agent, author: { name }, created_at }], agent, typing, ended }` |
 | `POST /chat/:id/messages` | `{ body }` | the stored reply |
 | `POST /chat/:id/typing` | | `{ message }` |
