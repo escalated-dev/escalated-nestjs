@@ -73,15 +73,29 @@ describe('WorkflowExecutorService', () => {
   });
 
   describe('add_tag', () => {
-    it('attaches the tag to the ticket when the tag exists (by slug)', async () => {
+    it('attaches the tag named by the builder', async () => {
       const ticket = buildTicket({ id: 10, tags: [] }) as unknown as Ticket;
       const tag = { id: 7, name: 'VIP', slug: 'vip' };
       tagRepo.findOne.mockResolvedValue(tag);
       ticketRepo.findOne.mockResolvedValue({ ...ticket, tags: [] });
 
+      await executor.execute(ticket, [{ type: 'add_tag', value: 'VIP' }]);
+
+      expect(tagRepo.findOne).toHaveBeenCalledWith({ where: { name: 'VIP' } });
+      expect(ticketRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ tags: expect.arrayContaining([tag]) }),
+      );
+    });
+
+    it('falls back to lookup by slug', async () => {
+      const ticket = buildTicket({ id: 10, tags: [] }) as unknown as Ticket;
+      const tag = { id: 7, name: 'VIP', slug: 'vip' };
+      tagRepo.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(tag);
+      ticketRepo.findOne.mockResolvedValue({ ...ticket, tags: [] });
+
       await executor.execute(ticket, [{ type: 'add_tag', value: 'vip' }]);
 
-      expect(tagRepo.findOne).toHaveBeenCalledWith({ where: { slug: 'vip' } });
+      expect(tagRepo.findOne).toHaveBeenNthCalledWith(2, { where: { slug: 'vip' } });
       expect(ticketRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ tags: expect.arrayContaining([tag]) }),
       );
@@ -90,13 +104,17 @@ describe('WorkflowExecutorService', () => {
     it('falls back to lookup by id when value is numeric', async () => {
       const ticket = buildTicket({ id: 10, tags: [] }) as unknown as Ticket;
       const tag = { id: 7, name: 'VIP', slug: 'vip' };
-      tagRepo.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(tag);
+      tagRepo.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(tag);
       ticketRepo.findOne.mockResolvedValue({ ...ticket, tags: [] });
 
       await executor.execute(ticket, [{ type: 'add_tag', value: '7' }]);
 
-      expect(tagRepo.findOne).toHaveBeenNthCalledWith(1, { where: { slug: '7' } });
-      expect(tagRepo.findOne).toHaveBeenNthCalledWith(2, { where: { id: 7 } });
+      expect(tagRepo.findOne).toHaveBeenNthCalledWith(1, { where: { name: '7' } });
+      expect(tagRepo.findOne).toHaveBeenNthCalledWith(2, { where: { slug: '7' } });
+      expect(tagRepo.findOne).toHaveBeenNthCalledWith(3, { where: { id: 7 } });
     });
 
     it('is a no-op when tag not found', async () => {

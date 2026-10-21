@@ -101,6 +101,7 @@ import {
   WorkflowEngineService,
   WorkflowExecutorService,
   WorkflowRunnerService,
+  WorkflowAdminService,
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
@@ -134,6 +135,7 @@ import { AdminWebhookController } from './controllers/admin/webhook.controller';
 import { AdminApiTokenController } from './controllers/admin/api-token.controller';
 import { AdminImportController } from './controllers/admin/import.controller';
 import { AdminMacroController } from './controllers/admin/macro.controller';
+import { AdminWorkflowController } from './controllers/admin/workflow.controller';
 import { AdminSkillController } from './controllers/admin/skill.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
@@ -243,6 +245,7 @@ const services = [
   WorkflowEngineService,
   WorkflowExecutorService,
   WorkflowRunnerService,
+  WorkflowAdminService,
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
@@ -270,6 +273,7 @@ const controllers = [
   AdminKnowledgeBaseController,
   AdminTwoFactorController,
   AdminAutomationController,
+  AdminWorkflowController,
   CustomerTicketController,
   CustomerKnowledgeBaseController,
   WidgetController,
