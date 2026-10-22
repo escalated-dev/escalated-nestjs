@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Admin/AuditLog/Index` (`/escalated/admin/audit-log`, paginated, filtered by
   user, action, resource type and date; stored verbs show as Laravel's
   `created`/`updated`/`deleted`). Rendered pages: 81 of 91.
+- With `ui.enabled`, `Admin/Reports/AgentDetail` at
+  `/escalated/admin/reports/agent/:id/detail` (`?days=`, default 30): one
+  agent's tickets, resolutions, first response and resolution averages, CSAT,
+  response-time percentiles, replies and resolutions per day, workload and
+  CSAT breakdown, each against the period of the same length before it. It
+  sends the props the component declares (`agent`, `total_tickets`, ...), as
+  escalated-rails does; Laravel's own `agent_id`/`metrics`/`percentiles` are
+  not read by the component. Rendered pages: 82 of 91.
 
 ### Changed
 - `GET /escalated/admin/automations` and `/escalated/admin/skills` and their

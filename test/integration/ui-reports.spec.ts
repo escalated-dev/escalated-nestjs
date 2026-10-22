@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { AuditLog } from '../../src/entities';
+import { AuditLog, Reply } from '../../src/entities';
 import { apiFetch, bootUi, expectManifestProps, inertiaFetch, page } from './ui-harness';
 import { REPORT_AGENT, seedReports } from './report-fixtures';
 
@@ -340,5 +340,59 @@ describe('report screens (ui.enabled)', () => {
       400,
     );
     expect(await source.getRepository(AuditLog).countBy({ action: 'report.exported' })).toBe(2);
+  });
+
+  it('serves Escalated/Admin/Reports/AgentDetail under the names the component reads', async () => {
+    await source.getRepository(Reply).save({
+      ticketId: seeded.waiting.id,
+      userId: REPORT_AGENT,
+      body: 'On it',
+      type: 'reply',
+    } as Partial<Reply>);
+
+    const props = await report(
+      `/escalated/admin/reports/agent/${REPORT_AGENT}/detail?days=30`,
+      'Escalated/Admin/Reports/AgentDetail',
+    );
+    expect(props).toMatchObject({
+      period_days: 30,
+      agent: { id: REPORT_AGENT, name: 'Ada', email: null },
+      total_tickets: 2,
+      resolved_tickets: 1,
+      avg_frt: 1.3,
+      avg_resolution: 6,
+      csat_score: 3,
+      prev_total_tickets: 0,
+      prev_resolved_tickets: 0,
+      prev_avg_frt: 0,
+      prev_avg_resolution: 0,
+      prev_csat_score: null,
+    });
+    expect(Object.keys(props.response_percentiles).sort()).toEqual([
+      'p50',
+      'p75',
+      'p90',
+      'p95',
+      'p99',
+    ]);
+    expect(props.response_percentiles.p50).toBe(1.3);
+    expect(props.csat_breakdown).toEqual([
+      { label: '2 stars', value: 1 },
+      { label: '4 stars', value: 1 },
+    ]);
+    expect(props.workload.reduce((sum: number, row: any) => sum + row.value, 0)).toBe(2);
+    expect(props.workload[0]).toEqual({
+      label: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      value: expect.any(Number),
+    });
+    // One reply written and one ticket resolved, per day.
+    const written = props.productivity.reduce((sum: number, row: any) => sum + row.values[0], 0);
+    const resolved = props.productivity.reduce((sum: number, row: any) => sum + row.values[1], 0);
+    expect([written, resolved]).toEqual([1, 1]);
+    for (const row of props.productivity) expect(row.value).toBe(row.values[0] + row.values[1]);
+
+    const unknown = await page(base, '/escalated/admin/reports/agent/9999/detail', asAdmin);
+    expect(unknown.props.agent).toEqual({ id: 9999, name: 'User #9999', email: null });
+    expect(unknown.props.total_tickets).toBe(0);
   });
 });
