@@ -97,6 +97,7 @@ import {
   ImportJobService,
   SavedViewService,
   SettingsService,
+  DataRetentionService,
   TicketLinkService,
   TicketSubjectService,
   AuditLogService,
@@ -171,6 +172,7 @@ import { UiDataService } from './ui/ui-data.service';
 import { AgentUiController } from './ui/controllers/agent-ui.controller';
 import { CustomerUiController } from './ui/controllers/customer-ui.controller';
 import { AdminUiController } from './ui/controllers/admin-ui.controller';
+import { AdminSettingsUiController } from './ui/controllers/admin-settings-ui.controller';
 import { AdminTicketsUiController } from './ui/controllers/admin-tickets-ui.controller';
 import { AdminConfigUiController } from './ui/controllers/admin-config-ui.controller';
 import { AdminImportUiController } from './ui/controllers/admin-import-ui.controller';
@@ -275,6 +277,7 @@ const services = [
   ImportJobService,
   SavedViewService,
   SettingsService,
+  DataRetentionService,
   TicketLinkService,
   TicketSubjectService,
   AuditLogService,
@@ -384,6 +387,7 @@ export class EscalatedModule implements NestModule {
         AgentUiController,
         CustomerUiController,
         AdminUiController,
+        AdminSettingsUiController,
         AdminTicketsUiController,
         AdminConfigUiController,
         AdminImportUiController,

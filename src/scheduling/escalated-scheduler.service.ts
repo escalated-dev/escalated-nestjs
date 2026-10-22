@@ -12,6 +12,7 @@ import { AutomationService } from '../services/automation.service';
 import { NewsletterDispatcherService } from '../services/newsletter/newsletter-dispatcher.service';
 import { NewsletterPlannerService } from '../services/newsletter/newsletter-planner.service';
 import { Ticket } from '../entities/ticket.entity';
+import { DataRetentionService } from '../services/data-retention.service';
 
 @Injectable()
 export class EscalatedSchedulerService {
@@ -35,7 +36,29 @@ export class EscalatedSchedulerService {
     @Optional()
     @InjectRepository(Newsletter)
     private readonly newsletterRepo?: Repository<Newsletter>,
+    @Optional()
+    private readonly dataRetention?: DataRetentionService,
   ) {}
+
+  /**
+   * Apply the data retention periods daily at 03:30, as escalated-laravel
+   * schedules `escalated:purge-expired`. Every period defaults to `never`, so
+   * until an admin sets one this only removes expired guest verification codes.
+   */
+  @Cron('30 3 * * *')
+  async purgeExpiredData(): Promise<void> {
+    if (!this.dataRetention) return;
+    try {
+      const report = await this.dataRetention.purgeExpired();
+      if (report.closedTickets + report.attachments + report.auditLogs > 0) {
+        this.logger.log(
+          `Data retention purged ${report.closedTickets} closed ticket(s), ${report.attachments} attachment(s) and ${report.auditLogs} audit log(s)`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('Error purging expired data', error);
+    }
+  }
 
   /** Check for SLA breaches every minute */
   @Cron(CronExpression.EVERY_MINUTE)
