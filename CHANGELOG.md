@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **`ApiTokenGuard` enforces token abilities**, as escalated-laravel's
+  `AuthenticateApiToken` does. It checked only that a token existed and had
+  not expired, so a token issued with just the `agent` ability (or none)
+  could call every admin route when the host used the guard as `adminGuard`.
+  Admin routes now need the `admin` ability, agent routes need `agent`, `*`
+  grants both, and a token without the needed ability gets
+  `403 {"message": "Insufficient permissions."}` (its `lastUsedAt` is not
+  touched). Customer routes need no ability. The route group is read from the
+  Escalated group guard that is asking (`adminGuard` / `agentGuard`), or,
+  when the token guard runs first (globally or listed before it), from the
+  `EscalatedAdminGuard` / `EscalatedAgentGuard` on the route. Host routes can
+  name an ability with the new `@ApiTokenAbility('admin')` decorator; host
+  routes that name none are unchanged.
+
+### Upgrading
+- Tokens are checked against their abilities now. As in Laravel, `admin` does
+  not imply `agent`: a token that must reach both admin and agent routes
+  needs `["agent", "admin"]` or `["*"]`. Tokens created without abilities
+  through `ApiTokenService.create` default to `["*"]` and are unaffected;
+  a token stored with an empty or null `abilities` list is refused on admin
+  and agent routes. Review existing tokens' abilities before upgrading.
+
 ## [1.2.6] - 2026-10-22
 
 ### Added

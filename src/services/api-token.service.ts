@@ -71,15 +71,17 @@ export class ApiTokenService {
     if (!token) return null;
     if (token.expiresAt && new Date(token.expiresAt) < new Date()) return null;
 
-    if (
-      requiredAbility &&
-      !token.abilities.includes('*') &&
-      !token.abilities.includes(requiredAbility)
-    ) {
+    if (requiredAbility && !tokenHasAbility(token, requiredAbility)) {
       return null;
     }
 
     await this.tokenRepo.update(token.id, { lastUsedAt: new Date() });
     return token;
   }
+}
+
+/** True when the token grants `ability`, directly or through `*`. */
+export function tokenHasAbility(token: Pick<ApiToken, 'abilities'>, ability: string): boolean {
+  const abilities = Array.isArray(token.abilities) ? token.abilities : [];
+  return abilities.includes('*') || abilities.includes(ability);
 }
