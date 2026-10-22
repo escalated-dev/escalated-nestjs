@@ -150,6 +150,15 @@ Admin (`adminGuard`):
   `tickets_count`, `agents_count`); `/departments/create` and
   `/departments/:id/edit` - `Admin/Departments/Form`
 - `GET /escalated/admin/tags` - `Admin/Tags/Index` (with `tickets_count`)
+- `GET /escalated/admin/tickets` - `Admin/Tickets/Index` (the agent list's
+  filters, plus `agents` and the admin's own and shared `savedViews`);
+  `GET /escalated/admin/tickets/:reference` - `Admin/Tickets/Show` (with
+  `agents` and `is_snoozed`); its `reply`, `note`, `assign`, `status`,
+  `priority`, `tags`, `department`, `macro`, `follow`, `snooze` and `unsnooze`
+  actions redirect back to the ticket; `POST /escalated/admin/tickets/bulk`
+  (`ticket_ids`, `action` of `status`/`priority`/`assign`/`department`/`tags`/
+  `delete`, `value`) redirects back to the list; `POST`/`PUT`/`DELETE
+  /escalated/admin/saved-views` serve the views sidebar (JSON, own views only)
 
 On these shared JSON routes, a state-changing browser request (one asking for
 HTML) without `X-Inertia` / `X-Requested-With` is refused while the screens
@@ -158,4 +167,5 @@ are on; API clients are unaffected.
 The pages the frontend ships that no screen serves yet are listed, exactly, in
 `NOT_YET_RENDERED` in `test/page-name-parity.spec.ts`. Not yet supported:
 attachments on screen replies (multipart), pinned notes, presence and typing,
-bulk actions.
+side conversations and ticket links from the admin ticket screen, saved-view
+reordering.

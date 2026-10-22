@@ -124,8 +124,6 @@ const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/SlaPolicies/Index',
   'Escalated/Admin/Statuses/Form',
   'Escalated/Admin/Statuses/Index',
-  'Escalated/Admin/Tickets/Index',
-  'Escalated/Admin/Tickets/Show',
   'Escalated/Admin/Users/Index',
   'Escalated/Admin/Webhooks/DeliveryLog',
   'Escalated/Admin/Webhooks/Form',

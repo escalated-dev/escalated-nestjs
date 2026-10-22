@@ -16,7 +16,14 @@ import { serializeAttachment } from './serializers';
 import { TicketService } from '../services/ticket.service';
 import { CannedResponseService } from '../services/canned-response.service';
 import { MacroService } from '../services/macro.service';
-import { paginate, serializeTicket, type UserDirectory } from './serializers';
+import { TicketSubjectService } from '../services/ticket-subject.service';
+import {
+  paginate,
+  serializeActivity,
+  serializeReply,
+  serializeTicket,
+  type UserDirectory,
+} from './serializers';
 
 const SORTABLE: Record<string, string> = {
   created_at: 'createdAt',
@@ -67,6 +74,7 @@ export class UiDataService {
     private readonly ticketService: TicketService,
     private readonly cannedResponseService: CannedResponseService,
     private readonly macroService: MacroService,
+    private readonly ticketSubjectService: TicketSubjectService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
   ) {}
 
@@ -297,6 +305,94 @@ export class UiDataService {
 
     const [rows, total] = await query.getManyAndCount();
     return paginate(await this.serializeTickets(rows), total, page, perPage, path, filters);
+  }
+
+  /**
+   * What a staff ticket screen reads (`Agent/TicketShow`, `Admin/Tickets/Show`),
+   * as escalated-laravel's Agent and Admin TicketController@show send it.
+   */
+  async ticketScreen(ticket: Ticket, userId: UserId) {
+    const id = ticket.id;
+    const [replies, activities, chat, requesterTicketCount, related, subjects] = await Promise.all([
+      this.replyService.findByTicketId(id, true),
+      this.ticketService.getActivities(id),
+      this.ticketService.getChatContext(id),
+      this.ticketService.getRequesterTicketCount(ticket.requesterId),
+      this.ticketService.getRelatedTickets(id),
+      this.ticketSubjectService.serializeForTicket(ticket),
+    ]);
+    const [serialized] = await this.serializeTickets([ticket]);
+    const directory = await this.directory([
+      ...replies.map((r) => r.userId),
+      ...activities.map((a) => a.userId),
+    ]);
+    const newestFirst = [...replies].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id,
+    );
+    const rating = await this.ratings.findOne({ where: { ticketId: id } });
+    const snoozed = ticket.snoozedUntil != null && new Date(ticket.snoozedUntil) > new Date();
+
+    return {
+      ticket: {
+        ...serialized,
+        is_snoozed: snoozed,
+        replies: newestFirst.map((reply) => serializeReply(reply, directory)),
+        activities: activities.slice(0, 20).map((a) => serializeActivity(a, directory)),
+        attachments: replies.flatMap((reply) => reply.attachments ?? []).map(serializeAttachment),
+        pinned_notes: [],
+        subjects,
+        satisfaction_rating: rating
+          ? { rating: rating.rating, comment: rating.comment ?? null }
+          : null,
+        chat_session_id: chat?.chat_session_id ?? null,
+        chat_started_at: chat?.chat_started_at ?? null,
+        chat_messages: (chat?.chat_messages ?? []).map((reply) => serializeReply(reply, directory)),
+        chat_metadata: chat?.chat_metadata ?? null,
+        requester_ticket_count: requesterTicketCount,
+        related_tickets: related.map((t) => ({
+          id: t.id,
+          reference: t.referenceNumber,
+          subject: t.subject,
+          status: t.status,
+        })),
+      },
+      departments: await this.departmentOptions(),
+      tags: await this.tagOptions(),
+      cannedResponses: (await this.cannedResponses(userId, ticket.departmentId)).map((c) => ({
+        id: c.id,
+        title: c.title,
+        body: c.content,
+        short_code: c.shortCode ?? null,
+      })),
+      macros: (await this.macros(userId)).map((m) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description ?? null,
+      })),
+      is_following: await this.isFollowing(id, userId),
+      followers_count: await this.followerCount(id),
+      is_snoozed: snoozed,
+    };
+  }
+
+  /**
+   * The staff a ticket can be assigned to, as `{ id, name, email }`: every
+   * active agent profile, named by the host's `ui.resolveUsers` when given.
+   */
+  async agentOptions() {
+    const profiles = await this.profiles.find({
+      where: { isActive: true },
+      order: { displayName: 'ASC', id: 'ASC' },
+    });
+    const directory = await this.directory(profiles.map((p) => p.userId));
+    return profiles.map((profile) => {
+      const user = directory.get(String(profile.userId));
+      return {
+        id: profile.userId,
+        name: user?.name || profile.displayName || `User #${profile.userId}`,
+        email: user?.email ?? null,
+      };
+    });
   }
 
   /** Canned responses the agent may use: shared ones and their own. */
