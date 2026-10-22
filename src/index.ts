@@ -60,6 +60,7 @@ export { BusinessSchedulePrecedence1792800000000 } from './migrations/1792800000
 export { TicketStatusCategories1792886400000 } from './migrations/1792886400000-TicketStatusCategories';
 export { CustomFieldsAndObjects1792972800000 } from './migrations/1792972800000-CustomFieldsAndObjects';
 export { ImportJobs1793059200000 } from './migrations/1793059200000-ImportJobs';
+export { HashApiTokens1793145600000 } from './migrations/1793145600000-HashApiTokens';
 export * from './events/event-names';
 
 // Widget embedding

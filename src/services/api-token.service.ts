@@ -5,6 +5,15 @@ import * as crypto from 'crypto';
 import { ApiToken } from '../entities/api-token.entity';
 import { UserId } from '../config/user-id-column';
 
+/**
+ * The value stored for an API token: the SHA-256 hex digest of the plain
+ * token, as escalated-laravel stores it. The plain token is returned once, on
+ * creation; lookups hash what the client sends.
+ */
+export function hashApiToken(plainTextToken: string): string {
+  return crypto.createHash('sha256').update(plainTextToken).digest('hex');
+}
+
 @Injectable()
 export class ApiTokenService {
   constructor(
@@ -34,7 +43,7 @@ export class ApiTokenService {
 
     const token = this.tokenRepo.create({
       name: data.name,
-      token: plainTextToken,
+      token: hashApiToken(plainTextToken),
       userId: data.userId,
       abilities: data.abilities || ['*'],
       expiresAt: data.expiresAt,
@@ -56,7 +65,7 @@ export class ApiTokenService {
 
   async validate(tokenStr: string, requiredAbility?: string): Promise<ApiToken | null> {
     const token = await this.tokenRepo.findOne({
-      where: { token: tokenStr, isActive: true },
+      where: { token: hashApiToken(tokenStr), isActive: true },
     });
 
     if (!token) return null;

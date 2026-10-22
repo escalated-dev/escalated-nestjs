@@ -13,7 +13,7 @@ export { KnowledgeBaseService } from './knowledge-base.service';
 export { WebhookService } from './webhook.service';
 export { AgentService } from './agent.service';
 export { RoleService } from './role.service';
-export { ApiTokenService } from './api-token.service';
+export { ApiTokenService, hashApiToken } from './api-token.service';
 export { SideConversationService } from './side-conversation.service';
 export { SatisfactionRatingService } from './satisfaction-rating.service';
 export { TwoFactorService } from './two-factor.service';

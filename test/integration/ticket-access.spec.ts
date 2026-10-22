@@ -10,6 +10,7 @@ import { EscalationService } from '../../src/services/escalation.service';
 import { WorkflowEngineService } from '../../src/services/workflow-engine.service';
 import { EscalatedGateway } from '../../src/gateway/escalated.gateway';
 import { ApiTokenGuard } from '../../src/guards/api-token.guard';
+import { hashApiToken } from '../../src/services/api-token.service';
 import {
   Ticket,
   Department,
@@ -108,7 +109,7 @@ describe('configurable ticket access over HTTP', () => {
     });
     await source
       .getRepository(ApiToken)
-      .save({ name: 'Visibility', token: 'private-api-token', userId: 1 });
+      .save({ name: 'Visibility', token: hashApiToken('private-api-token'), userId: 1 });
     app = moduleRef.createNestApplication({ logger: false });
     app.use((req: any, _res: any, next: () => void) => {
       req.user = { id: Number(req.headers['x-test-user'] || 1) };
