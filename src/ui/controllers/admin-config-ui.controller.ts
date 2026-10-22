@@ -28,13 +28,14 @@ import {
   serializeSlaPolicy,
   serializeStatus,
   SLA_PRIORITIES,
+  scheduleReference,
   slaPolicyInput,
   slugify,
   STATUS_CATEGORIES,
   statusInput,
 } from '../admin-config';
 import { back, inertia, redirect } from '../inertia';
-import { EscalatedUi, ScriptedRequestGuard } from '../inertia.interceptor';
+import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
 import { routeUrl } from '../routes';
 
 /**
@@ -69,6 +70,16 @@ export class AdminConfigUiController {
       order: { isDefault: 'DESC', id: 'ASC' },
     });
     return schedule?.id ?? null;
+  }
+
+  /** Refuses a `business_schedule_id` that names no schedule. */
+  private async checkScheduleReference(body: any) {
+    const id = scheduleReference(body);
+    if (id != null && !(await this.schedules.exists({ where: { id } }))) {
+      throw new UiValidationException({
+        business_schedule_id: 'The selected business schedule is invalid.',
+      });
+    }
   }
 
   /** Makes this the only default policy when it is marked default. */
@@ -114,6 +125,7 @@ export class AdminConfigUiController {
 
   @Post('sla-policies')
   async slaStore(@Body() body: any) {
+    await this.checkScheduleReference(body);
     const policy = await this.sla.create(
       slaPolicyInput(body, null, body?.business_hours_only ? await this.defaultScheduleId() : null),
     );
@@ -129,6 +141,7 @@ export class AdminConfigUiController {
   @Put('sla-policies/:id')
   async slaUpdate(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     const existing = await this.sla.findById(id);
+    await this.checkScheduleReference(body);
     const input = slaPolicyInput(
       body,
       existing,

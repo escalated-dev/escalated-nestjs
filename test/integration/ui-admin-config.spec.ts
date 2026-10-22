@@ -174,9 +174,56 @@ describe('admin configuration screens (ui.enabled)', () => {
         'PUT',
       );
       expect(res.status).toBe(303);
+      // Not pinned to the default: the ticket's department schedule comes first.
       expect(
         await source.getRepository(SlaPolicy).findOneByOrFail({ id: policy.id }),
-      ).toMatchObject({ name: 'Renamed', businessScheduleId: schedule.id, firstResponseHigh: 180 });
+      ).toMatchObject({
+        name: 'Renamed',
+        businessHoursOnly: true,
+        businessScheduleId: null,
+        firstResponseHigh: 180,
+      });
+      const edited = await page(base, `/escalated/admin/sla-policies/${policy.id}/edit`, asAdmin);
+      expect(edited.props.policy).toMatchObject({
+        business_hours_only: true,
+        business_schedule_id: null,
+      });
+
+      await submit(
+        `/escalated/admin/sla-policies/${policy.id}`,
+        { name: 'Renamed', business_hours_only: true, business_schedule_id: schedule.id },
+        'PUT',
+      );
+      expect(
+        (await source.getRepository(SlaPolicy).findOneByOrFail({ id: policy.id }))
+          .businessScheduleId,
+      ).toBe(schedule.id);
+      await submit(
+        `/escalated/admin/sla-policies/${policy.id}`,
+        { name: 'Renamed', business_hours_only: true },
+        'PUT',
+      );
+      expect(
+        (await source.getRepository(SlaPolicy).findOneByOrFail({ id: policy.id }))
+          .businessScheduleId,
+      ).toBe(schedule.id);
+
+      const unknown = await submit(
+        `/escalated/admin/sla-policies/${policy.id}`,
+        { name: 'Renamed', business_hours_only: true, business_schedule_id: 999999 },
+        'PUT',
+        `/escalated/admin/sla-policies/${policy.id}/edit`,
+      );
+      expect(Object.keys((await follow(unknown)).props.errors)).toEqual(['business_schedule_id']);
+
+      await submit(
+        `/escalated/admin/sla-policies/${policy.id}`,
+        { name: 'Renamed', business_hours_only: false },
+        'PUT',
+      );
+      expect(
+        await source.getRepository(SlaPolicy).findOneByOrFail({ id: policy.id }),
+      ).toMatchObject({ businessHoursOnly: false, businessScheduleId: null });
 
       const gone = await submit(`/escalated/admin/sla-policies/${policy.id}`, undefined, 'DELETE');
       expect(gone.status).toBe(303);

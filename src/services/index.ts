@@ -26,6 +26,7 @@ export { DepartmentService } from './department.service';
 export { TagService } from './tag.service';
 export { SkillService } from './skill.service';
 export { BusinessScheduleService } from './business-schedule.service';
+export { addBusinessMinutes, countsBusinessHours, isWithinBusinessHours } from './business-hours';
 export { ChatSessionService } from './chat-session.service';
 export { ChatRoutingService } from './chat-routing.service';
 export { AttachmentService } from './attachment.service';

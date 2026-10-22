@@ -19,8 +19,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   send the usual `ticket.priority_changed`, `ticket.assigned` and
   `ticket.updated` events. Only open tickets (not resolved, closed or merged)
   are escalated.
+- Run the exported `BusinessSchedulePrecedence1792800000000` migration: it
+  adds `businessHoursOnly` (false) to SLA policies and a nullable
+  `businessScheduleId` to departments. Existing policies keep their deadlines:
+  a policy with its own schedule still counts business hours, and one without
+  still counts calendar time.
+- **Behaviour change:** saving the shared SLA policy form with
+  `business_hours_only` no longer pins the default schedule onto the policy;
+  it sets `businessHoursOnly`, and the schedule is chosen per ticket (see
+  Added). Policies pinned before keep their schedule. `business_hours_only` is
+  still refused while no business schedule exists.
+- **Behaviour change:** business hours are now read in the schedule's
+  `timezone` (default `UTC`) instead of the server's local zone, holidays now
+  close their days, and a day saved without an `enabled` flag (the shape
+  escalated-laravel and the shared form use) is open when it has a start and
+  end. Days saved with `enabled: false` stay closed.
 
 ### Added
+- Business-hours SLA deadlines are counted as escalated-laravel counts them.
+  For a policy limited to business hours (`businessHoursOnly`, or a policy with
+  its own `businessScheduleId`), `SlaService` uses the policy's schedule, else
+  the ticket department's `businessScheduleId`, else the default schedule
+  (`isDefault`), and calendar time when none applies. The new calculator
+  (`addBusinessMinutes`, `isWithinBusinessHours`, exported) reads hours as
+  wall-clock times in the schedule's zone and counts real elapsed time across
+  daylight-saving changes (an opening skipped by spring-forward opens at the
+  change), honours one-off and recurring holidays on the local date (an
+  overnight window that opens on a holiday is closed), supports overnight
+  windows and `24:00`, and counts calendar time for a schedule with no open
+  day.
+- SLA policy and department screens accept `business_schedule_id` (nullable;
+  an unknown id is a field error), changed only when the form sends it; the
+  shared forms do not send it yet. The SLA policy form's
+  `business_hours_only` reflects `businessHoursOnly` as well as an own
+  schedule. Deleting a business schedule clears it from policies and
+  departments.
 - Escalation rule screens (with `ui.enabled`): `Admin/EscalationRules/Index`
   and `Form` (`/escalated/admin/escalation-rules`), with create, update and
   delete, as escalated-laravel's EscalationRuleController. Rules take
@@ -80,6 +113,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the
   existing `set_status`, `set_priority`, `set_department`, `assign`,
   `add_reply`, `add_note`.
+
+### Fixed
+- `SlaService.addBusinessMinutes` looped forever on a schedule with no
+  enabled day; such a schedule now counts calendar time.
 
 ## [1.2.4] - 2026-10-21
 

@@ -26,6 +26,10 @@ export class Department {
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
+  /** The schedule business-hours SLA policies count in for this department's tickets. */
+  @Column({ type: 'int', nullable: true })
+  businessScheduleId: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

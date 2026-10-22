@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BusinessSchedule } from '../entities/business-schedule.entity';
 import { Holiday } from '../entities/holiday.entity';
+import { SlaPolicy } from '../entities/sla-policy.entity';
+import { Department } from '../entities/department.entity';
+import { isWithinBusinessHours } from './business-hours';
 
 @Injectable()
 export class BusinessScheduleService {
@@ -37,8 +40,19 @@ export class BusinessScheduleService {
     return this.findById(id);
   }
 
+  /** Deletes a schedule and clears it from the policies and departments that used it. */
   async delete(id: number): Promise<void> {
     const schedule = await this.findById(id);
+    const manager = this.scheduleRepo.manager;
+    await manager.getRepository(SlaPolicy).update({ businessScheduleId: id }, {
+      businessScheduleId: null,
+    } as any);
+    await manager.getRepository(Department).update(
+      { businessScheduleId: id },
+      {
+        businessScheduleId: null,
+      },
+    );
     await this.scheduleRepo.remove(schedule);
   }
 
@@ -53,20 +67,8 @@ export class BusinessScheduleService {
     await this.holidayRepo.remove(holiday);
   }
 
+  /** Whether `date` falls inside one of the schedule's windows, in its zone and holidays. */
   isWithinBusinessHours(schedule: BusinessSchedule, date: Date): boolean {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = days[date.getDay()];
-    const daySchedule = schedule.schedule[dayName];
-
-    if (!daySchedule?.enabled) return false;
-
-    const [startH, startM] = daySchedule.start.split(':').map(Number);
-    const [endH, endM] = daySchedule.end.split(':').map(Number);
-
-    const currentMinutes = date.getHours() * 60 + date.getMinutes();
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-
-    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    return isWithinBusinessHours(date, schedule);
   }
 }

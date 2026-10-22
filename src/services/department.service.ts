@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Department } from '../entities/department.entity';
+import { BusinessSchedule } from '../entities/business-schedule.entity';
 
 @Injectable()
 export class DepartmentService {
@@ -32,6 +33,11 @@ export class DepartmentService {
     await this.findById(id);
     await this.departmentRepo.update(id, data);
     return this.findById(id);
+  }
+
+  /** Whether a business schedule with this id exists. */
+  async scheduleExists(id: number): Promise<boolean> {
+    return this.departmentRepo.manager.getRepository(BusinessSchedule).exists({ where: { id } });
   }
 
   async delete(id: number): Promise<void> {

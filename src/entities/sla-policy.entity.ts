@@ -70,8 +70,16 @@ export class SlaPolicy {
   @Column({ type: 'simple-json', nullable: true })
   conditions: Record<string, any>;
 
+  /**
+   * The schedule this policy counts business hours in. A policy with one
+   * counts business hours; one without counts them when `businessHoursOnly`
+   * is set, in the ticket department's schedule or else the default one.
+   */
   @Column({ type: 'int', nullable: true })
   businessScheduleId: number;
+
+  @Column({ default: false })
+  businessHoursOnly: boolean;
 
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
