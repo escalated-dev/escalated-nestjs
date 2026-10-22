@@ -17,6 +17,16 @@ import { TicketService } from '../services/ticket.service';
 import { CannedResponseService } from '../services/canned-response.service';
 import { MacroService } from '../services/macro.service';
 import { TicketSubjectService } from '../services/ticket-subject.service';
+import { CannedResponse } from '../entities/canned-response.entity';
+import { Macro } from '../entities/macro.entity';
+import { Webhook } from '../entities/webhook.entity';
+import { WebhookDelivery } from '../entities/webhook-delivery.entity';
+import {
+  serializeCannedResponse,
+  serializeDelivery,
+  serializeMacro,
+  serializeWebhook,
+} from './admin-config';
 import {
   paginate,
   serializeActivity,
@@ -70,6 +80,11 @@ export class UiDataService {
     @InjectRepository(TicketFollower) private readonly followers: Repository<TicketFollower>,
     @InjectRepository(SatisfactionRating)
     private readonly ratings: Repository<SatisfactionRating>,
+    @InjectRepository(Macro) private readonly macroRows: Repository<Macro>,
+    @InjectRepository(CannedResponse) private readonly cannedRows: Repository<CannedResponse>,
+    @InjectRepository(Webhook) private readonly webhookRows: Repository<Webhook>,
+    @InjectRepository(WebhookDelivery)
+    private readonly deliveryRows: Repository<WebhookDelivery>,
     private readonly replyService: ReplyService,
     private readonly ticketService: TicketService,
     private readonly cannedResponseService: CannedResponseService,
@@ -520,6 +535,50 @@ export class UiDataService {
       color: tag.color,
       tickets_count: counts.get(tag.id) ?? 0,
     }));
+  }
+
+  /** `Escalated/Admin/Macros/Index`: every macro, shared and personal, with its creator. */
+  async adminMacros() {
+    const rows = await this.macroRows.find({ order: { name: 'ASC', id: 'ASC' } });
+    const directory = await this.directory(rows.map((m) => m.createdBy));
+    return rows.map((macro) => serializeMacro(macro, directory));
+  }
+
+  /** `Escalated/Admin/CannedResponses/Index`: every canned response with its creator. */
+  async adminCannedResponses() {
+    const rows = await this.cannedRows.find({ order: { title: 'ASC', id: 'ASC' } });
+    const directory = await this.directory(rows.map((r) => r.createdBy));
+    return rows.map((response) => serializeCannedResponse(response, directory));
+  }
+
+  /** `Escalated/Admin/Webhooks/Index`: newest first, each with its latest delivery and count. */
+  async adminWebhooks() {
+    const rows = await this.webhookRows.find({ order: { createdAt: 'DESC', id: 'DESC' } });
+    return Promise.all(
+      rows.map(async (webhook) => {
+        const [latest, count] = await Promise.all([
+          this.deliveryRows.findOne({
+            where: { webhookId: webhook.id },
+            order: { createdAt: 'DESC', id: 'DESC' },
+          }),
+          this.deliveryRows.countBy({ webhookId: webhook.id }),
+        ]);
+        return serializeWebhook(webhook, latest, count);
+      }),
+    );
+  }
+
+  /** `Escalated/Admin/Webhooks/DeliveryLog`'s deliveries: a paginator, newest first. */
+  async webhookDeliveries(webhookId: number, page: unknown, path: string) {
+    const perPage = 25;
+    const current = positiveInt(page, 1);
+    const [rows, total] = await this.deliveryRows.findAndCount({
+      where: { webhookId },
+      order: { createdAt: 'DESC', id: 'DESC' },
+      skip: (current - 1) * perPage,
+      take: perPage,
+    });
+    return paginate(rows.map(serializeDelivery), total, current, perPage, path);
   }
 
   async isFollowing(ticketId: number, userId: UserId): Promise<boolean> {

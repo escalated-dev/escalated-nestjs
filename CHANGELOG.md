@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the saved views sidebar (`/escalated/admin/saved-views`, own views
   only) are served under the `escalated.admin.*` route names the screens call.
 - The staff ticket screens now send the ticket's `satisfaction_rating`.
+- Admin configuration screens (with `ui.enabled`): `Admin/SlaPolicies/Index`
+  and `Form`, `Admin/Statuses/Index` and `Form`, `Admin/Macros/Index`,
+  `Admin/CannedResponses/Index`, `Admin/Webhooks/Index`, `Form` and
+  `DeliveryLog`, with their create/update/delete forms and webhook delivery
+  retry, as escalated-laravel's admin controllers serve them. See
+  `docs/ui.md` for how each maps onto this backend.
+- `WebhookService.retryDelivery(id)` sends one stored delivery again now.
+- Macros run escalated-laravel's action names (`status` by slug, `priority`,
+  `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the
+  existing `set_status`, `set_priority`, `set_department`, `assign`,
+  `add_reply`, `add_note`.
 
 ## [1.2.4] - 2026-10-21
 
