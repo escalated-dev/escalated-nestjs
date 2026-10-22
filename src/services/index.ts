@@ -23,6 +23,8 @@ export { ImportContext, ImportCredentials } from './import-adapter';
 export type { ImportAdapter, ImportExtractResult } from './import-adapter';
 export { SavedViewService } from './saved-view.service';
 export { SettingsService } from './settings.service';
+export { DataRetentionService, retentionDays } from './data-retention.service';
+export type { RetentionReport, RetentionPreview } from './data-retention.service';
 export { TicketLinkService } from './ticket-link.service';
 export { TicketSubjectService } from './ticket-subject.service';
 export { AuditLogService } from './audit-log.service';
