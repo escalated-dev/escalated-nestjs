@@ -11,6 +11,7 @@ export { TicketFollower } from './ticket-follower.entity';
 export { SatisfactionRating } from './satisfaction-rating.entity';
 export { SlaPolicy } from './sla-policy.entity';
 export { EscalationRule } from './escalation-rule.entity';
+export { RuleExecution } from './rule-execution.entity';
 export { BusinessSchedule } from './business-schedule.entity';
 export { Holiday } from './holiday.entity';
 export { AgentProfile } from './agent-profile.entity';

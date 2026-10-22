@@ -129,6 +129,30 @@ const routes: Record<string, NamedRoute> = {
   'escalated.admin.statuses.edit': { uri: 'escalated/admin/statuses/{status}/edit', methods: GET },
   'escalated.admin.statuses.update': { uri: 'escalated/admin/statuses/{status}', methods: PUT },
   'escalated.admin.statuses.destroy': { uri: 'escalated/admin/statuses/{status}', methods: DELETE },
+  'escalated.admin.escalation-rules.index': {
+    uri: 'escalated/admin/escalation-rules',
+    methods: GET,
+  },
+  'escalated.admin.escalation-rules.create': {
+    uri: 'escalated/admin/escalation-rules/create',
+    methods: GET,
+  },
+  'escalated.admin.escalation-rules.store': {
+    uri: 'escalated/admin/escalation-rules',
+    methods: POST,
+  },
+  'escalated.admin.escalation-rules.edit': {
+    uri: 'escalated/admin/escalation-rules/{escalation_rule}/edit',
+    methods: GET,
+  },
+  'escalated.admin.escalation-rules.update': {
+    uri: 'escalated/admin/escalation-rules/{escalation_rule}',
+    methods: PUT,
+  },
+  'escalated.admin.escalation-rules.destroy': {
+    uri: 'escalated/admin/escalation-rules/{escalation_rule}',
+    methods: DELETE,
+  },
   'escalated.admin.macros.index': { uri: 'escalated/admin/macros', methods: GET },
   'escalated.admin.macros.store': { uri: 'escalated/admin/macros', methods: POST },
   'escalated.admin.macros.update': { uri: 'escalated/admin/macros/{macro}', methods: PUT },

@@ -195,6 +195,20 @@ Admin (`adminGuard`):
   `solved`, the distinction this backend stores (`isClosed`); a new status
   gets a slug from its label, an edit keeps it, and a status tickets still
   have cannot be deleted. Status descriptions are not stored
+- `GET /escalated/admin/escalation-rules` - `Admin/EscalationRules/Index`;
+  `/escalation-rules/create` and `/escalation-rules/:id/edit` -
+  `Admin/EscalationRules/Form`. Rules are escalated-laravel's: `conditions`
+  (`[{ field, value }]`: `status` by slug, `priority`, `assigned`,
+  `age_hours`, `no_response_hours`, `sla_breached`, `department_id`,
+  `ticket_type`, `account`) matched against open tickets, and `actions`
+  (`escalate`, `change_priority`, `assign_to`, `change_department`), run by
+  the five-minute sweep once per ticket (again after the ticket stops
+  matching, or after `repeat_after_hours`). `escalate` moves the ticket to the
+  status with slug `escalated` when there is one and sends
+  `ticket.escalated`. Rules saved before this show their SLA policy and
+  trigger as conditions (`sla_policy_id`, `first_response_breached`,
+  `resolution_breached`, `first_response_due_within_minutes`), which saving
+  keeps. Categories are not stored (`category` is null)
 - Reports, as escalated-laravel's ReportController sends them (`?days=`, and
   `?period=` on the advanced reports; 30 by default):
   `GET /escalated/admin/reports` - `Admin/Reports`; `/reports/dashboard` -

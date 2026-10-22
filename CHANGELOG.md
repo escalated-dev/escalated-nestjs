@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrading
+- Run the exported `EscalationRuleContract1792713600000` migration: it makes
+  an escalation rule's SLA policy optional, adds `description` and
+  `repeatAfterHours` to rules, and creates `escalated_rule_executions`.
+  Existing rules keep their data and match the same tickets.
+- **Behaviour change:** an escalation rule now acts on a ticket once, as in
+  escalated-laravel, not on every five-minute run. It acts again after the
+  ticket stops matching and matches again, or after the rule's
+  `repeatAfterHours`. Rule actions now go through `TicketService`, so they
+  send the usual `ticket.priority_changed`, `ticket.assigned` and
+  `ticket.updated` events. Only open tickets (not resolved, closed or merged)
+  are escalated.
+
 ### Added
+- Escalation rule screens (with `ui.enabled`): `Admin/EscalationRules/Index`
+  and `Form` (`/escalated/admin/escalation-rules`), with create, update and
+  delete, as escalated-laravel's EscalationRuleController. Rules take
+  escalated-laravel's shape (`conditions` as `[{ field, value }]`, actions
+  `escalate`, `change_priority`, `assign_to`, `change_department`, `order`,
+  `description`, `repeat_after_hours`), so rules saved from the shared form
+  fire. Rules saved before keep matching as they did and are shown in that
+  shape (see `docs/ui.md`); the JSON routes under `/escalated/admin/sla`
+  accept both shapes, and the earlier action names `reassign` and
+  `set_priority`.
 - Report screens (with `ui.enabled`): `Admin/Reports` and
   `Admin/Reports/Dashboard`, `AgentMetrics`, `SlaReport`, `CsatReport`,
   `SlaTrends`, `ResponseTimes`, `ResolutionTimes`, `AgentRanking`, `Cohorts`

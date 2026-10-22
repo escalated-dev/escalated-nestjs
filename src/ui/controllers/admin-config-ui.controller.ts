@@ -19,9 +19,12 @@ import { SlaPolicy } from '../../entities/sla-policy.entity';
 import { Ticket } from '../../entities/ticket.entity';
 import { TicketStatus } from '../../entities/ticket-status.entity';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
+import { EscalationService } from '../../services/escalation.service';
 import { SlaService } from '../../services/sla.service';
 import { WebhookService } from '../../services/webhook.service';
 import {
+  escalationRuleInput,
+  serializeEscalationRule,
   serializeSlaPolicy,
   serializeStatus,
   SLA_PRIORITIES,
@@ -37,8 +40,10 @@ import { routeUrl } from '../routes';
 /**
  * The admin configuration screens with no JSON route of the same path
  * (registered with `ui.enabled`): SLA policies (`/escalated/admin/sla-policies`)
- * and ticket statuses (`/escalated/admin/statuses`), as escalated-laravel's
- * SlaPolicyController and StatusController serve them, and the webhook
+ * ticket statuses (`/escalated/admin/statuses`) and escalation rules
+ * (`/escalated/admin/escalation-rules`), as escalated-laravel's
+ * SlaPolicyController, StatusController and EscalationRuleController serve
+ * them, and the webhook
  * delivery retry. Macros, canned responses and webhooks are served by their
  * JSON admin routes, which answer the screens.
  */
@@ -49,6 +54,7 @@ export class AdminConfigUiController {
   constructor(
     private readonly sla: SlaService,
     private readonly webhooks: WebhookService,
+    private readonly escalations: EscalationService,
     @InjectRepository(SlaPolicy) private readonly policies: Repository<SlaPolicy>,
     @InjectRepository(BusinessSchedule) private readonly schedules: Repository<BusinessSchedule>,
     @InjectRepository(TicketStatus) private readonly statuses: Repository<TicketStatus>,
@@ -221,6 +227,50 @@ export class AdminConfigUiController {
     }
     await this.statuses.remove(status);
     return this.toStatuses('Status deleted.');
+  }
+
+  // Escalation rules
+
+  private toRules(message: string) {
+    return redirect(routeUrl('escalated.admin.escalation-rules.index'), { success: message });
+  }
+
+  @Get('escalation-rules')
+  async ruleIndex() {
+    const rules = await this.escalations.findAll();
+    return inertia('Escalated/Admin/EscalationRules/Index', {
+      rules: rules.map(serializeEscalationRule),
+    });
+  }
+
+  @Get('escalation-rules/create')
+  ruleCreate() {
+    return inertia('Escalated/Admin/EscalationRules/Form', { rule: null });
+  }
+
+  @Post('escalation-rules')
+  async ruleStore(@Body() body: any) {
+    await this.escalations.create(escalationRuleInput(body));
+    return this.toRules('Escalation rule created.');
+  }
+
+  @Get('escalation-rules/:id/edit')
+  async ruleEdit(@Param('id', ParseIntPipe) id: number) {
+    return inertia('Escalated/Admin/EscalationRules/Form', {
+      rule: serializeEscalationRule(await this.escalations.findById(id)),
+    });
+  }
+
+  @Put('escalation-rules/:id')
+  async ruleUpdate(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    await this.escalations.update(id, escalationRuleInput(body));
+    return this.toRules('Escalation rule updated.');
+  }
+
+  @Delete('escalation-rules/:id')
+  async ruleDestroy(@Param('id', ParseIntPipe) id: number) {
+    await this.escalations.delete(id);
+    return this.toRules('Escalation rule deleted.');
   }
 
   // Webhooks
