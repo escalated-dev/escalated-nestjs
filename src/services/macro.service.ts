@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Macro } from '../entities/macro.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { Reply } from '../entities/reply.entity';
+import { TicketStatus } from '../entities/ticket-status.entity';
 import { UserId } from '../config/user-id-column';
 
 @Injectable()
@@ -76,6 +77,60 @@ export class MacroService {
     userId: UserId,
   ): Promise<void> {
     switch (action.type) {
+      // escalated-laravel's action names, which the shared Macros screen saves.
+      case 'status': {
+        const value = String(action.value ?? '');
+        const status = await this.ticketRepo.manager.getRepository(TicketStatus).findOne({
+          where: /^\d+$/.test(value) ? { id: Number(value) } : { slug: value },
+        });
+        if (status) await this.ticketRepo.update(ticket.id, { statusId: status.id });
+        break;
+      }
+      case 'priority':
+        await this.ticketRepo.update(ticket.id, { priority: action.value });
+        break;
+      case 'department':
+        await this.ticketRepo.update(ticket.id, { departmentId: Number(action.value) });
+        break;
+      case 'tags': {
+        const raw = Array.isArray(action.value)
+          ? action.value
+          : String(action.value ?? '').split(',');
+        const ids = raw.map((id: unknown) => Number(String(id).trim()));
+        const wanted = ids.filter((id: number) => Number.isInteger(id) && id > 0);
+        const current = await this.ticketRepo.findOne({
+          where: { id: ticket.id },
+          relations: { tags: true },
+        });
+        const have = new Set((current?.tags ?? []).map((tag) => tag.id));
+        const add = [...new Set<number>(wanted)].filter((id) => !have.has(id));
+        if (add.length) {
+          await this.ticketRepo
+            .createQueryBuilder()
+            .relation(Ticket, 'tags')
+            .of(ticket.id)
+            .add(add);
+        }
+        break;
+      }
+      case 'reply':
+        await this.replyRepo.save({
+          ticketId: ticket.id,
+          userId,
+          body: action.value,
+          type: 'reply',
+          isInternal: false,
+        });
+        break;
+      case 'note':
+        await this.replyRepo.save({
+          ticketId: ticket.id,
+          userId,
+          body: action.value,
+          type: 'note',
+          isInternal: true,
+        });
+        break;
       case 'set_status':
         await this.ticketRepo.update(ticket.id, { statusId: action.value });
         break;

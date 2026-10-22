@@ -159,6 +159,30 @@ Admin (`adminGuard`):
   (`ticket_ids`, `action` of `status`/`priority`/`assign`/`department`/`tags`/
   `delete`, `value`) redirects back to the list; `POST`/`PUT`/`DELETE
   /escalated/admin/saved-views` serve the views sidebar (JSON, own views only)
+- `GET /escalated/admin/sla-policies` - `Admin/SlaPolicies/Index` (targets
+  shown in hours, with `tickets_count`); `/sla-policies/create` and
+  `/sla-policies/:id/edit` - `Admin/SlaPolicies/Form` (`priorities`: `low`,
+  `medium`, `high`, `urgent`). Hours are stored as minutes;
+  `business_hours_only` keeps the policy's business schedule or takes the
+  default one, and is refused when there is none
+- `GET /escalated/admin/statuses` - `Admin/Statuses/Index`; `/statuses/create`
+  and `/statuses/:id/edit` - `Admin/Statuses/Form`. `categories` is `open` and
+  `solved`, the distinction this backend stores (`isClosed`); a new status
+  gets a slug from its label, an edit keeps it, and a status tickets still
+  have cannot be deleted. Status descriptions are not stored
+- `GET /escalated/admin/macros` - `Admin/Macros/Index` (every macro with its
+  `creator`); the screen's action names (`status` by slug, `priority`,
+  `assign`, `tags`, `department`, `reply`, `note`) now run when a macro is
+  applied, beside the older `set_*` / `add_*` names
+- `GET /escalated/admin/canned-responses` - `Admin/CannedResponses/Index`
+  (`body` is the response text; `category` is not stored and is `null`; a new
+  response gets a short code from its title)
+- `GET /escalated/admin/webhooks` - `Admin/Webhooks/Index` (with the latest
+  delivery and `deliveries_count`); `/webhooks/create` and
+  `/webhooks/:id/edit` - `Admin/Webhooks/Form` (`availableEvents` are the names
+  webhooks are sent under); `/webhooks/:id/deliveries` -
+  `Admin/Webhooks/DeliveryLog` (paginated); `POST
+  /webhooks/deliveries/:delivery/retry` sends a delivery again now
 
 On these shared JSON routes, a state-changing browser request (one asking for
 HTML) without `X-Inertia` / `X-Requested-With` is refused while the screens

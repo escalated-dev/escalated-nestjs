@@ -39,6 +39,11 @@ const WEBHOOK_EVENT_NAMES: Readonly<Record<string, string>> = {
   TicketSplitEvent: 'ticket.split',
 };
 
+/** Every event name webhooks are sent under, in the shared vocabulary's order. */
+export function webhookEventNames(): string[] {
+  return [...new Set(Object.values(WEBHOOK_EVENT_NAMES))];
+}
+
 @Injectable()
 export class WebhookService {
   constructor(
@@ -209,6 +214,44 @@ export class WebhookService {
 
       await this.deliveryRepo.save(delivery);
     }
+  }
+
+  /**
+   * Sends one stored delivery again now, whatever its status, as the admin's
+   * Retry button asks (escalated-laravel's `retryDelivery`). Counts the attempt.
+   */
+  async retryDelivery(deliveryId: number): Promise<WebhookDelivery> {
+    const delivery = await this.deliveryRepo.findOne({ where: { id: deliveryId } });
+    if (!delivery) throw new NotFoundException(`Webhook delivery #${deliveryId} not found`);
+    const webhook = await this.webhookRepo.findOne({ where: { id: delivery.webhookId } });
+    if (!webhook) throw new NotFoundException(`Webhook #${delivery.webhookId} not found`);
+
+    delivery.attempts = (delivery.attempts ?? 0) + 1;
+    try {
+      await assertPublicWebhookUrl(webhook.url);
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Escalated-Signature': this.sign(delivery.payload, webhook.secret),
+          'X-Escalated-Event': delivery.event,
+        },
+        body: delivery.payload,
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10000),
+      });
+      delivery.responseStatus = response.status;
+      delivery.responseBody = await response.text().catch(() => '');
+      delivery.status = response.ok ? 'success' : 'failed';
+    } catch (error) {
+      delivery.status = 'failed';
+      delivery.responseStatus = null as unknown as number;
+      delivery.responseBody = error instanceof Error ? error.message : 'Unknown error';
+    }
+    if (delivery.status === 'success') {
+      await this.webhookRepo.update(webhook.id, { failureCount: 0, lastDeliveredAt: new Date() });
+    }
+    return this.deliveryRepo.save(delivery);
   }
 
   getDeliveries(webhookId: number): Promise<WebhookDelivery[]> {
