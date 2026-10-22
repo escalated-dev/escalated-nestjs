@@ -280,6 +280,23 @@ Admin (`adminGuard`):
   made from the title when empty and must be unique);
   `GET /escalated/admin/kb-categories` - `Admin/KnowledgeBase/Categories/Index`
   (with `articles_count`, `parent_id`, `position`) and its create/update/delete
+- The Settings sub-pages, each saving back to itself with a `success` flash:
+  `GET`/`POST /escalated/admin/settings/csat` - `Admin/Settings/CsatSettings`
+  (stored only; survey sending does not read them yet);
+  `/settings/data-retention` - `Admin/Settings/DataRetention` (with
+  `purgePreview`; the scheduler applies the periods daily at 03:30 through
+  `DataRetentionService`: a closed ticket past its period is deleted with its
+  rows, attachment rows and audit logs past theirs are deleted, and so are
+  expired guest verification codes; every period defaults to `never`);
+  `/settings/email` - `Admin/Settings/EmailSettings` (`email_addresses`,
+  `default_reply_address`; stored only, outbound mail does not read them);
+  `/settings/public-tickets` - `Admin/Settings/PublicTickets` (`POST` or
+  `PUT`, saving the `guest_policy` setting the widget resolves); and
+  `GET /settings/database` - `Admin/Settings/DatabaseConnection`, read-only:
+  the connection is the module's `connection` option, so `pinnedByConfig` is
+  true, `POST /settings/database` is refused with an `error` flash, and
+  `POST /settings/database/test` returns the connection's description (422
+  for another name). `Admin/Settings/Sandbox` is not served, as in Laravel
 
 On these shared JSON routes, a state-changing browser request (one asking for
 HTML) without `X-Inertia` / `X-Requested-With` is refused while the screens

@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- The scheduler now runs the data retention purge daily at 03:30. Every
+  period defaults to `never`, so until an admin sets one on the Data retention
+  page it only deletes expired guest verification codes. A closed ticket
+  (status `closed`) past `retention_closed_tickets` is deleted outright with
+  its replies, attachments, activities and every other row that points at it:
+  tickets have no soft delete here, so there is no 30-day grace period.
+  Tickets merged into it are kept and unlinked; inbound emails keep their
+  record without the ticket id.
 - Run the exported `ImportJobs1793059200000` migration: it creates
   `escalated_import_jobs` and `escalated_import_source_maps` for the admin
   Import wizard. Nothing existing changes.
@@ -82,6 +90,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   end. Days saved with `enabled: false` stay closed.
 
 ### Added
+- The admin Settings sub-pages, with escalated-laravel's routes, props,
+  validation and flash messages (`ui.enabled`, admins only):
+  `Escalated/Admin/Settings/CsatSettings` (`escalated/admin/settings/csat`),
+  `DataRetention` (`.../data-retention`, with `purgePreview`), `EmailSettings`
+  (`.../email`: `email_addresses` normalised to `email`, `display_name`,
+  `department_id`, `dkim_status`, and `default_reply_address`; stored only,
+  as in Laravel), `PublicTickets` (`.../public-tickets`, `POST` or `PUT`,
+  reading and writing the `guest_policy` setting the widget resolves) and a
+  read-only `DatabaseConnection` (`.../database`, `POST .../database/test`):
+  the connection is the module's `connection` option, so the page is pinned
+  and a switch is refused. The route names are in the `route()` table.
+- `DataRetentionService` (`purgeExpired({ dryRun })`, `preview()`):
+  escalated-laravel's `escalated:purge-expired` for closed tickets,
+  attachments, audit logs and expired guest verification codes.
 - The admin Import wizard and the import framework behind it, as
   escalated-laravel's: the shared `Admin/Import/Index`, `Connect`, `Mapping`,
   `Review` and `Progress` pages on Laravel's paths and props under

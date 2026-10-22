@@ -308,6 +308,35 @@ const routes: Record<string, NamedRoute> = {
   'escalated.admin.reports.export': { uri: 'escalated/admin/reports/export/{type}', methods: GET },
   'escalated.admin.settings': { uri: 'escalated/admin/settings', methods: GET },
   'escalated.admin.settings.update': { uri: 'escalated/admin/settings', methods: POST },
+  'escalated.admin.settings.csat': { uri: 'escalated/admin/settings/csat', methods: GET },
+  'escalated.admin.settings.csat.update': { uri: 'escalated/admin/settings/csat', methods: POST },
+  'escalated.admin.settings.data-retention': {
+    uri: 'escalated/admin/settings/data-retention',
+    methods: GET,
+  },
+  'escalated.admin.settings.data-retention.update': {
+    uri: 'escalated/admin/settings/data-retention',
+    methods: POST,
+  },
+  'escalated.admin.settings.database': { uri: 'escalated/admin/settings/database', methods: GET },
+  'escalated.admin.settings.database.test': {
+    uri: 'escalated/admin/settings/database/test',
+    methods: POST,
+  },
+  'escalated.admin.settings.database.update': {
+    uri: 'escalated/admin/settings/database',
+    methods: POST,
+  },
+  'escalated.admin.settings.email': { uri: 'escalated/admin/settings/email', methods: GET },
+  'escalated.admin.settings.email.update': { uri: 'escalated/admin/settings/email', methods: POST },
+  'escalated.admin.settings.public-tickets': {
+    uri: 'escalated/admin/settings/public-tickets',
+    methods: GET,
+  },
+  'escalated.admin.settings.public-tickets.update': {
+    uri: 'escalated/admin/settings/public-tickets',
+    methods: PUT,
+  },
   'escalated.admin.departments.index': { uri: 'escalated/admin/departments', methods: GET },
   'escalated.admin.departments.create': { uri: 'escalated/admin/departments/create', methods: GET },
   'escalated.admin.departments.store': { uri: 'escalated/admin/departments', methods: POST },
