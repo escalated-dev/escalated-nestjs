@@ -69,6 +69,8 @@ import {
   WorkflowLog,
   InboundEmail,
   Automation,
+  ImportJob,
+  ImportSourceMap,
 } from './entities';
 
 // Services
@@ -92,6 +94,7 @@ import {
   SatisfactionRatingService,
   TwoFactorService,
   ImportService,
+  ImportJobService,
   SavedViewService,
   SettingsService,
   TicketLinkService,
@@ -170,6 +173,7 @@ import { CustomerUiController } from './ui/controllers/customer-ui.controller';
 import { AdminUiController } from './ui/controllers/admin-ui.controller';
 import { AdminTicketsUiController } from './ui/controllers/admin-tickets-ui.controller';
 import { AdminConfigUiController } from './ui/controllers/admin-config-ui.controller';
+import { AdminImportUiController } from './ui/controllers/admin-import-ui.controller';
 import { AdminReportsUiController } from './ui/controllers/admin-reports-ui.controller';
 import { AdminReportExportController } from './controllers/admin/report-export.controller';
 import {
@@ -244,6 +248,8 @@ const entities = [
   WorkflowLog,
   InboundEmail,
   Automation,
+  ImportJob,
+  ImportSourceMap,
 ];
 
 const services = [
@@ -266,6 +272,7 @@ const services = [
   SatisfactionRatingService,
   TwoFactorService,
   ImportService,
+  ImportJobService,
   SavedViewService,
   SettingsService,
   TicketLinkService,
@@ -379,6 +386,7 @@ export class EscalatedModule implements NestModule {
         AdminUiController,
         AdminTicketsUiController,
         AdminConfigUiController,
+        AdminImportUiController,
         AdminReportsUiController,
         AdminKnowledgeBaseUiController,
         CustomerKnowledgeBaseUiController,

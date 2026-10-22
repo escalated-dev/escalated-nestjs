@@ -323,6 +323,33 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/admin/departments/{department}',
     methods: DELETE,
   },
+  // Import wizard
+  'escalated.admin.import.index': { uri: 'escalated/admin/import', methods: GET },
+  'escalated.admin.import.connect': {
+    uri: 'escalated/admin/import/{platform}/connect',
+    methods: GET,
+  },
+  'escalated.admin.import.test-connection': {
+    uri: 'escalated/admin/import/{platform}/test-connection',
+    methods: POST,
+  },
+  'escalated.admin.import.mapping': {
+    uri: 'escalated/admin/import/{platform}/mapping',
+    methods: GET,
+  },
+  'escalated.admin.import.review': {
+    uri: 'escalated/admin/import/{platform}/review',
+    methods: POST,
+  },
+  'escalated.admin.import.start': { uri: 'escalated/admin/import/{platform}/start', methods: POST },
+  'escalated.admin.import.progress': {
+    uri: 'escalated/admin/import/progress/{jobId}',
+    methods: GET,
+  },
+  'escalated.admin.import.status': { uri: 'escalated/admin/import/status/{jobId}', methods: GET },
+  'escalated.admin.import.pause': { uri: 'escalated/admin/import/pause/{jobId}', methods: POST },
+  'escalated.admin.import.resume': { uri: 'escalated/admin/import/resume/{jobId}', methods: POST },
+  'escalated.admin.import.cancel': { uri: 'escalated/admin/import/cancel/{jobId}', methods: POST },
   'escalated.admin.tags.index': { uri: 'escalated/admin/tags', methods: GET },
   'escalated.admin.tags.store': { uri: 'escalated/admin/tags', methods: POST },
   'escalated.admin.tags.update': { uri: 'escalated/admin/tags/{tag}', methods: PUT },

@@ -10,6 +10,7 @@ import { UserId } from '../config/user-id-column';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { findStatusBySlugOrId } from './status-lookup';
 import { TicketService } from './ticket.service';
+import { ImportContext } from './import-adapter';
 
 /**
  * AutomationService — admin time-based rules engine.
@@ -75,6 +76,8 @@ export class AutomationService {
    * matching ticket counts once per automation that touched it).
    */
   async run(): Promise<number> {
+    // Imported history is not live work (ImportContext).
+    if (ImportContext.isImporting()) return 0;
     const automations = await this.automationRepo.find({
       where: { active: true },
       order: { position: 'ASC', id: 'ASC' },

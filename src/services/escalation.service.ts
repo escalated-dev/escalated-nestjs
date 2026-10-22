@@ -14,6 +14,7 @@ import { ESCALATED_EVENTS, TicketEscalatedEvent } from '../events/escalated.even
 import { normalizeEscalationRule, RuleAction, RuleCondition } from './escalation-rules';
 import { RuleFireLog } from './rule-fire-log.service';
 import { TicketService } from './ticket.service';
+import { ImportContext } from './import-adapter';
 
 const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
 
@@ -78,6 +79,8 @@ export class EscalationService {
    * number of rule/ticket pairs acted on.
    */
   async processEscalations(): Promise<number> {
+    // Imported history is not live work (ImportContext).
+    if (ImportContext.isImporting()) return 0;
     const now = new Date();
     const rules = await this.ruleRepo.find({
       where: { isActive: true },

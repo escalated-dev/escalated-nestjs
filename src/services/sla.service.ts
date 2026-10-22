@@ -9,6 +9,7 @@ import { Ticket } from '../entities/ticket.entity';
 import { Department } from '../entities/department.entity';
 import { addBusinessMinutes, countsBusinessHours } from './business-hours';
 import { ESCALATED_EVENTS, SlaBreachedEvent, SlaWarningEvent } from '../events/escalated.events';
+import { ImportContext } from './import-adapter';
 
 @Injectable()
 export class SlaService {
@@ -56,6 +57,8 @@ export class SlaService {
   }
 
   async applyToTicket(ticket: Ticket): Promise<void> {
+    // Imported history is not live work (ImportContext).
+    if (ImportContext.isImporting()) return;
     // Find matching SLA policy
     const policy = await this.findMatchingPolicy(ticket);
     if (!policy) return;
@@ -90,6 +93,8 @@ export class SlaService {
    * on later ticks, so webhooks and listeners do not fire every minute.
    */
   async checkBreaches(): Promise<void> {
+    // Imported history is not live work (ImportContext).
+    if (ImportContext.isImporting()) return;
     const now = new Date();
 
     const firstResponseBreaches = await this.ticketRepo.find({
@@ -147,7 +152,7 @@ export class SlaService {
    * is not repeated every tick). Returns how many warnings were sent.
    */
   async checkWarnings(warningMinutes = 30): Promise<number> {
-    if (!(warningMinutes > 0)) return 0;
+    if (!(warningMinutes > 0) || ImportContext.isImporting()) return 0;
     const now = new Date();
     const threshold = new Date(now.getTime() + warningMinutes * 60000);
     let warned = 0;
