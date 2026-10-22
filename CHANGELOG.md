@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeliveryLog`, with their create/update/delete forms and webhook delivery
   retry, as escalated-laravel's admin controllers serve them. See
   `docs/ui.md` for how each maps onto this backend.
+- People screens (with `ui.enabled`): `Admin/Roles/Index` and `Form` on the
+  roles JSON routes (create, update with the permission matrix, delete), and
+  `Admin/ApiTokens/Index` on the API token routes (a new token's plain value
+  is flashed once as `plain_text_token`; tokens can be issued to active
+  agents only).
 - `WebhookService.retryDelivery(id)` sends one stored delivery again now.
 - Macros run escalated-laravel's action names (`status` by slug, `priority`,
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the

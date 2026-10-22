@@ -183,6 +183,15 @@ Admin (`adminGuard`):
   webhooks are sent under); `/webhooks/:id/deliveries` -
   `Admin/Webhooks/DeliveryLog` (paginated); `POST
   /webhooks/deliveries/:delivery/retry` sends a delivery again now
+- `GET /escalated/admin/roles` - `Admin/Roles/Index` (`users_count` is the
+  agents with the role); `/roles/create` and `/roles/:id/edit` -
+  `Admin/Roles/Form` (`permissions` grouped by `group`); system roles cannot
+  be deleted
+- `GET /escalated/admin/api-tokens` - `Admin/ApiTokens/Index` (`users` are the
+  active agents; the token itself is never listed). Creating one redirects
+  back with the plain token in the `plain_text_token` flash value, shown once.
+  `Admin/Users/Index` is not served: it edits the host's user table, which
+  this package does not own
 
 On these shared JSON routes, a state-changing browser request (one asking for
 HTML) without `X-Inertia` / `X-Requested-With` is refused while the screens

@@ -34,6 +34,7 @@ import { EscalatedUi, BrowserFormGuard } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
+import { roleInput } from '../../ui/admin-people';
 import {
   SUPPORTED_SETTINGS,
   departmentInput,
@@ -235,7 +236,10 @@ export class AdminSettingsController {
 
   // Roles
   @Get('roles')
-  async listRoles() {
+  async listRoles(@Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      return inertia('Escalated/Admin/Roles/Index', { roles: await this.ui!.adminRoles() });
+    }
     return this.roleService.findAll();
   }
 
@@ -246,20 +250,41 @@ export class AdminSettingsController {
 
   @Post('roles')
   @AuditAction('create', 'role')
-  async createRole(@Body() body: any) {
+  async createRole(@Body() body: any, @Req() req?: any): Promise<any> {
+    if (this.screen(req)) {
+      const input = roleInput(body);
+      await this.roleService.create({ ...input, slug: await this.ui!.uniqueRoleSlug(input.name) });
+      return redirect(routeUrl('escalated.admin.roles.index'), { success: 'Role created.' });
+    }
     return this.roleService.create(body);
   }
 
   @Put('roles/:id')
   @AuditAction('update', 'role')
-  async updateRole(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  async updateRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: any,
+    @Req() req?: any,
+  ): Promise<any> {
+    if (this.screen(req)) {
+      const input = roleInput(body);
+      await this.roleService.update(id, {
+        ...input,
+        description: input.description ?? (null as unknown as string),
+        permissionIds: input.permissionIds ?? [],
+      });
+      return redirect(routeUrl('escalated.admin.roles.index'), { success: 'Role updated.' });
+    }
     return this.roleService.update(id, body);
   }
 
   @Delete('roles/:id')
   @HttpCode(204)
-  async deleteRole(@Param('id', ParseIntPipe) id: number) {
+  async deleteRole(@Param('id', ParseIntPipe) id: number, @Req() req?: any): Promise<any> {
     await this.roleService.delete(id);
+    if (this.screen(req)) {
+      return redirect(routeUrl('escalated.admin.roles.index'), { success: 'Role deleted.' });
+    }
   }
 
   // Audit Logs

@@ -83,7 +83,7 @@ export function tagInput(body: any): Partial<Tag> {
 
 /**
  * The admin screens' own routes (registered with `ui.enabled`): saving the
- * settings form and the department create/edit forms. The list pages and
+ * settings form, and the department and role create/edit forms. The list pages and
  * the department/tag/workflow writes are served by the JSON admin routes,
  * which answer screens with redirects.
  */
@@ -154,6 +154,22 @@ export class AdminUiController {
     const department = await this.departments.findById(id);
     return inertia('Escalated/Admin/Departments/Form', {
       department: this.data.serializeDepartment(department),
+    });
+  }
+
+  @Get('roles/create')
+  async createRole() {
+    return inertia('Escalated/Admin/Roles/Form', {
+      role: null,
+      permissions: await this.data.groupedPermissions(),
+    });
+  }
+
+  @Get('roles/:id/edit')
+  async editRole(@Param('id', ParseIntPipe) id: number) {
+    return inertia('Escalated/Admin/Roles/Form', {
+      role: await this.data.role(id),
+      permissions: await this.data.groupedPermissions(),
     });
   }
 }
