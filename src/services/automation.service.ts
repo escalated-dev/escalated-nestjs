@@ -1,5 +1,5 @@
 import { accountIdentity, caseSensitiveEquals } from '../config/ticket-access';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Automation } from '../entities/automation.entity';
@@ -7,6 +7,9 @@ import { Ticket } from '../entities/ticket.entity';
 import { Tag } from '../entities/tag.entity';
 import { Reply } from '../entities/reply.entity';
 import { UserId } from '../config/user-id-column';
+import { TicketStatus } from '../entities/ticket-status.entity';
+import { findStatusBySlugOrId } from './status-lookup';
+import { TicketService } from './ticket.service';
 
 /**
  * AutomationService — admin time-based rules engine.
@@ -33,6 +36,7 @@ export class AutomationService {
     private readonly tagRepo: Repository<Tag>,
     @InjectRepository(Reply)
     private readonly replyRepo: Repository<Reply>,
+    @Optional() private readonly tickets?: TicketService,
   ) {}
 
   // ---------------- CRUD ----------------
@@ -207,10 +211,21 @@ export class AutomationService {
 
       try {
         switch (type) {
-          case 'change_status':
-            // Value is a TicketStatus.id. Frontend renders a dropdown.
-            await this.ticketRepo.update(ticket.id, { statusId: Number(value) });
+          case 'change_status': {
+            // A status id (the admin form's dropdown) or a status slug, through
+            // TicketService so a solved status stamps resolvedAt and the status
+            // events go out.
+            if (!this.tickets) {
+              await this.ticketRepo.update(ticket.id, { statusId: Number(value) });
+              break;
+            }
+            const status = await findStatusBySlugOrId(
+              this.ticketRepo.manager.getRepository(TicketStatus),
+              value,
+            );
+            if (status) await this.tickets.update(ticket.id, { statusId: status.id }, null as any);
             break;
+          }
           case 'change_priority':
             await this.ticketRepo.update(ticket.id, { priority: String(value) });
             break;

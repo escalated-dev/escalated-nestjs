@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- Run the exported `TicketStatusCategories1792886400000` migration: it adds
+  `category`, `description` and `isSystem` to ticket statuses. Existing rows
+  get a category from `isClosed` and their slug (`solved` when closed or
+  slugged `resolved`/`closed`, `pending` for `waiting_on_customer`/`pending`,
+  `on_hold` for `snoozed`, otherwise `open`); every solved row gets
+  `isClosed`, and rows with a built-in slug (`open`, `in_progress`,
+  `waiting_on_customer`, `waiting_on_agent`, `escalated`, `resolved`,
+  `closed`, `reopened`, `live`, `snoozed`) become system rows. Tickets are not
+  changed.
+- **Behaviour change:** a status slugged `resolved` or `closed` but saved
+  without `isClosed` now stamps `resolvedAt`/`closedAt` like any solved
+  status (lifecycle events already treated it as closed).
+- **Behaviour change:** macro `status`, workflow `change_status` and
+  automation `change_status` actions now go through `TicketService`, so they
+  stamp `resolvedAt`/`closedAt` for a solved status and send
+  `ticket.status_changed` (plus `ticket.resolved`/`ticket.closed`/
+  `ticket.reopened`) and `ticket.updated`. Automations accept a status slug as
+  well as an id.
+- **Behaviour change:** the Statuses screen's `is_default` is exclusive per
+  category (as in escalated-laravel), not across all statuses. New tickets
+  still get one default status: the default of the earliest category.
 - Run the exported `EscalationRuleContract1792713600000` migration: it makes
   an escalation rule's SLA policy optional, adds `description` and
   `repeatAfterHours` to rules, and creates `escalated_rule_executions`.
@@ -36,6 +57,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   end. Days saved with `enabled: false` stay closed.
 
 ### Added
+- Status categories as escalated-laravel has them: every ticket status
+  belongs to `new`, `open`, `pending`, `on_hold` or `solved`, and lifecycle
+  keys off the category. A custom status in the `solved` category stamps
+  `resolvedAt`/`closedAt`, stops SLA and escalation, counts as closed in
+  reports and queues, and closes the ticket to guest and customer replies.
+  `isClosed` is kept equal to `category === 'solved'`. The Statuses screens
+  offer all five categories and send `description` and `is_system`; system
+  statuses keep their slug and category and cannot be deleted. Status changes
+  take a custom status by slug or id on every path (agent API, screen and
+  bulk actions, macros, workflows, automations). Agent and admin ticket JSON
+  gains `status_category` and `custom_status`; customer and guest tickets
+  gain `status_category`. See `docs/ui.md` ("Status categories").
 - Business-hours SLA deadlines are counted as escalated-laravel counts them.
   For a policy limited to business hours (`businessHoursOnly`, or a policy with
   its own `businessScheduleId`), `SlaService` uses the policy's schedule, else

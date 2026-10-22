@@ -14,6 +14,7 @@ import { SlaService } from './sla.service';
 import { UserId } from '../config/user-id-column';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
+import { isSolvedStatus, pickDefaultStatus } from '../entities/status-category';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { TicketLink } from '../entities/ticket-link.entity';
 import { Reply } from '../entities/reply.entity';
@@ -170,6 +171,15 @@ export class TicketService {
     return tickets;
   }
 
+  /**
+   * The status a new ticket gets when none is given: the default status. Defaults
+   * are exclusive per category, so with several the earliest category wins.
+   */
+  async defaultStatusId(): Promise<number | undefined> {
+    const defaults = await this.statusRepo.find({ where: { isDefault: true } });
+    return pickDefaultStatus(defaults ?? [])?.id;
+  }
+
   private async enrichTicket(ticket: Ticket): Promise<Ticket> {
     const [enriched] = await this.enrichTickets([ticket]);
     return enriched;
@@ -183,8 +193,7 @@ export class TicketService {
     // Get default status if not provided
     let statusId = dto.statusId;
     if (!statusId) {
-      const defaultStatus = await this.statusRepo.findOne({ where: { isDefault: true } });
-      statusId = defaultStatus?.id;
+      statusId = await this.defaultStatusId();
     }
 
     const ticket = this.ticketRepo.create({
@@ -393,7 +402,8 @@ export class TicketService {
       const newStatus = await this.statusRepo.findOne({ where: { id: dto.statusId } });
       const previousStatus = ticket.status ?? null;
       pending.push((fresh) => lifecycleEvent(previousStatus, newStatus, fresh, userId));
-      if (newStatus?.isClosed && !ticket.closedAt) {
+      // A `solved` status closes the ticket: this stamps resolvedAt, which stops SLA.
+      if (isSolvedStatus(newStatus) && !ticket.closedAt) {
         (dto as any).closedAt = new Date();
         (dto as any).resolvedAt = new Date();
       }

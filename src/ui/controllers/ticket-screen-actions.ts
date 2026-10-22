@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import type { EscalatedModuleOptions } from '../../config/escalated.config';
 import { requireUserId } from '../../config/request-user';
 import { TicketStatus } from '../../entities/ticket-status.entity';
+import { findStatusBySlugOrId } from '../../services/status-lookup';
 import { MacroService } from '../../services/macro.service';
 import { ReplyService } from '../../services/reply.service';
 import { TicketService } from '../../services/ticket.service';
@@ -71,9 +72,9 @@ export abstract class TicketScreenActions {
     return { message, ...json };
   }
 
-  /** The ticket status with this slug, or a field error. */
+  /** The ticket status with this slug (built-in or custom) or id, or a field error. */
   protected async statusBySlug(slug: string, field = 'status'): Promise<TicketStatus> {
-    const status = await this.statuses.findOne({ where: { slug } });
+    const status = await findStatusBySlugOrId(this.statuses, slug);
     if (!status) throw new UiValidationException({ [field]: 'The selected status is invalid.' });
     return status;
   }

@@ -1,4 +1,5 @@
 import type { UserId } from '../config/user-id-column';
+import { statusCategory } from '../entities/status-category';
 import type { Attachment } from '../entities/attachment.entity';
 import type { Reply } from '../entities/reply.entity';
 import type { Ticket } from '../entities/ticket.entity';
@@ -97,6 +98,18 @@ export function serializeTicket(
     status: ticket.status?.slug ?? null,
     status_label: ticket.status?.name ?? null,
     status_id: ticket.statusId ?? null,
+    status_category: ticket.status ? statusCategory(ticket.status) : null,
+    // A status an admin added (not a built-in one), for the shared StatusBadge.
+    custom_status:
+      ticket.status && !ticket.status.isSystem
+        ? {
+            id: ticket.status.id,
+            label: ticket.status.name,
+            slug: ticket.status.slug,
+            color: ticket.status.color ?? null,
+            category: statusCategory(ticket.status),
+          }
+        : null,
     priority: ticket.priority,
     channel: ticket.channel,
     ticket_type: ticket.ticketType,

@@ -3,6 +3,7 @@ import type { EscalationRule } from '../entities/escalation-rule.entity';
 import type { Macro } from '../entities/macro.entity';
 import type { SlaPolicy } from '../entities/sla-policy.entity';
 import type { TicketStatus } from '../entities/ticket-status.entity';
+import { isStatusCategory, STATUS_CATEGORIES, statusCategory } from '../entities/status-category';
 import type { Webhook } from '../entities/webhook.entity';
 import type { WebhookDelivery } from '../entities/webhook-delivery.entity';
 import { countsBusinessHours } from '../services/business-hours';
@@ -259,24 +260,27 @@ export function cannedResponseInput(body: any, creating = false): Partial<Canned
 
 // Statuses
 
-/**
- * The status categories this backend distinguishes: a status is open or it
- * closes the ticket (`isClosed`), shown as Laravel's `open` and `solved`.
- */
-export const STATUS_CATEGORIES = ['open', 'solved'];
+/** escalated-laravel's status categories; lifecycle keys off them (`status-category.ts`). */
+export { STATUS_CATEGORIES };
 
+/**
+ * A status as the Statuses screens read it: escalated-laravel's columns, plus
+ * `name` and `is_closed` for clients of earlier releases.
+ */
 export function serializeStatus(status: TicketStatus) {
+  const category = statusCategory(status);
   return {
     id: status.id,
     label: status.name,
     name: status.name,
     slug: status.slug,
-    category: status.isClosed ? 'solved' : 'open',
+    category,
     color: status.color ?? '#6b7280',
-    description: null,
+    description: status.description ?? null,
     position: status.sortOrder ?? 0,
     is_default: status.isDefault === true,
-    is_closed: status.isClosed === true,
+    is_system: status.isSystem === true,
+    is_closed: category === 'solved',
     created_at: iso(status.createdAt),
     updated_at: iso(status.updatedAt),
   };
@@ -291,10 +295,15 @@ export function slugify(label: string): string {
     .slice(0, 100);
 }
 
+/**
+ * escalated-laravel's status validation: `label` (at most 100 characters, the
+ * column's size here), `category` one of the five, `color`, optional
+ * `description`, integer `position`, boolean `is_default`.
+ */
 export function statusInput(body: any): Partial<TicketStatus> {
-  const label = requiredText(body?.label, 'label');
+  const label = requiredText(body?.label, 'label', 100);
   const category = body?.category;
-  if (!STATUS_CATEGORIES.includes(category)) {
+  if (!isStatusCategory(category)) {
     throw new UiValidationException({ category: 'The selected category is invalid.' });
   }
   const color = requiredText(body?.color, 'color', 20);
@@ -302,10 +311,16 @@ export function statusInput(body: any): Partial<TicketStatus> {
   if (!Number.isInteger(position)) {
     throw new UiValidationException({ position: 'The position must be an integer.' });
   }
+  const description = body?.description;
+  if (description != null && typeof description !== 'string') {
+    throw new UiValidationException({ description: 'The description must be a string.' });
+  }
   return {
     name: label,
+    category,
     isClosed: category === 'solved',
     color,
+    description: description?.trim() ? description : null,
     sortOrder: position,
     isDefault: flag(body?.is_default, 'is_default', false),
   };

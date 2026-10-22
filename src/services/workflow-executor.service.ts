@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -9,6 +9,8 @@ import { TicketActivity } from '../entities/ticket-activity.entity';
 import { Reply } from '../entities/reply.entity';
 import { TicketFollower } from '../entities/ticket-follower.entity';
 import { resolveFollowerUserIds } from './follower-recipients';
+import { findStatusBySlugOrId } from './status-lookup';
+import { TicketService } from './ticket.service';
 import {
   ESCALATED_EVENTS,
   TicketAssignedEvent,
@@ -50,6 +52,7 @@ export class WorkflowExecutorService {
     private readonly followerRepo: Repository<TicketFollower>,
     private readonly eventEmitter: EventEmitter2,
     private readonly engine: WorkflowEngineService,
+    @Optional() private readonly tickets?: TicketService,
   ) {}
 
   async execute(ticket: Ticket, actions: WorkflowAction[]): Promise<void> {
@@ -166,19 +169,19 @@ export class WorkflowExecutorService {
   }
 
   private async changeStatus(ticket: Ticket, value: string): Promise<void> {
-    let status = await this.statusRepo.findOne({ where: { slug: value } });
-    if (!status) {
-      const asId = Number(value);
-      if (Number.isFinite(asId) && asId > 0) {
-        status = await this.statusRepo.findOne({ where: { id: asId } });
-      }
-    }
+    const status = await findStatusBySlugOrId(this.statusRepo, value);
     if (!status) {
       this.logger.debug(`change_status: status "${value}" not found`);
       return;
     }
     const previousStatusId = ticket.statusId;
     if (previousStatusId === status.id) return;
+    if (this.tickets) {
+      // The normal status-change path: a solved status stamps resolvedAt (which
+      // stops SLA), and the status and lifecycle events go out from there.
+      await this.tickets.update(ticket.id, { statusId: status.id }, 0);
+      return;
+    }
     const previousStatus =
       ticket.status ??
       (previousStatusId != null

@@ -6,15 +6,17 @@ import {
   TicketResolvedEvent,
 } from './escalated.events';
 
+import { isSolvedStatus } from '../entities/status-category';
+
 interface StatusLike {
   slug?: string | null;
+  category?: string | null;
   isClosed?: boolean | null;
 }
 
-/** A resolved or closed status. */
+/** A status in the `solved` category (resolved, closed, or a custom solved one). */
 export function isTerminalStatus(status: StatusLike | null | undefined): boolean {
-  if (!status) return false;
-  return Boolean(status.isClosed) || status.slug === 'resolved' || status.slug === 'closed';
+  return isSolvedStatus(status);
 }
 
 /**

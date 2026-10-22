@@ -243,14 +243,14 @@ describe('admin configuration screens (ui.enabled)', () => {
   });
 
   describe('Escalated/Admin/Statuses', () => {
-    it('lists statuses with the categories this backend distinguishes', async () => {
+    it('lists statuses with escalated-laravel’s categories', async () => {
       await source
         .getRepository(TicketStatus)
         .save({ name: 'Done', slug: 'done', isClosed: true, color: '#00ff00', sortOrder: 5 });
       const result = await page(base, '/escalated/admin/statuses', asAdmin);
       expect(result.component).toBe('Escalated/Admin/Statuses/Index');
       expectManifestProps(result);
-      expect(result.props.categories).toEqual(['open', 'solved']);
+      expect(result.props.categories).toEqual(['new', 'open', 'pending', 'on_hold', 'solved']);
       expect(result.props.statuses).toContainEqual(
         expect.objectContaining({
           label: 'Open',
@@ -304,9 +304,10 @@ describe('admin configuration screens (ui.enabled)', () => {
         isClosed: true,
         isDefault: true,
       });
+      // Defaults are exclusive per category: the open default stays.
       expect(
         (await source.getRepository(TicketStatus).findOneByOrFail({ id: open.id })).isDefault,
-      ).toBe(false);
+      ).toBe(true);
 
       await submit(`/escalated/admin/statuses/${status.id}`, undefined, 'DELETE');
       expect(await source.getRepository(TicketStatus).countBy({ id: status.id })).toBe(0);
@@ -325,7 +326,7 @@ describe('admin configuration screens (ui.enabled)', () => {
 
       const bad = await submit(
         '/escalated/admin/statuses',
-        { label: 'X', category: 'on_hold', color: '#000000' },
+        { label: 'X', category: 'archived', color: '#000000' },
         'POST',
         '/escalated/admin/statuses/create',
       );

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { NOT_SOLVED_STATUS_PARAMS, notSolvedStatusSql } from '../entities/status-category';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { UserId } from '../config/user-id-column';
@@ -627,15 +628,11 @@ export class ReportingService {
       .where('ticket.isMerged = :merged', { merged: false })
       .andWhere(
         new Brackets((open) =>
-          open.where('ticket.statusId IS NULL').orWhere(
-            new Brackets((s) =>
-              s
-                .where('status.isClosed = :closed', { closed: false })
-                .andWhere('status.slug NOT IN (:...terminal)', {
-                  terminal: ['resolved', 'closed'],
-                }),
+          open
+            .where('ticket.statusId IS NULL')
+            .orWhere(
+              new Brackets((s) => s.where(notSolvedStatusSql('status'), NOT_SOLVED_STATUS_PARAMS)),
             ),
-          ),
         ),
       )
       .andWhere(

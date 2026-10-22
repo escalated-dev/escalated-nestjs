@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { isSolvedStatus, pickDefaultStatus } from '../../entities/status-category';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
@@ -168,9 +169,10 @@ export class CustomerUiController {
   @HttpCode(200)
   async close(@Param('ticket') param: string, @Req() req: any) {
     const { ticket, userId } = await this.own(param, req);
+    // The built-in `closed` status, else the first status in the `solved` category.
     const closed =
       (await this.statuses.findOne({ where: { slug: 'closed' } })) ??
-      (await this.statuses.findOne({ where: { isClosed: true }, order: { sortOrder: 'ASC' } }));
+      (await this.statuses.find({ order: { sortOrder: 'ASC', id: 'ASC' } })).find(isSolvedStatus);
     if (!closed) throw new UiValidationException({ status: 'No closed status is configured.' });
     const updated = await this.tickets.update(ticket.id, { statusId: closed.id }, userId);
     return this.done(req, ticket, 'Ticket closed.', { ticket: updated });
@@ -180,9 +182,13 @@ export class CustomerUiController {
   @HttpCode(200)
   async reopen(@Param('ticket') param: string, @Req() req: any) {
     const { ticket, userId } = await this.own(param, req);
+    // `reopened`, else the default open status, else `open`: never a solved one.
+    const defaults = (await this.statuses.find({ where: { isDefault: true } })).filter(
+      (status) => !isSolvedStatus(status),
+    );
     const reopened =
       (await this.statuses.findOne({ where: { slug: 'reopened' } })) ??
-      (await this.statuses.findOne({ where: { isDefault: true } })) ??
+      pickDefaultStatus(defaults) ??
       (await this.statuses.findOne({ where: { slug: 'open' } }));
     if (!reopened) throw new UiValidationException({ status: 'No open status is configured.' });
     const updated = await this.tickets.update(ticket.id, { statusId: reopened.id }, userId);
