@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-10-22
+
 ### Upgrading
 - **Run the exported `HashApiTokens1793145600000` migration when deploying.**
   API tokens are now stored as the SHA-256 digest of the token, and
@@ -293,6 +295,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the
   existing `set_status`, `set_priority`, `set_department`, `assign`,
   `add_reply`, `add_note`.
+
+### Changed
+- The bundled widget is now `@escalated-dev/escalated` 0.12.4. The widget's source did not change in 0.12.4; the bundle is rebuilt with the frontend's newer build tools, so it behaves as before.
 
 ### Security
 - **API tokens are no longer stored in plain text.** `escalated_api_tokens.token`
