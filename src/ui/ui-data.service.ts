@@ -491,6 +491,7 @@ export class UiDataService {
       slug: department.slug,
       description: department.description ?? null,
       is_active: department.isActive !== false,
+      business_schedule_id: department.businessScheduleId ?? null,
       tickets_count: counts.tickets ?? 0,
       agents_count: counts.agents ?? 0,
       created_at: department.createdAt ? new Date(department.createdAt).toISOString() : null,

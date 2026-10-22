@@ -29,6 +29,7 @@ import {
   serializeSlaPolicy,
   serializeStatus,
   SLA_PRIORITIES,
+  scheduleOptions,
   scheduleReference,
   slaPolicyInput,
   slugify,
@@ -94,10 +95,11 @@ export class AdminConfigUiController {
     return redirect(routeUrl('escalated.admin.sla-policies.index'), { success: message });
   }
 
-  private form(policy: SlaPolicy | null) {
+  private async form(policy: SlaPolicy | null) {
     return inertia('Escalated/Admin/SlaPolicies/Form', {
       policy: policy ? serializeSlaPolicy(policy) : null,
       priorities: [...SLA_PRIORITIES],
+      schedules: await scheduleOptions(this.schedules),
     });
   }
 
