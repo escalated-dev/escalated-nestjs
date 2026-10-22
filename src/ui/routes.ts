@@ -493,6 +493,12 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/agent/tickets/{ticket}/actions/{action}',
     methods: POST,
   },
+  // Live chat transfer from Agent/TicketShow's action bar. The name is
+  // escalated-laravel's; the endpoint here is the agent chat console's.
+  'escalated.admin.chat.transfer': {
+    uri: 'escalated/agent/chat/{session}/transfer',
+    methods: POST,
+  },
 };
 
 /** Every named route the screens can call, keyed by name. */

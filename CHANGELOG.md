@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a token stored with an empty or null `abilities` list is refused on admin
   and agent routes. Review existing tokens' abilities before upgrading.
 
+### Fixed
+- The shared UI's route table now names `escalated.admin.chat.transfer`
+  (escalated-laravel's name), pointing at `POST
+  /escalated/agent/chat/{session}/transfer`. `Agent/TicketShow` in
+  `@escalated-dev/escalated` posts the live chat Transfer menu there with
+  `{"department_id"}` or `{"agent_id"}`, which this endpoint already accepts.
+
 ## [1.2.6] - 2026-10-22
 
 ### Added
