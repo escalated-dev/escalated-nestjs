@@ -160,6 +160,10 @@ import { CustomerUiController } from './ui/controllers/customer-ui.controller';
 import { AdminUiController } from './ui/controllers/admin-ui.controller';
 import { AdminTicketsUiController } from './ui/controllers/admin-tickets-ui.controller';
 import { AdminConfigUiController } from './ui/controllers/admin-config-ui.controller';
+import {
+  AdminKnowledgeBaseUiController,
+  CustomerKnowledgeBaseUiController,
+} from './ui/controllers/knowledge-base-ui.controller';
 
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
@@ -353,6 +357,8 @@ export class EscalatedModule implements NestModule {
         AdminUiController,
         AdminTicketsUiController,
         AdminConfigUiController,
+        AdminKnowledgeBaseUiController,
+        CustomerKnowledgeBaseUiController,
       );
     }
 
