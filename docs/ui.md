@@ -145,6 +145,17 @@ with `enableKnowledgeBase: false`):
   `related` articles; counts the view); `POST /escalated/kb/:slug/feedback`
   (`helpful`) records helpful / not helpful
 
+Guest (no host user; verified guest access, see docs/guest-access.md):
+
+- `GET /escalated/guest/create` - `Guest/Create` (`verification_url` and
+  `lookup_url` are the `/escalated/guest` verification and lookup routes);
+  `POST /escalated/guest` files the ticket with the emailed code
+  (`verification_id`, `verification_code`) and redirects to its grant
+- `GET /escalated/guest/:grant` - `Guest/Show` (the customer ticket payload
+  plus `guest_access_expires_at`, and `token`); `POST /:grant/reply` and
+  `POST /:grant/rate` (resolved or closed tickets, once). An expired or
+  unknown grant is refused with `403`, as the guest JSON routes refuse it
+
 Admin (`adminGuard`):
 
 - `GET /escalated/admin/settings` - `Escalated/Admin/Settings`, with

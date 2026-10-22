@@ -33,6 +33,7 @@ import { ESCALATED_EVENTS, TicketSignupInviteEvent } from '../../events/escalate
 import { GuestTicketsService } from '../../services/guest-tickets.service';
 import { privateGuestResponse } from '../../services/guest-access.service';
 import { clientIp, withRetryAfter } from './guest-http';
+import { requesterIdForPolicy, resolveGuestPolicy } from '../../services/guest-policy';
 
 /**
  * Shape accepted by POST /escalated/widget/tickets. The route is public, so the
@@ -77,27 +78,12 @@ export class WidgetController {
     private readonly guestTickets: GuestTicketsService,
   ) {}
 
-  /**
-   * Resolve the effective guest policy: settings store overrides module
-   * option, so admins can change policy at runtime without redeploy.
-   */
   private async resolveGuestPolicy(): Promise<EscalatedModuleOptions['guestPolicy']> {
-    const stored = await this.settingsService.getTyped<
-      EscalatedModuleOptions['guestPolicy'] | null
-    >('guest_policy', null);
-    return stored ?? this.options.guestPolicy;
+    return resolveGuestPolicy(this.settingsService, this.options);
   }
 
   private requesterIdForPolicy(policy: EscalatedModuleOptions['guestPolicy']): UserId {
-    if (!policy) return 0;
-    switch (policy.mode) {
-      case 'guest_user':
-        return policy.guestUserId;
-      case 'unassigned':
-      case 'prompt_signup':
-      default:
-        return 0;
-    }
+    return requesterIdForPolicy(policy);
   }
 
   /**
