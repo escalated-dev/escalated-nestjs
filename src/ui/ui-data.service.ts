@@ -1,4 +1,9 @@
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import {
+  NOT_SOLVED_STATUS_PARAMS,
+  notSolvedStatusSql,
+  statusCategory,
+} from '../entities/status-category';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
@@ -192,7 +197,9 @@ export class UiDataService {
   private open(query: SelectQueryBuilder<Ticket>): SelectQueryBuilder<Ticket> {
     return query.andWhere(
       new Brackets((q) =>
-        q.where('status.id IS NULL').orWhere('status.isClosed = :closed', { closed: false }),
+        q
+          .where('status.id IS NULL')
+          .orWhere(notSolvedStatusSql('status'), NOT_SOLVED_STATUS_PARAMS),
       ),
     );
   }
@@ -448,6 +455,7 @@ export class UiDataService {
       subject: ticket.subject,
       description: ticket.description ?? '',
       status: ticket.status?.slug ?? null,
+      status_category: ticket.status ? statusCategory(ticket.status) : null,
       priority: ticket.priority,
       channel: ticket.channel ?? null,
       department: ticket.department ? { name: ticket.department.name } : null,

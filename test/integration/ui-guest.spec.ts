@@ -73,7 +73,11 @@ describe('guest screens (ui.enabled)', () => {
   };
 
   beforeAll(async () => {
-    ({ app, source, base } = await bootUi({ guestAccess: outbox.options() }));
+    // Room for every ticket this suite files from one address (throttling has its own spec).
+    ({ app, source, base } = await bootUi({
+      guestAccess: outbox.options(),
+      guestRateLimit: { ticketsPerMinute: 20 },
+    }));
     open = await source
       .getRepository(TicketStatus)
       .save({ name: 'Open', slug: 'open', isDefault: true });
@@ -205,6 +209,34 @@ describe('guest screens (ui.enabled)', () => {
     );
     const after = await guestPage(location, cookieFrom(refused));
     expect(after.props.flash.error).toBe('This ticket is closed.');
+  });
+
+  it('treats a custom status in the solved category as closed', async () => {
+    // Category alone: written without isClosed, as a row the admin screen saved.
+    await source
+      .getRepository(TicketStatus)
+      .createQueryBuilder()
+      .insert()
+      .values({ name: 'Fixed', slug: 'fixed', category: 'solved', isClosed: false })
+      .execute();
+    const fixed = await source.getRepository(TicketStatus).findOneByOrFail({ slug: 'fixed' });
+    const { location } = await fileTicket();
+    const ticket = await source
+      .getRepository(Ticket)
+      .findOneOrFail({ where: {}, order: { id: 'DESC' } });
+    await source.getRepository(Ticket).update(ticket.id, { statusId: fixed.id });
+
+    const refused = await guest(
+      `${location}/reply`,
+      { body: 'Hello?' },
+      { referer: `${base}${location}` },
+    );
+    const after = await guestPage(location, cookieFrom(refused));
+    expect(after.props.flash.error).toBe('This ticket is closed.');
+    expect(after.props.ticket).toMatchObject({ status: 'fixed', status_category: 'solved' });
+
+    const rated = await guest(`${location}/rate`, { rating: 5 }, { referer: `${base}${location}` });
+    expect((await guestPage(location, cookieFrom(rated))).props.flash.success).toMatch(/Thank/);
   });
 
   it('rates a closed ticket once', async () => {

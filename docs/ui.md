@@ -191,10 +191,12 @@ Admin (`adminGuard`):
   `business_hours_only` keeps the policy's business schedule or takes the
   default one, and is refused when there is none
 - `GET /escalated/admin/statuses` - `Admin/Statuses/Index`; `/statuses/create`
-  and `/statuses/:id/edit` - `Admin/Statuses/Form`. `categories` is `open` and
-  `solved`, the distinction this backend stores (`isClosed`); a new status
-  gets a slug from its label, an edit keeps it, and a status tickets still
-  have cannot be deleted. Status descriptions are not stored
+  and `/statuses/:id/edit` - `Admin/Statuses/Form`. `categories` are
+  escalated-laravel's `new`, `open`, `pending`, `on_hold` and `solved`, and
+  ticket lifecycle keys off them (see "Status categories" below); a new status
+  gets a slug from its label, an edit keeps it, `is_default` is exclusive per
+  category, a system status (`is_system`, a built-in slug) keeps its category
+  and cannot be deleted, and a status tickets still have cannot be deleted
 - `GET /escalated/admin/escalation-rules` - `Admin/EscalationRules/Index`;
   `/escalation-rules/create` and `/escalation-rules/:id/edit` -
   `Admin/EscalationRules/Form`. Rules are escalated-laravel's: `conditions`
@@ -269,3 +271,37 @@ The pages the frontend ships that no screen serves yet are listed, exactly, in
 attachments on screen replies (multipart), pinned notes, presence and typing,
 side conversations and ticket links from the admin ticket screen, saved-view
 reordering.
+
+## Status categories
+
+Every ticket status belongs to one of escalated-laravel's categories: `new`,
+`open`, `pending`, `on_hold` or `solved` (`TicketStatus.category`). Lifecycle
+reads the category, so a status an admin adds behaves like the built-in one
+of its category:
+
+- Moving a ticket to a `solved` status stamps `resolvedAt` and `closedAt`,
+  which stops SLA timers and escalation, counts it as resolved in reports and
+  leaves it out of open queues. Guests cannot reply to it and can rate it,
+  and a customer's close takes the `closed` status or else the first solved
+  one, while reopening never picks a solved default. The event is `ticket.resolved` for the
+  `resolved` slug and `ticket.closed` for any other solved status.
+- The other four categories are open. This backend has no "waiting on
+  customer" behaviour of its own, so `pending` and `on_hold` only label the
+  wait: SLA timers keep running.
+- `isClosed` stays on the table, equal to `category === 'solved'`. Rows
+  written without a category (host seeders from before the column) take one
+  from `isClosed` and the slug: `resolved`/`closed` are solved,
+  `waiting_on_customer`/`pending` pending, `snoozed` on hold, and the rest
+  open.
+- Every status change takes a status by slug or id and goes through
+  `TicketService.update`: the agent API (`statusId`), the screen actions and
+  bulk action (`status`/`value`), macros (`status`), workflows and automations
+  (`change_status`). Each sends `ticket.status_changed` and the lifecycle
+  event the new status implies.
+- New tickets get the default status. Defaults are exclusive per category, so
+  when more than one category has one, the earliest category wins (`new`,
+  then `open`, ...).
+- Changing a status's category does not touch tickets that have it.
+- Agent and admin ticket JSON carries `status_category`, and `custom_status`
+  (`{ id, label, slug, color, category }`) for a non-system status. Customer
+  and guest views show the status slug as before, plus `status_category`.

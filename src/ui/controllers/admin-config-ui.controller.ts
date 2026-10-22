@@ -13,11 +13,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { BusinessSchedule } from '../../entities/business-schedule.entity';
 import { SlaPolicy } from '../../entities/sla-policy.entity';
 import { Ticket } from '../../entities/ticket.entity';
 import { TicketStatus } from '../../entities/ticket-status.entity';
+import { statusCategory } from '../../entities/status-category';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { EscalationService } from '../../services/escalation.service';
 import { SlaService } from '../../services/sla.service';
@@ -178,16 +179,27 @@ export class AdminConfigUiController {
     return slug;
   }
 
-  /** The default status is the one new tickets get: only one may be. */
+  /**
+   * `is_default` is exclusive per category, as in escalated-laravel. New
+   * tickets get the default of the earliest category (`new`, then `open`...).
+   */
   private async soleDefaultStatus(status: TicketStatus) {
-    if (status.isDefault) {
-      await this.statuses.update({ id: Not(status.id), isDefault: true }, { isDefault: false });
+    if (!status.isDefault) return;
+    const others = await this.statuses.find({ where: { id: Not(status.id), isDefault: true } });
+    const sameCategory = others.filter((row) => statusCategory(row) === statusCategory(status));
+    if (sameCategory.length) {
+      await this.statuses.update(
+        { id: In(sameCategory.map((row) => row.id)) },
+        { isDefault: false },
+      );
     }
   }
 
   @Get('statuses')
   async statusIndex() {
     const rows = await this.statuses.find({ order: { sortOrder: 'ASC', id: 'ASC' } });
+    const rank = (row: TicketStatus) => STATUS_CATEGORIES.indexOf(statusCategory(row));
+    rows.sort((a, b) => rank(a) - rank(b));
     return inertia('Escalated/Admin/Statuses/Index', {
       statuses: rows.map(serializeStatus),
       categories: STATUS_CATEGORIES,
@@ -206,7 +218,7 @@ export class AdminConfigUiController {
   async statusStore(@Body() body: any) {
     const input = statusInput(body);
     const status = await this.statuses.save(
-      this.statuses.create({ ...input, slug: await this.slugFor(input.name!) }),
+      this.statuses.create({ ...input, isSystem: false, slug: await this.slugFor(input.name!) }),
     );
     await this.soleDefaultStatus(status);
     return this.toStatuses('Status created.');
@@ -220,11 +232,21 @@ export class AdminConfigUiController {
     });
   }
 
-  /** Keeps the slug: tickets, filters and macros refer to a status by it. */
+  /**
+   * Keeps the slug: tickets, filters and macros refer to a status by it. A
+   * system status keeps its category too. Changing a status's category does
+   * not touch tickets that have it; their next status change follows it.
+   */
   @Put('statuses/:id')
   async statusUpdate(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     const status = await this.findStatus(id);
-    Object.assign(status, statusInput(body));
+    const input = statusInput(body);
+    if (status.isSystem && input.category !== statusCategory(status)) {
+      throw new UiValidationException({
+        category: 'The category of a system status cannot be changed.',
+      });
+    }
+    Object.assign(status, input);
     await this.soleDefaultStatus(await this.statuses.save(status));
     return this.toStatuses('Status updated.');
   }
@@ -232,6 +254,9 @@ export class AdminConfigUiController {
   @Delete('statuses/:id')
   async statusDestroy(@Param('id', ParseIntPipe) id: number) {
     const status = await this.findStatus(id);
+    if (status.isSystem) {
+      throw new ConflictException('System statuses cannot be deleted.');
+    }
     const inUse = await this.tickets.countBy({ statusId: status.id });
     if (inUse) {
       throw new ConflictException(

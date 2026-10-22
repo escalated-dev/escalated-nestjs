@@ -10,6 +10,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { isSolvedStatus } from '../../entities/status-category';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -173,7 +174,7 @@ export class GuestUiController {
     privateGuestResponse(res);
     const ticket = await this.granted(token);
     const text = required(body, 'body', 'reply', 65535);
-    if (ticket.status?.isClosed) {
+    if (isSolvedStatus(ticket.status)) {
       return this.toTicket(token, { error: 'This ticket is closed.' });
     }
     await this.replies.create(ticket.id, { body: text, type: 'reply' }, ticket.requesterId);
@@ -201,7 +202,7 @@ export class GuestUiController {
         comment: 'The comment may not be greater than 2000 characters.',
       });
     }
-    if (!ticket.status?.isClosed && !ticket.resolvedAt) {
+    if (!isSolvedStatus(ticket.status) && !ticket.resolvedAt) {
       return this.toTicket(token, { error: 'Only resolved or closed tickets can be rated.' });
     }
     if (await this.ratingRows.existsBy({ ticketId: ticket.id })) {

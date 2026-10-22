@@ -67,6 +67,7 @@ describe('TicketService', () => {
           provide: getRepositoryToken(TicketStatus),
           useValue: {
             findOne: jest.fn().mockResolvedValue(mockStatus),
+            find: jest.fn().mockResolvedValue([mockStatus]),
           },
         },
         {

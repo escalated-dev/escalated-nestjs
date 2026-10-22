@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Macro } from '../entities/macro.entity';
@@ -6,6 +6,8 @@ import { Ticket } from '../entities/ticket.entity';
 import { Reply } from '../entities/reply.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { UserId } from '../config/user-id-column';
+import { findStatusBySlugOrId } from './status-lookup';
+import { TicketService } from './ticket.service';
 
 @Injectable()
 export class MacroService {
@@ -16,6 +18,7 @@ export class MacroService {
     private readonly ticketRepo: Repository<Ticket>,
     @InjectRepository(Reply)
     private readonly replyRepo: Repository<Reply>,
+    @Optional() private readonly tickets?: TicketService,
   ) {}
 
   async findAll(userId?: UserId): Promise<Macro[]> {
@@ -79,11 +82,15 @@ export class MacroService {
     switch (action.type) {
       // escalated-laravel's action names, which the shared Macros screen saves.
       case 'status': {
-        const value = String(action.value ?? '');
-        const status = await this.ticketRepo.manager.getRepository(TicketStatus).findOne({
-          where: /^\d+$/.test(value) ? { id: Number(value) } : { slug: value },
-        });
-        if (status) await this.ticketRepo.update(ticket.id, { statusId: status.id });
+        const status = await findStatusBySlugOrId(
+          this.ticketRepo.manager.getRepository(TicketStatus),
+          action.value,
+        );
+        if (!status) break;
+        // Through TicketService, so a solved status stamps resolvedAt and the
+        // status events go out as for any other status change.
+        if (this.tickets) await this.tickets.update(ticket.id, { statusId: status.id }, userId);
+        else await this.ticketRepo.update(ticket.id, { statusId: status.id });
         break;
       }
       case 'priority':

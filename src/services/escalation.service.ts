@@ -1,4 +1,5 @@
 import { accountIdentity, caseSensitiveEquals } from '../config/ticket-access';
+import { NOT_SOLVED_STATUS_PARAMS, notSolvedStatusSql } from '../entities/status-category';
 import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -126,15 +127,13 @@ export class EscalationService {
       .where('ticket.isMerged = :isMerged', { isMerged: false })
       .andWhere(
         new Brackets((open) =>
-          open.where('ticket.statusId IS NULL').orWhere(
-            new Brackets((status) =>
-              status
-                .where('ticketStatus.isClosed = :notClosed', { notClosed: false })
-                .andWhere('ticketStatus.slug NOT IN (:...terminal)', {
-                  terminal: ['resolved', 'closed'],
-                }),
+          open
+            .where('ticket.statusId IS NULL')
+            .orWhere(
+              new Brackets((status) =>
+                status.where(notSolvedStatusSql('ticketStatus'), NOT_SOLVED_STATUS_PARAMS),
+              ),
             ),
-          ),
         ),
       );
 

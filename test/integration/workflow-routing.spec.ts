@@ -67,7 +67,10 @@ describe('integration: TicketService.create → Workflow routing', () => {
         },
         {
           provide: getRepositoryToken(TicketStatus),
-          useValue: { findOne: jest.fn().mockResolvedValue({ id: 1, isDefault: true }) },
+          useValue: {
+            findOne: jest.fn().mockResolvedValue({ id: 1, isDefault: true }),
+            find: jest.fn().mockResolvedValue([{ id: 1, isDefault: true }]),
+          },
         },
         {
           provide: getRepositoryToken(TicketActivity),

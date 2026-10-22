@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
+import { pickDefaultStatus } from '../entities/status-category';
 import { Tag } from '../entities/tag.entity';
 import { Department } from '../entities/department.entity';
 import { UserId } from '../config/user-id-column';
@@ -30,7 +31,9 @@ export class ImportService {
   async importTickets(data: any[], userId: UserId): Promise<ImportResult> {
     const result: ImportResult = { total: data.length, imported: 0, failed: 0, errors: [] };
 
-    const defaultStatus = await this.statusRepo.findOne({ where: { isDefault: true } });
+    const defaultStatus = pickDefaultStatus(
+      (await this.statusRepo.find({ where: { isDefault: true } })) ?? [],
+    );
 
     for (let i = 0; i < data.length; i++) {
       try {
