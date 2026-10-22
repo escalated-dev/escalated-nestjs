@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Admin ticket screens (with `ui.enabled`): `Escalated/Admin/Tickets/Index`
+  (`GET /escalated/admin/tickets`, with `agents` and `savedViews`) and
+  `Escalated/Admin/Tickets/Show` (`GET /escalated/admin/tickets/:reference`,
+  with `agents` and `is_snoozed`), as escalated-laravel's Admin
+  TicketController sends them. The admin ticket actions (`reply`, `note`,
+  `assign`, `status`, `priority`, `tags`, `department`, `macro`, `follow`,
+  `snooze`, `unsnooze`), bulk actions (`POST /escalated/admin/tickets/bulk`)
+  and the saved views sidebar (`/escalated/admin/saved-views`, own views
+  only) are served under the `escalated.admin.*` route names the screens call.
+- The staff ticket screens now send the ticket's `satisfaction_rating`.
+
 ## [1.2.4] - 2026-10-21
 
 ### Upgrading

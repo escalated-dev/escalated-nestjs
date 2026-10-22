@@ -36,7 +36,6 @@ import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
-import { serializeActivity, serializeAttachment, serializeReply } from '../../ui/serializers';
 
 /**
  * The agent ticket JSON API. With `ui.enabled`, the index and show routes also
@@ -211,62 +210,8 @@ export class AgentTicketController {
 
   /** `Escalated/Agent/TicketShow`, with the props escalated-laravel's Agent TicketController@show sends. */
   private async page(ticket: any, req: any) {
-    const ui = this.ui!;
-    const userId = requireUserId(req);
-    const id = ticket.id;
-    const [replies, activities, chat, requesterTicketCount, related, subjects] = await Promise.all([
-      this.replyService.findByTicketId(id, true),
-      this.ticketService.getActivities(id),
-      this.ticketService.getChatContext(id),
-      this.ticketService.getRequesterTicketCount(ticket.requesterId),
-      this.ticketService.getRelatedTickets(id),
-      this.ticketSubjectService.serializeForTicket(ticket),
-    ]);
-    const [serialized] = await ui.serializeTickets([ticket]);
-    const directory = await ui.directory([
-      ...replies.map((r) => r.userId),
-      ...activities.map((a) => a.userId),
-    ]);
-    const newestFirst = [...replies].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id,
-    );
-
     return inertia('Escalated/Agent/TicketShow', {
-      ticket: {
-        ...serialized,
-        replies: newestFirst.map((reply) => serializeReply(reply, directory)),
-        activities: activities.slice(0, 20).map((a) => serializeActivity(a, directory)),
-        attachments: replies.flatMap((reply) => reply.attachments ?? []).map(serializeAttachment),
-        pinned_notes: [],
-        subjects,
-        satisfaction_rating: null,
-        chat_session_id: chat?.chat_session_id ?? null,
-        chat_started_at: chat?.chat_started_at ?? null,
-        chat_messages: (chat?.chat_messages ?? []).map((reply) => serializeReply(reply, directory)),
-        chat_metadata: chat?.chat_metadata ?? null,
-        requester_ticket_count: requesterTicketCount,
-        related_tickets: related.map((t) => ({
-          id: t.id,
-          reference: t.referenceNumber,
-          subject: t.subject,
-          status: t.status,
-        })),
-      },
-      departments: await ui.departmentOptions(),
-      tags: await ui.tagOptions(),
-      cannedResponses: (await ui.cannedResponses(userId, ticket.departmentId)).map((c) => ({
-        id: c.id,
-        title: c.title,
-        body: c.content,
-        short_code: c.shortCode ?? null,
-      })),
-      macros: (await ui.macros(userId)).map((m) => ({
-        id: m.id,
-        name: m.name,
-        description: m.description ?? null,
-      })),
-      is_following: await ui.isFollowing(id, userId),
-      followers_count: await ui.followerCount(id),
+      ...(await this.ui!.ticketScreen(ticket, requireUserId(req))),
       customActions: this.customActionsForTicket(ticket, req?.user ?? null),
     });
   }

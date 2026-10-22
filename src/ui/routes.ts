@@ -49,6 +49,62 @@ const routes: Record<string, NamedRoute> = {
     methods: POST,
   },
   // Admin
+  'escalated.admin.tickets.index': { uri: 'escalated/admin/tickets', methods: GET },
+  'escalated.admin.tickets.bulk': { uri: 'escalated/admin/tickets/bulk', methods: POST },
+  'escalated.admin.tickets.show': { uri: 'escalated/admin/tickets/{ticket}', methods: GET },
+  'escalated.admin.tickets.reply': {
+    uri: 'escalated/admin/tickets/{ticket}/reply',
+    methods: POST,
+  },
+  'escalated.admin.tickets.note': {
+    uri: 'escalated/admin/tickets/{ticket}/note',
+    methods: POST,
+  },
+  'escalated.admin.tickets.assign': {
+    uri: 'escalated/admin/tickets/{ticket}/assign',
+    methods: POST,
+  },
+  'escalated.admin.tickets.status': {
+    uri: 'escalated/admin/tickets/{ticket}/status',
+    methods: POST,
+  },
+  'escalated.admin.tickets.priority': {
+    uri: 'escalated/admin/tickets/{ticket}/priority',
+    methods: POST,
+  },
+  'escalated.admin.tickets.tags': {
+    uri: 'escalated/admin/tickets/{ticket}/tags',
+    methods: POST,
+  },
+  'escalated.admin.tickets.department': {
+    uri: 'escalated/admin/tickets/{ticket}/department',
+    methods: POST,
+  },
+  'escalated.admin.tickets.macro': {
+    uri: 'escalated/admin/tickets/{ticket}/macro',
+    methods: POST,
+  },
+  'escalated.admin.tickets.follow': {
+    uri: 'escalated/admin/tickets/{ticket}/follow',
+    methods: POST,
+  },
+  'escalated.admin.tickets.snooze': {
+    uri: 'escalated/admin/tickets/{ticket}/snooze',
+    methods: POST,
+  },
+  'escalated.admin.tickets.unsnooze': {
+    uri: 'escalated/admin/tickets/{ticket}/unsnooze',
+    methods: POST,
+  },
+  'escalated.admin.saved-views.store': { uri: 'escalated/admin/saved-views', methods: POST },
+  'escalated.admin.saved-views.update': {
+    uri: 'escalated/admin/saved-views/{savedView}',
+    methods: PUT,
+  },
+  'escalated.admin.saved-views.destroy': {
+    uri: 'escalated/admin/saved-views/{savedView}',
+    methods: DELETE,
+  },
   'escalated.admin.settings': { uri: 'escalated/admin/settings', methods: GET },
   'escalated.admin.settings.update': { uri: 'escalated/admin/settings', methods: POST },
   'escalated.admin.departments.index': { uri: 'escalated/admin/departments', methods: GET },
