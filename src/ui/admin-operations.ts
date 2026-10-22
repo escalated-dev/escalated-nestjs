@@ -85,7 +85,7 @@ export function automationInput(body: any): {
 export function serializeHoliday(holiday: Holiday) {
   return {
     id: holiday.id,
-    business_schedule_id: holiday.businessScheduleId,
+    schedule_id: holiday.businessScheduleId,
     name: holiday.name,
     date: holiday.date,
     recurring: holiday.isRecurring === true,
