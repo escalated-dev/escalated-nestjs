@@ -5,6 +5,7 @@ import type { SlaPolicy } from '../entities/sla-policy.entity';
 import type { TicketStatus } from '../entities/ticket-status.entity';
 import type { Webhook } from '../entities/webhook.entity';
 import type { WebhookDelivery } from '../entities/webhook-delivery.entity';
+import { countsBusinessHours } from '../services/business-hours';
 import { normalizeEscalationRule } from '../services/escalation-rules';
 import { webhookEventNames } from '../services/webhook.service';
 import { UiValidationException } from './inertia.interceptor';
@@ -76,7 +77,7 @@ export function serializeSlaPolicy(policy: SlaPolicy, ticketsCount = 0) {
     description: policy.description ?? null,
     first_response_hours: byPriority(FIRST_RESPONSE),
     resolution_hours: byPriority(RESOLUTION),
-    business_hours_only: policy.businessScheduleId != null,
+    business_hours_only: countsBusinessHours(policy),
     business_schedule_id: policy.businessScheduleId ?? null,
     is_default: policy.isDefault === true,
     is_active: policy.isActive !== false,
@@ -87,14 +88,35 @@ export function serializeSlaPolicy(policy: SlaPolicy, ticketsCount = 0) {
 }
 
 /**
+ * `business_schedule_id` from a form, when it sends one: a positive id, or
+ * null to clear it. Undefined when the key is not sent, so a form that does
+ * not know about schedules leaves the stored one alone.
+ */
+export function scheduleReference(body: any): number | null | undefined {
+  if (!body || !Object.prototype.hasOwnProperty.call(body, 'business_schedule_id'))
+    return undefined;
+  const value = body.business_schedule_id;
+  if (value === null || value === '') return null;
+  const id = Number(value);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new UiValidationException({
+      business_schedule_id: 'The selected business schedule is invalid.',
+    });
+  }
+  return id;
+}
+
+/**
  * The SLA form's fields in the entity's names. Hours become minutes. With
- * `business_hours_only`, the policy keeps its business schedule or takes the
- * default one (`scheduleId`); without one there is nothing to count against.
+ * `business_hours_only`, deadlines count in the policy's own schedule
+ * (`business_schedule_id`, changed only when sent), else the ticket
+ * department's, else the default one. `anySchedule` says whether one exists
+ * to count against.
  */
 export function slaPolicyInput(
   body: any,
   existing: SlaPolicy | null,
-  defaultScheduleId: number | null,
+  anySchedule: number | null,
 ): Partial<SlaPolicy> {
   const input: Partial<SlaPolicy> = {
     name: requiredText(body?.name, 'name'),
@@ -124,15 +146,18 @@ export function slaPolicyInput(
     }
   }
 
+  const sent = scheduleReference(body);
   if (flag(body?.business_hours_only, 'business_hours_only', false)) {
-    const scheduleId = existing?.businessScheduleId ?? defaultScheduleId;
-    if (scheduleId == null) {
+    const own = sent !== undefined ? sent : (existing?.businessScheduleId ?? null);
+    if (own == null && anySchedule == null) {
       throw new UiValidationException({
         business_hours_only: 'Add business hours before limiting a policy to them.',
       });
     }
-    input.businessScheduleId = scheduleId;
+    input.businessHoursOnly = true;
+    if (sent !== undefined) input.businessScheduleId = sent as number;
   } else {
+    input.businessHoursOnly = false;
     input.businessScheduleId = null as unknown as number;
   }
   return input;

@@ -6,6 +6,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SlaPolicy } from '../entities/sla-policy.entity';
 import { BusinessSchedule } from '../entities/business-schedule.entity';
 import { Ticket } from '../entities/ticket.entity';
+import { Department } from '../entities/department.entity';
+import { addBusinessMinutes, countsBusinessHours } from './business-hours';
 import { ESCALATED_EVENTS, SlaBreachedEvent, SlaWarningEvent } from '../events/escalated.events';
 
 @Injectable()
@@ -62,25 +64,13 @@ export class SlaService {
     const resolutionMinutes = this.getResolutionMinutes(policy, ticket.priority);
 
     const now = this.access?.options.targetedSlas ? new Date(ticket.createdAt) : new Date();
-    let firstResponseDue = now;
-    let resolutionDue = now;
-
-    // If business schedule exists, calculate using business hours
-    if (policy.businessScheduleId) {
-      const schedule = await this.scheduleRepo.findOne({
-        where: { id: policy.businessScheduleId },
-      });
-      if (schedule) {
-        firstResponseDue = this.addBusinessMinutes(now, firstResponseMinutes, schedule);
-        resolutionDue = this.addBusinessMinutes(now, resolutionMinutes, schedule);
-      } else {
-        firstResponseDue = new Date(now.getTime() + firstResponseMinutes * 60000);
-        resolutionDue = new Date(now.getTime() + resolutionMinutes * 60000);
-      }
-    } else {
-      firstResponseDue = new Date(now.getTime() + firstResponseMinutes * 60000);
-      resolutionDue = new Date(now.getTime() + resolutionMinutes * 60000);
-    }
+    const schedule = countsBusinessHours(policy) ? await this.scheduleFor(policy, ticket) : null;
+    const due = (minutes: number) =>
+      schedule
+        ? this.addBusinessMinutes(now, minutes, schedule)
+        : new Date(now.getTime() + minutes * 60000);
+    const firstResponseDue = due(firstResponseMinutes);
+    const resolutionDue = due(resolutionMinutes);
 
     Object.assign(ticket, {
       slaPolicyId: policy.id,
@@ -302,43 +292,42 @@ export class SlaService {
     }
   }
 
-  addBusinessMinutes(start: Date, minutes: number, schedule: BusinessSchedule): Date {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    let remaining = minutes;
-    const current = new Date(start);
-
-    while (remaining > 0) {
-      const dayName = days[current.getDay()];
-      const daySchedule = schedule.schedule[dayName];
-
-      if (daySchedule?.enabled) {
-        const [startH, startM] = daySchedule.start.split(':').map(Number);
-        const [endH, endM] = daySchedule.end.split(':').map(Number);
-
-        const dayStart = new Date(current);
-        dayStart.setHours(startH, startM, 0, 0);
-        const dayEnd = new Date(current);
-        dayEnd.setHours(endH, endM, 0, 0);
-
-        const effectiveStart = current > dayStart ? current : dayStart;
-
-        if (effectiveStart < dayEnd) {
-          const availableMinutes = (dayEnd.getTime() - effectiveStart.getTime()) / 60000;
-
-          if (remaining <= availableMinutes) {
-            return new Date(effectiveStart.getTime() + remaining * 60000);
-          }
-
-          remaining -= availableMinutes;
-        }
-      }
-
-      // Move to next day
-      current.setDate(current.getDate() + 1);
-      current.setHours(0, 0, 0, 0);
+  /**
+   * The business schedule a business-hours policy counts in, chosen as
+   * escalated-laravel does: the policy's own, else the ticket department's,
+   * else the default schedule. Null when none applies, and the deadline is
+   * counted in calendar time as before.
+   */
+  async scheduleFor(policy: SlaPolicy, ticket: Ticket): Promise<BusinessSchedule | null> {
+    const ids: number[] = [];
+    if (policy.businessScheduleId != null) ids.push(policy.businessScheduleId);
+    if (ticket.departmentId != null) {
+      const department = await this.scheduleRepo.manager
+        ?.getRepository(Department)
+        .findOne({ where: { id: ticket.departmentId } });
+      if (department?.businessScheduleId != null) ids.push(department.businessScheduleId);
     }
 
-    return current;
+    for (const id of ids) {
+      const schedule = await this.scheduleRepo.findOne({
+        where: { id },
+        relations: { holidays: true },
+      });
+      if (schedule) return schedule;
+    }
+
+    return (
+      (await this.scheduleRepo.findOne({
+        where: { isDefault: true },
+        order: { id: 'ASC' },
+        relations: { holidays: true },
+      })) ?? null
+    );
+  }
+
+  /** `minutes` of business time after `start`, in the schedule's zone and holidays. */
+  addBusinessMinutes(start: Date, minutes: number, schedule: BusinessSchedule): Date {
+    return addBusinessMinutes(start, minutes, schedule);
   }
 }
 

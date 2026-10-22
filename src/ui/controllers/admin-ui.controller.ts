@@ -14,6 +14,7 @@ import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { DepartmentService } from '../../services/department.service';
 import { SettingsService } from '../../services/settings.service';
 import { invalidOriginEntries } from '../../services/widget-origins.service';
+import { scheduleReference } from '../admin-config';
 import { back, inertia } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
 import { routeUrl } from '../routes';
@@ -60,11 +61,13 @@ export function departmentInput(body: any): Partial<Department> {
   if (isActive === null) {
     throw new UiValidationException({ is_active: 'The is active field must be true or false.' });
   }
+  const businessScheduleId = scheduleReference(body);
   return {
     name: name.trim(),
     ...(slug ? { slug } : {}),
     description: typeof body?.description === 'string' ? body.description : null,
     isActive,
+    ...(businessScheduleId !== undefined ? { businessScheduleId } : {}),
   } as Partial<Department>;
 }
 

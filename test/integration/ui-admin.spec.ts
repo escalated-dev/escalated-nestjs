@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import {
+  BusinessSchedule,
   Department,
   EscalatedSettings,
   Tag,
@@ -214,6 +215,54 @@ describe('admin screens (ui.enabled)', () => {
       const removed = await form(`/escalated/admin/departments/${dept.id}`, undefined, 'DELETE');
       expect(removed.status).toBe(303);
       expect(await source.getRepository(Department).countBy({ id: dept.id })).toBe(0);
+    });
+
+    it('saves a department business schedule only when the form sends one', async () => {
+      const office = await source.getRepository(BusinessSchedule).save({
+        name: 'Office',
+        schedule: { monday: { start: '09:00', end: '17:00' } },
+      });
+      const created = await form('/escalated/admin/departments', {
+        name: 'Scheduled',
+        is_active: true,
+        business_schedule_id: office.id,
+      });
+      expect(created.status).toBe(303);
+      const dept = await source.getRepository(Department).findOneByOrFail({ name: 'Scheduled' });
+      expect(dept.businessScheduleId).toBe(office.id);
+
+      await form(
+        `/escalated/admin/departments/${dept.id}`,
+        { name: 'Scheduled 2', is_active: true },
+        'PUT',
+      );
+      expect(
+        (await source.getRepository(Department).findOneByOrFail({ id: dept.id }))
+          .businessScheduleId,
+      ).toBe(office.id);
+
+      await form(
+        `/escalated/admin/departments/${dept.id}`,
+        { name: 'Scheduled 2', is_active: true, business_schedule_id: null },
+        'PUT',
+      );
+      expect(
+        (await source.getRepository(Department).findOneByOrFail({ id: dept.id }))
+          .businessScheduleId,
+      ).toBeNull();
+
+      const refused = await form(
+        '/escalated/admin/departments',
+        { name: 'Unknown schedule', business_schedule_id: 999999 },
+        'POST',
+        '/escalated/admin/departments/create',
+      );
+      const next = await page(base, '/escalated/admin/departments/create', {
+        ...asAdmin,
+        headers: { cookie: cookieFrom(refused) },
+      });
+      expect(Object.keys(next.props.errors)).toEqual(['business_schedule_id']);
+      expect(await source.getRepository(Department).countBy({ name: 'Unknown schedule' })).toBe(0);
     });
 
     it('sends a missing name back as a field error', async () => {

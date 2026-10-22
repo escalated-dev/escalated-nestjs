@@ -30,7 +30,7 @@ import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.i
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import { back, inertia, redirect } from '../../ui/inertia';
-import { EscalatedUi, BrowserFormGuard } from '../../ui/inertia.interceptor';
+import { EscalatedUi, BrowserFormGuard, UiValidationException } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
@@ -130,11 +130,25 @@ export class AdminSettingsController {
     return this.departmentService.findAll();
   }
 
+  /** The department form's fields, refusing a business schedule that does not exist. */
+  private async departmentFormInput(body: any) {
+    const input = departmentInput(body);
+    if (
+      input.businessScheduleId != null &&
+      !(await this.departmentService.scheduleExists(input.businessScheduleId))
+    ) {
+      throw new UiValidationException({
+        business_schedule_id: 'The selected business schedule is invalid.',
+      });
+    }
+    return input;
+  }
+
   @Post('departments')
   @AuditAction('create', 'department')
   async createDepartment(@Body() body: any, @Req() req?: any): Promise<any> {
     if (this.screen(req)) {
-      await this.departmentService.create(departmentInput(body));
+      await this.departmentService.create(await this.departmentFormInput(body));
       return redirect(routeUrl('escalated.admin.departments.index'), {
         success: 'Department created.',
       });
@@ -150,7 +164,7 @@ export class AdminSettingsController {
     @Req() req?: any,
   ): Promise<any> {
     if (this.screen(req)) {
-      await this.departmentService.update(id, departmentInput(body));
+      await this.departmentService.update(id, await this.departmentFormInput(body));
       return redirect(routeUrl('escalated.admin.departments.index'), {
         success: 'Department updated.',
       });

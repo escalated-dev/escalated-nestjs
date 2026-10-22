@@ -85,6 +85,17 @@ creation. Department/type changes preserve the current policy and clock; call
 `SlaService.applyToTicket(ticket)` explicitly to reselect. Targeted deadlines
 are calculated from ticket creation.
 
+Business-hours deadlines follow escalated-laravel. A policy counts business
+hours when it has its own `businessScheduleId` or `businessHoursOnly` is set;
+the schedule is the policy's, else the ticket department's
+`businessScheduleId`, else the default schedule (`isDefault`), and calendar
+time when none applies. Hours are wall-clock times in the schedule's
+`timezone`, counted in real elapsed time across daylight-saving changes;
+holidays (one-off or `isRecurring`) close the window that opens on their local
+date; an end before the start is an overnight window and `24:00` is midnight.
+Run the exported `BusinessSchedulePrecedence1792800000000` migration to add
+`businessHoursOnly` and the department column.
+
 Follower notification recipient IDs and chat assignment candidates are checked
 against access. Hosts sending their own notifications should call `allowsUser`
 at delivery time. Guest-contact email remains governed by the guest ownership
