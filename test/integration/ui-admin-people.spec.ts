@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AgentProfile, ApiToken, Permission, Role } from '../../src/entities';
+import { hashApiToken } from '../../src/services/api-token.service';
 import {
   AGENT,
   apiFetch,
@@ -187,7 +188,11 @@ describe('admin people screens (ui.enabled)', () => {
       const index = await follow(res);
       expect(index.component).toBe('Escalated/Admin/ApiTokens/Index');
       expectManifestProps(index);
-      expect(index.props.flash.plain_text_token).toBe(stored.token);
+      // The screen shows the plain token once; only its SHA-256 digest is stored.
+      const shown = index.props.flash.plain_text_token;
+      expect(shown).toMatch(/^[0-9a-f]{80}$/);
+      expect(stored.token).toBe(hashApiToken(shown));
+      expect(JSON.stringify(index)).not.toContain(stored.token);
       expect(index.props.api_enabled).toBe(true);
       expect(index.props.users).toEqual([
         { id: AGENT, name: `Host user ${AGENT}`, email: `u${AGENT}@example.com` },

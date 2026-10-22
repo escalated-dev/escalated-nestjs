@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- **Run the exported `HashApiTokens1793145600000` migration when deploying.**
+  API tokens are now stored as the SHA-256 digest of the token, and
+  `ApiTokenGuard` and `ApiTokenService.validate()` look them up by digest. The
+  migration hashes every stored plain token in place, so tokens already given
+  to clients keep working unchanged; until it runs, those tokens are refused.
+  It skips values that are already a 64-character hex digest, so running it
+  twice is safe, and the schema does not change. `down()` is a no-op: the plain
+  tokens cannot be recovered. Host code that inserts `ApiToken` rows itself
+  (seeders, fixtures) must store `hashApiToken(plainToken)` (now exported) in
+  `token`.
 - Saving a webhook with the secret left blank (screen or `PUT
   /escalated/admin/webhooks/:id`) now keeps the stored secret, because pages
   and the JSON API no longer receive it; the JSON API used to store the blank
@@ -285,6 +295,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `add_reply`, `add_note`.
 
 ### Security
+- **API tokens are no longer stored in plain text.** `escalated_api_tokens.token`
+  held each token itself, so anyone who could read the table (a backup, a
+  replica, a SQL injection elsewhere in the host) could call the API as that
+  token's user. It now holds the SHA-256 digest, as escalated-laravel stores
+  it. `POST /escalated/admin/api-tokens` still returns the plain token once
+  (`plainTextToken`, or the `plain_text_token` flash on the admin screen);
+  no response carries the digest. Abilities, expiry and revocation work as
+  before.
 - **Stored secrets are no longer sent to admin pages or the admin JSON API.**
   The webhook index, edit and delivery-log pages, and the webhook JSON list,
   show and update responses, carried each webhook's signing secret. The API

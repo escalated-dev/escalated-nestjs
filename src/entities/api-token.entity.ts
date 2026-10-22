@@ -15,7 +15,10 @@ export class ApiToken {
   @Column({ length: 255 })
   name: string;
 
-  /** Looked up by the token guard; never serialized. Shown once, on creation. */
+  /**
+   * The SHA-256 hex digest of the token (see `hashApiToken`); the plain token
+   * is returned once, on creation, and never stored. Never serialized.
+   */
   @Column({ length: 255, unique: true })
   token: string;
 

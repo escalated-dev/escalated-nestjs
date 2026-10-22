@@ -2,6 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiToken } from '../entities/api-token.entity';
+import { hashApiToken } from '../services/api-token.service';
 
 @Injectable()
 export class ApiTokenGuard implements CanActivate {
@@ -20,7 +21,7 @@ export class ApiTokenGuard implements CanActivate {
 
     const token = authHeader.substring(7);
     const apiToken = await this.apiTokenRepo.findOne({
-      where: { token, isActive: true },
+      where: { token: hashApiToken(token), isActive: true },
     });
 
     if (!apiToken) {
