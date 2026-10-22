@@ -3,9 +3,13 @@ import {
   Controller,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
+  Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,6 +22,7 @@ import { DepartmentService } from '../../services/department.service';
 import { SettingsService } from '../../services/settings.service';
 import { invalidOriginEntries } from '../../services/widget-origins.service';
 import { scheduleOptions, scheduleReference } from '../admin-config';
+import { userRoleInput } from '../admin-people';
 import { back, inertia } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
 import { routeUrl } from '../routes';
@@ -89,7 +94,8 @@ export function tagInput(body: any): Partial<Tag> {
 
 /**
  * The admin screens' own routes (registered with `ui.enabled`): saving the
- * settings form, and the department and role create/edit forms. The list pages and
+ * settings form, the department and role create/edit forms, and the users
+ * screen (host users through `ui.listUsers` / `ui.updateUserRoles`). The list pages and
  * the department/tag/workflow writes are served by the JSON admin routes,
  * which answer screens with redirects.
  */
@@ -182,5 +188,51 @@ export class AdminUiController {
       role: await this.data.role(id),
       permissions: await this.data.groupedPermissions(),
     });
+  }
+
+  /**
+   * `Escalated/Admin/Users/Index`, as escalated-laravel's
+   * Admin\UserController: host users from `ui.listUsers`, 20 a page,
+   * searchable by name or email. Without the hook the page renders empty with
+   * a `notice`.
+   */
+  @Get('users')
+  async users(@Query('search') search: unknown, @Query('page') page: unknown, @Req() req: any) {
+    const term = typeof search === 'string' ? search.trim() : '';
+    const { users, notice } = await this.data.adminUsers(
+      term,
+      page,
+      routeUrl('escalated.admin.users.index'),
+    );
+    return inertia('Escalated/Admin/Users/Index', {
+      users,
+      filters: { search: term },
+      currentUserId: req.user?.id ?? null,
+      notice,
+    });
+  }
+
+  /**
+   * The users screen's admin/agent toggles (`role`: admin|agent, `value`).
+   * An admin cannot remove their own admin access.
+   */
+  @Patch('users/:user/role')
+  async updateUserRole(@Param('user') user: string, @Body() body: any, @Req() req: any) {
+    const { role, value } = userRoleInput(body);
+    const index = routeUrl('escalated.admin.users.index');
+    if (!this.data.canUpdateUserRoles()) {
+      return back(index, {
+        error:
+          'Escalated cannot change user access here: the host application has not provided ui.updateUserRoles.',
+      });
+    }
+    const self = req.user?.id != null && String(req.user.id) === String(user);
+    if (role === 'admin' && !value && self) {
+      return back(index, { error: 'You cannot remove your own admin role.' });
+    }
+    if (!(await this.data.updateUserRole(user, role, value))) {
+      throw new NotFoundException('User not found');
+    }
+    return back(index, { success: 'User updated.' });
   }
 }

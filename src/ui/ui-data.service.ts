@@ -27,7 +27,13 @@ import { Macro } from '../entities/macro.entity';
 import { ApiToken } from '../entities/api-token.entity';
 import { Permission } from '../entities/permission.entity';
 import { Role } from '../entities/role.entity';
-import { groupPermissions, serializeApiToken, serializeRole } from './admin-people';
+import {
+  groupPermissions,
+  roleChange,
+  serializeApiToken,
+  serializeHostUser,
+  serializeRole,
+} from './admin-people';
 import { slugify } from './admin-config';
 import { Webhook } from '../entities/webhook.entity';
 import { WebhookDelivery } from '../entities/webhook-delivery.entity';
@@ -634,6 +640,45 @@ export class UiDataService {
     let slug = base;
     for (let n = 2; await this.roleRows.existsBy({ slug }); n += 1) slug = `${base}-${n}`;
     return slug;
+  }
+
+  /**
+   * `Escalated/Admin/Users/Index`'s `users` paginator, from the host's
+   * `ui.listUsers` (20 a page, as Laravel). `notice` explains an empty page
+   * when the host has not provided the hook; it is null otherwise.
+   */
+  async adminUsers(search: string, page: unknown, path: string) {
+    const perPage = 20;
+    const current = positiveInt(page, 1);
+    const query = { search };
+    const listUsers = this.options?.ui?.listUsers;
+    if (!listUsers) {
+      return {
+        users: paginate([], 0, 1, perPage, path, query),
+        notice:
+          'Users cannot be listed here: the host application has not provided ' +
+          'ui.listUsers to Escalated. Manage admin and agent access in the host application.',
+      };
+    }
+    const result = await listUsers({ search, page: current, perPage });
+    const rows = (result?.data ?? []).slice(0, perPage).map(serializeHostUser);
+    const total = Math.max(Number(result?.total) || 0, rows.length);
+    return { users: paginate(rows, total, current, perPage, path, query), notice: null };
+  }
+
+  /** Whether the host lets the screen change a user's access (`ui.updateUserRoles`). */
+  canUpdateUserRoles(): boolean {
+    return typeof this.options?.ui?.updateUserRoles === 'function';
+  }
+
+  /**
+   * Hands a toggle on `Admin/Users/Index` to the host's `ui.updateUserRoles`,
+   * with Laravel's admin/agent rules applied. False when the host reports no
+   * such user.
+   */
+  async updateUserRole(userId: string, role: 'admin' | 'agent', value: boolean): Promise<boolean> {
+    const result = await this.options!.ui!.updateUserRoles!(userId, roleChange(role, value));
+    return result !== false;
   }
 
   /** `Escalated/Admin/ApiTokens/Index`'s tokens, newest first, never the token itself. */
