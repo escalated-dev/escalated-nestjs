@@ -3,12 +3,51 @@ import type { Permission } from '../entities/permission.entity';
 import type { Role } from '../entities/role.entity';
 import { UiValidationException } from './inertia.interceptor';
 import { iso, type UserDirectory } from './serializers';
+import type { EscalatedUiHostUser, EscalatedUiRoleChange } from './ui-options';
 
 /**
- * The people screens' shapes and form input (roles and API tokens), as
- * escalated-laravel's Admin\RoleController and ApiTokenController send and
- * validate them.
+ * The people screens' shapes and form input (users, roles and API tokens), as
+ * escalated-laravel's Admin\UserController, RoleController and
+ * ApiTokenController send and validate them.
  */
+
+/** A row of `Admin/Users/Index`, as Laravel's UserController maps a user. */
+export function serializeHostUser(user: EscalatedUiHostUser) {
+  return {
+    id: user.id,
+    name: user.name ?? null,
+    email: user.email ?? null,
+    is_admin: user.isAdmin === true,
+    is_agent: user.isAgent === true,
+  };
+}
+
+/** `PATCH users/:user/role`'s body, validated as Laravel's (`role` admin|agent, `value` boolean). */
+export function userRoleInput(body: any): { role: 'admin' | 'agent'; value: boolean } {
+  const errors: Record<string, string> = {};
+  const role = body?.role;
+  if (role !== 'admin' && role !== 'agent') errors.role = 'The selected role is invalid.';
+  const raw = body?.value;
+  const value =
+    raw === true || raw === 1 || raw === '1' || raw === 'true'
+      ? true
+      : raw === false || raw === 0 || raw === '0' || raw === 'false'
+        ? false
+        : null;
+  if (value === null) errors.value = 'The value field must be true or false.';
+  if (Object.keys(errors).length) throw new UiValidationException(errors);
+  return { role, value: value! };
+}
+
+/**
+ * The access change for a toggle, with Laravel's rules: granting admin also
+ * grants agent; revoking agent also revokes admin (an admin who is not an
+ * agent would pass one gate and fail the other). Revoking admin leaves agent.
+ */
+export function roleChange(role: 'admin' | 'agent', value: boolean): EscalatedUiRoleChange {
+  if (role === 'admin') return value ? { isAdmin: true, isAgent: true } : { isAdmin: false };
+  return value ? { isAgent: true } : { isAgent: false, isAdmin: false };
+}
 
 export function serializePermission(permission: Permission) {
   return {

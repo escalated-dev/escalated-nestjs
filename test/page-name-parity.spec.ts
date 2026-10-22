@@ -75,7 +75,6 @@ const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/Settings/Sandbox',
   'Escalated/Admin/Settings/SsoSettings',
   'Escalated/Admin/Settings/TwoFactor',
-  'Escalated/Admin/Users/Index',
   'Escalated/Admin/Workflows/Builder',
   'Escalated/Auth/TwoFactorChallenge',
   'Escalated/Error',

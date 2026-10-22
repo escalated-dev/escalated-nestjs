@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- With `ui.enabled`, `Admin/Users/Index` at `/escalated/admin/users`, with
+  escalated-laravel's props (`users` paginated 20 a page, `filters.search`,
+  `currentUserId`) and its toggles at `PATCH /escalated/admin/users/:user/role`
+  (`escalated.admin.users.index` / `escalated.admin.users.role`). Escalated
+  owns no users, so two new optional host hooks back it: `ui.listUsers({
+  search, page, perPage })` returns `{ data, total }`, and
+  `ui.updateUserRoles(userId, { isAdmin?, isAgent? })` applies a change
+  (Laravel's rules applied first: granting admin grants agent, revoking agent
+  revokes admin, and an admin cannot drop their own admin access). Without
+  `listUsers` the page renders empty with a `notice` prop explaining why;
+  without `updateUserRoles` a toggle flashes an error and changes nothing.
+  Rendered pages: 83 of 91.
 - With `ui.enabled`, the admin operations screens, with escalated-laravel's
   controllers as the prop contract: `Admin/Automations/Index` and `Form`,
   `Admin/BusinessHours/Index` and `Form` (`/escalated/admin/business-hours`,

@@ -89,6 +89,39 @@ own shared props with `ui.share(req)`.
 | `ui.title`, `ui.scripts`, `ui.styles`, `ui.head` | | Used by the default root view. |
 | `ui.share(req)` | | Extra shared props. |
 | `ui.resolveUsers(ids)` | | Host user names and emails for the screens. Without it they show contact names, agent display names or `User #id`. |
+| `ui.listUsers({ search, page, perPage })` | | One page of host users for `Admin/Users/Index`, as `{ data, total }`; each user is `{ id, name, email, isAdmin, isAgent }`. Match `search` against name and email. Without it the page renders empty, with a `notice` prop saying why. |
+| `ui.updateUserRoles(userId, change)` | | Applies a toggle from `Admin/Users/Index`: `change` has `isAdmin` and/or `isAgent`. Return `false` for an unknown user. Without it the toggles change nothing and flash an error. |
+
+### Host users (`Admin/Users/Index`)
+
+Escalated owns no users, so the users screen reads and changes them through
+your app:
+
+```ts
+EscalatedModule.forRoot({
+  ui: {
+    enabled: true,
+    listUsers: async ({ search, page, perPage }) => {
+      const [rows, total] = await users.findAndCount({
+        where: search ? [{ name: ILike(`%${search}%`) }, { email: ILike(`%${search}%`) }] : {},
+        order: { isAdmin: 'DESC', isAgent: 'DESC', id: 'ASC' },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      });
+      return { data: rows, total };
+    },
+    updateUserRoles: async (userId, change) => {
+      const result = await users.update(userId, change);
+      return result.affected === 1;
+    },
+  },
+});
+```
+
+escalated-laravel orders admins first, then agents, then by id. The package
+applies Laravel's rules before calling `updateUserRoles`: granting admin also
+grants agent, revoking agent also revokes admin, and an admin cannot remove
+their own admin access (refused before the hook runs).
 
 ## `route()`
 
@@ -270,9 +303,12 @@ Admin (`adminGuard`):
   be deleted
 - `GET /escalated/admin/api-tokens` - `Admin/ApiTokens/Index` (`users` are the
   active agents; the token itself is never listed). Creating one redirects
-  back with the plain token in the `plain_text_token` flash value, shown once.
-  `Admin/Users/Index` is not served: it edits the host's user table, which
-  this package does not own
+  back with the plain token in the `plain_text_token` flash value, shown once
+- `GET /escalated/admin/users` - `Admin/Users/Index` (`users` paginated 20 a
+  page with `search`, `filters`, `currentUserId`, and `notice`), and
+  `PATCH /escalated/admin/users/:user/role` (`role`: `admin`|`agent`,
+  `value`), both through the host's `ui.listUsers` / `ui.updateUserRoles`
+  (see Host users above)
 - `GET /escalated/admin/kb-articles` - `Admin/KnowledgeBase/Articles/Index`
   (`search`, `status`, `category_id` filters, 20 a page);
   `/kb-articles/create` and `/kb-articles/:id/edit` -

@@ -14,6 +14,7 @@ export interface NamedRoute {
 const GET = ['GET', 'HEAD'];
 const POST = ['POST'];
 const PUT = ['PUT'];
+const PATCH = ['PATCH'];
 const DELETE = ['DELETE'];
 
 export const ESCALATED_UI_PREFIX = 'escalated';
@@ -252,6 +253,8 @@ const routes: Record<string, NamedRoute> = {
   'escalated.admin.roles.edit': { uri: 'escalated/admin/roles/{role}/edit', methods: GET },
   'escalated.admin.roles.update': { uri: 'escalated/admin/roles/{role}', methods: PUT },
   'escalated.admin.roles.destroy': { uri: 'escalated/admin/roles/{role}', methods: DELETE },
+  'escalated.admin.users.index': { uri: 'escalated/admin/users', methods: GET },
+  'escalated.admin.users.role': { uri: 'escalated/admin/users/{user}/role', methods: PATCH },
   'escalated.admin.api-tokens.index': { uri: 'escalated/admin/api-tokens', methods: GET },
   'escalated.admin.api-tokens.store': { uri: 'escalated/admin/api-tokens', methods: POST },
   'escalated.admin.api-tokens.destroy': {
