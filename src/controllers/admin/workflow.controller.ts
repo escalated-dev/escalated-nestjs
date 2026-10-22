@@ -84,11 +84,25 @@ export class AdminWorkflowController {
     return this.workflows.options();
   }
 
-  /** Logs across every workflow; `?workflow_id=` narrows them to one. */
+  /**
+   * Logs across every workflow; `?workflow_id=` (or the screen's `?workflow=`)
+   * narrows them to one. With `ui.enabled`, also `Escalated/Admin/Workflows/Logs`
+   * with the workflows to filter by, as escalated-laravel's WorkflowController@logs.
+   */
   @Get('logs')
-  async allLogs(@Query('workflow_id') workflowId?: string) {
-    const id = workflowId ? Number(workflowId) : undefined;
-    return { logs: await this.workflows.logs(Number.isInteger(id) ? id : undefined) };
+  async allLogs(
+    @Query('workflow_id') workflowId?: string,
+    @Query('workflow') workflow?: string,
+    @Req() req?: any,
+  ): Promise<any> {
+    const raw = workflowId || workflow;
+    const id = raw ? Number(raw) : undefined;
+    const logs = await this.workflows.logs(Number.isInteger(id) ? id : undefined);
+    if (this.screen(req)) {
+      const workflows = (await this.workflows.list()).map((w) => ({ id: w.id, name: w.name }));
+      return inertia('Escalated/Admin/Workflows/Logs', { logs, workflows });
+    }
+    return { logs };
   }
 
   @Post()

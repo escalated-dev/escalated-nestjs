@@ -114,7 +114,6 @@ const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/Skills/Index',
   'Escalated/Admin/Users/Index',
   'Escalated/Admin/Workflows/Builder',
-  'Escalated/Admin/Workflows/Logs',
   'Escalated/Auth/TwoFactorChallenge',
   'Escalated/Error',
   'Escalated/Plugin/Page',

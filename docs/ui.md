@@ -167,6 +167,10 @@ Admin (`adminGuard`):
   `/workflows/create` and `/workflows/:id/edit` - `Admin/Workflows/Form`; the
   builder's `POST`, `PUT`, `DELETE`, `toggle` and `reorder` redirect back to the
   list (see docs/workflows.md for the wire contract)
+- `GET /escalated/admin/workflows/logs` - `Admin/Workflows/Logs` (the newest
+  100 runs, `?workflow=` for one workflow, with `workflows` to filter by).
+  `Admin/Workflows/Builder` is not served: escalated-laravel renders the
+  builder inside `Admin/Workflows/Form`, as this package does
 - `GET /escalated/admin/departments` - `Admin/Departments/Index` (with
   `tickets_count`, `agents_count`); `/departments/create` and
   `/departments/:id/edit` - `Admin/Departments/Form`
