@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import {
   BusinessSchedule,
   CannedResponse,
@@ -148,6 +148,30 @@ describe('admin configuration screens (ui.enabled)', () => {
       expect(
         (await source.getRepository(SlaPolicy).findOneByOrFail({ name: 'Old default' })).isDefault,
       ).toBe(false);
+    });
+
+    it('hands the form the business schedules to pick from, by name', async () => {
+      const schedules = source.getRepository(BusinessSchedule);
+      await schedules.save({ name: 'Zulu shift', schedule: {} as any });
+      await schedules.save({ name: 'Alpha weekend', schedule: {} as any });
+      const expected = (await schedules.find({ order: { name: 'ASC' } })).map((s) => ({
+        id: s.id,
+        name: s.name,
+      }));
+      expect(expected.map((s) => s.name)).toEqual(
+        expect.arrayContaining(['Alpha weekend', 'Zulu shift']),
+      );
+
+      const create = await page(base, '/escalated/admin/sla-policies/create', asAdmin);
+      expect(create.props.schedules).toEqual(expected);
+
+      const policy = await source.getRepository(SlaPolicy).save({ name: 'Picker' });
+      const edit = await page(base, `/escalated/admin/sla-policies/${policy.id}/edit`, asAdmin);
+      expect(edit.props.schedules).toEqual(expected);
+
+      // Later tests start without any business schedule.
+      await source.getRepository(SlaPolicy).delete({ id: policy.id });
+      await schedules.delete({ id: In(expected.map((s) => s.id)) });
     });
 
     it('edits a policy, limits it to business hours, and deletes it', async () => {

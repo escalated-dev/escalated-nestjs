@@ -265,6 +265,27 @@ describe('admin screens (ui.enabled)', () => {
       expect(await source.getRepository(Department).countBy({ name: 'Unknown schedule' })).toBe(0);
     });
 
+    it('hands the form the business schedules to pick from, by name', async () => {
+      const schedules = source.getRepository(BusinessSchedule);
+      const zulu = await schedules.save({ name: 'Zulu shift', schedule: {} as any });
+      const alpha = await schedules.save({ name: 'Alpha weekend', schedule: {} as any });
+      const dept = await source
+        .getRepository(Department)
+        .save({ name: 'Picker', slug: 'picker', isActive: true, businessScheduleId: zulu.id });
+      const expected = (await schedules.find({ order: { name: 'ASC' } })).map((s) => ({
+        id: s.id,
+        name: s.name,
+      }));
+      expect(expected).toContainEqual({ id: alpha.id, name: 'Alpha weekend' });
+
+      const create = await page(base, '/escalated/admin/departments/create', asAdmin);
+      expect(create.props.schedules).toEqual(expected);
+
+      const edit = await page(base, `/escalated/admin/departments/${dept.id}/edit`, asAdmin);
+      expect(edit.props.schedules).toEqual(expected);
+      expect(edit.props.department.business_schedule_id).toBe(zulu.id);
+    });
+
     it('sends a missing name back as a field error', async () => {
       const res = await form(
         '/escalated/admin/departments',

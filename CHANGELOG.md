@@ -82,8 +82,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   windows and `24:00`, and counts calendar time for a schedule with no open
   day.
 - SLA policy and department screens accept `business_schedule_id` (nullable;
-  an unknown id is a field error), changed only when the form sends it; the
-  shared forms do not send it yet. The SLA policy form's
+  an unknown id is a field error), changed only when the form sends it. The
+  `Admin/SlaPolicies/Form` and `Admin/Departments/Form` pages receive a
+  `schedules` prop (`[{id, name}]`, by name) for the shared frontend's
+  **Business hours schedule** picker, and the department form's `department`
+  carries `business_schedule_id`. The SLA policy form's
   `business_hours_only` reflects `businessHoursOnly` as well as an own
   schedule. Deleting a business schedule clears it from policies and
   departments.

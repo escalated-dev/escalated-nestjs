@@ -8,13 +8,16 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { BusinessSchedule } from '../../entities/business-schedule.entity';
 import { Department } from '../../entities/department.entity';
 import { Tag } from '../../entities/tag.entity';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { DepartmentService } from '../../services/department.service';
 import { SettingsService } from '../../services/settings.service';
 import { invalidOriginEntries } from '../../services/widget-origins.service';
-import { scheduleReference } from '../admin-config';
+import { scheduleOptions, scheduleReference } from '../admin-config';
 import { back, inertia } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
 import { routeUrl } from '../routes';
@@ -98,6 +101,7 @@ export class AdminUiController {
     private readonly settings: SettingsService,
     private readonly departments: DepartmentService,
     private readonly data: UiDataService,
+    @InjectRepository(BusinessSchedule) private readonly schedules: Repository<BusinessSchedule>,
   ) {}
 
   @Post('settings')
@@ -148,8 +152,11 @@ export class AdminUiController {
   }
 
   @Get('departments/create')
-  create() {
-    return inertia('Escalated/Admin/Departments/Form', { department: null });
+  async create() {
+    return inertia('Escalated/Admin/Departments/Form', {
+      department: null,
+      schedules: await scheduleOptions(this.schedules),
+    });
   }
 
   @Get('departments/:id/edit')
@@ -157,6 +164,7 @@ export class AdminUiController {
     const department = await this.departments.findById(id);
     return inertia('Escalated/Admin/Departments/Form', {
       department: this.data.serializeDepartment(department),
+      schedules: await scheduleOptions(this.schedules),
     });
   }
 

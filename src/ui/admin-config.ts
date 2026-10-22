@@ -1,3 +1,5 @@
+import type { Repository } from 'typeorm';
+import type { BusinessSchedule } from '../entities/business-schedule.entity';
 import type { CannedResponse } from '../entities/canned-response.entity';
 import type { EscalationRule } from '../entities/escalation-rule.entity';
 import type { Macro } from '../entities/macro.entity';
@@ -86,6 +88,18 @@ export function serializeSlaPolicy(policy: SlaPolicy, ticketsCount = 0) {
     created_at: iso(policy.createdAt),
     updated_at: iso(policy.updatedAt),
   };
+}
+
+/**
+ * The `schedules` prop of the SLA policy and department forms: every business
+ * schedule as `{id, name}`, by name, for the shared **Business hours
+ * schedule** picker (as escalated-laravel's controllers pass it).
+ */
+export async function scheduleOptions(
+  schedules: Repository<BusinessSchedule>,
+): Promise<Array<{ id: number; name: string }>> {
+  const rows = await schedules.find({ select: { id: true, name: true }, order: { name: 'ASC' } });
+  return rows.map((row) => ({ id: row.id, name: row.name }));
 }
 
 /**
