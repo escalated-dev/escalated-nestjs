@@ -8,6 +8,7 @@ export { ReportingService } from './reporting.service';
 export { MacroService } from './macro.service';
 export { CannedResponseService } from './canned-response.service';
 export { CustomFieldService } from './custom-field.service';
+export { CustomObjectService } from './custom-object.service';
 export { KnowledgeBaseService } from './knowledge-base.service';
 export { WebhookService } from './webhook.service';
 export { AgentService } from './agent.service';

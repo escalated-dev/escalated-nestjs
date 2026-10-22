@@ -30,6 +30,8 @@ export { WebhookDelivery } from './webhook-delivery.entity';
 export { AuditLog } from './audit-log.entity';
 export { CustomField } from './custom-field.entity';
 export { CustomFieldValue } from './custom-field-value.entity';
+export { CustomObject, CustomObjectFieldDefinition } from './custom-object.entity';
+export { CustomObjectRecord } from './custom-object-record.entity';
 export { EscalatedSettings } from './escalated-settings.entity';
 export { SavedView } from './saved-view.entity';
 export { KbCategory } from './kb-category.entity';

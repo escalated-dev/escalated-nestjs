@@ -48,6 +48,7 @@ describe('AgentTicketController', () => {
             getChatContext: jest.fn().mockResolvedValue(null),
             getRelatedTickets: jest.fn().mockResolvedValue([]),
             getRequesterTicketCount: jest.fn().mockResolvedValue(0),
+            customFieldValues: jest.fn().mockResolvedValue([]),
           },
         },
         {

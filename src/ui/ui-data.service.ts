@@ -386,6 +386,7 @@ export class UiDataService {
           status: t.status,
         })),
       },
+      custom_fields: await this.ticketService.customFieldValues(id),
       departments: await this.departmentOptions(),
       tags: await this.tagOptions(),
       cannedResponses: (await this.cannedResponses(userId, ticket.departmentId)).map((c) => ({

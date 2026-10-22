@@ -41,8 +41,14 @@ export class CreateTicketDto {
   @IsInt({ each: true })
   tagIds?: number[];
 
+  /** Older form of `custom_fields`, keyed by field id. */
   @IsOptional()
   customFields?: Record<string, any>;
+
+  /** Custom field values keyed by field slug (escalated-laravel's `custom_fields`). */
+  @IsOptional()
+  @IsObject()
+  custom_fields?: Record<string, any>;
 
   /** Flat map of host parameters, e.g. from an embedded widget. */
   @IsOptional()

@@ -245,6 +245,17 @@ Admin (`adminGuard`):
   webhooks are sent under); `/webhooks/:id/deliveries` -
   `Admin/Webhooks/DeliveryLog` (paginated); `POST
   /webhooks/deliveries/:delivery/retry` sends a delivery again now
+- `GET /escalated/admin/custom-fields` - `Admin/CustomFields/Index` (every
+  definition by position, with Laravel's keys); `/custom-fields/create` and
+  `/custom-fields/:id/edit` - `Admin/CustomFields/Form` (`contexts`: `ticket`,
+  `user`, `organization`); `POST /custom-fields/reorder` (`positions`). Ticket
+  fields' values are sent as `custom_fields` (by slug) on ticket create and
+  update, and shown as `custom_fields` on the ticket pages
+- `GET /escalated/admin/custom-objects` - `Admin/CustomObjects/Index` (with
+  `records_count`); `/custom-objects/create` and `/custom-objects/:id/edit` -
+  `Admin/CustomObjects/Form`; `/custom-objects/:id/records` -
+  `Admin/CustomObjects/Records` (newest first), with record create, update and
+  delete
 - `GET /escalated/admin/roles` - `Admin/Roles/Index` (`users_count` is the
   agents with the role); `/roles/create` and `/roles/:id/edit` -
   `Admin/Roles/Form` (`permissions` grouped by `group`); system roles cannot

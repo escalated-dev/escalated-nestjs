@@ -22,6 +22,7 @@ import { AgentProfile } from '../entities/agent-profile.entity';
 import { ChatSession } from '../entities/chat-session.entity';
 import { Tag } from '../entities/tag.entity';
 import { CustomFieldValue } from '../entities/custom-field-value.entity';
+import { CustomFieldService, PendingCustomFieldValues } from './custom-field.service';
 import { TicketFollower } from '../entities/ticket-follower.entity';
 import { resolveFollowerUserIds } from './follower-recipients';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
@@ -70,6 +71,7 @@ export class TicketService {
     @Optional() private readonly access?: TicketAccess,
     @Optional() private readonly sla?: SlaService,
     @Optional() private readonly subjects?: TicketSubjectService,
+    @Optional() private readonly customFields?: CustomFieldService,
   ) {}
 
   private generateReferenceNumber(): string {
@@ -188,8 +190,19 @@ export class TicketService {
   async create(
     dto: CreateTicketDto,
     requesterId: UserId,
-    context?: { subjects?: TicketSubjectSyncItem[]; account?: AccountIdentity | null },
+    context?: {
+      subjects?: TicketSubjectSyncItem[];
+      account?: AccountIdentity | null;
+      /**
+       * Every required custom field must be filled (the agent, customer and
+       * admin create endpoints). Other callers check only the values sent.
+       */
+      customFieldsRequired?: boolean;
+    },
   ): Promise<Ticket> {
+    // Checked before anything is written: a refused value creates no ticket.
+    const customValues = await this.checkCustomFields(dto, context?.customFieldsRequired === true);
+
     // Get default status if not provided
     let statusId = dto.statusId;
     if (!statusId) {
@@ -233,9 +246,7 @@ export class TicketService {
     }
 
     // Handle custom fields
-    if (dto.customFields) {
-      await this.saveCustomFields(saved.id, dto.customFields);
-    }
+    await this.writeCustomFields(saved.id, dto, customValues);
 
     // Activity log
     await this.activityRepo.save({
@@ -347,6 +358,8 @@ export class TicketService {
 
   async update(id: number, dto: UpdateTicketDto, userId: UserId): Promise<Ticket> {
     const ticket = await this.findById(id);
+    // Checked before anything is written; omitting them changes nothing.
+    const customValues = await this.checkCustomFields(dto, false);
     const changes: Record<string, any> = {};
     // Events announced once the update is written, with the updated ticket.
     const pending: Array<(fresh: Ticket) => [string, object] | null> = [];
@@ -507,9 +520,7 @@ export class TicketService {
     }
 
     // Handle custom fields
-    if (dto.customFields) {
-      await this.saveCustomFields(id, dto.customFields);
-    }
+    await this.writeCustomFields(id, dto, customValues);
 
     // Apply basic field updates
     const updateData: any = {};
@@ -740,6 +751,42 @@ export class TicketService {
   async delete(id: number): Promise<void> {
     const ticket = await this.findById(id);
     await this.ticketRepo.remove(ticket);
+  }
+
+  /** A ticket's `custom_fields`: active ticket field definitions with their decoded `value`. */
+  async customFieldValues(ticketId: number) {
+    return this.customFields ? this.customFields.ticketValues(ticketId) : [];
+  }
+
+  /** The `custom_fields` definitions a ticket create page offers. */
+  async customFieldDefinitions() {
+    return this.customFields ? this.customFields.ticketDefinitions() : [];
+  }
+
+  /**
+   * The custom field values a create or update sends (`custom_fields` by slug,
+   * or the older `customFields` by id), checked against the active ticket
+   * fields. Null when none are sent and none are required.
+   */
+  private async checkCustomFields(
+    dto: { custom_fields?: unknown; customFields?: unknown },
+    required: boolean,
+  ): Promise<PendingCustomFieldValues | null> {
+    if (!this.customFields) return null;
+    return this.customFields.resolveTicketInput(dto, { required });
+  }
+
+  private async writeCustomFields(
+    ticketId: number,
+    dto: { customFields?: Record<string, any> },
+    values: PendingCustomFieldValues | null,
+  ): Promise<void> {
+    if (this.customFields) {
+      if (values?.length) await this.customFields.saveTicketValues(ticketId, values);
+    } else if (dto.customFields) {
+      // Without the service (a hand-built TicketService), as before.
+      await this.saveCustomFields(ticketId, dto.customFields);
+    }
   }
 
   private async saveCustomFields(

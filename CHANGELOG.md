@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- Run the exported `CustomFieldsAndObjects1792972800000` migration: it adds
+  nullable `placeholder`, `description`, `validationRules` and `conditions` to
+  `escalated_custom_fields` (existing definitions keep everything) and creates
+  `escalated_custom_objects` and `escalated_custom_object_records`.
+- **Behaviour change:** ticket custom field values (`customFields` keyed by
+  field id, and the new `custom_fields` keyed by slug) are now checked against
+  the definitions before the ticket is written. Only active `ticket` fields
+  are accepted, values must match their type, and the agent, customer and
+  customer-screen create endpoints refuse a ticket that leaves a required
+  field empty (422, or the form's field errors, keyed
+  `custom_fields.<slug>`). With no custom fields defined nothing changes.
+  Values are now stored as escalated-laravel stores them: `multi_select` as a
+  JSON array, `checkbox` as `1`/`0`. An empty value for an optional field
+  deletes the stored one.
+- The `escalated/admin/custom-fields` JSON routes moved from
+  `AdminSettingsController` to the new `AdminCustomFieldController`; paths,
+  bodies and responses are unchanged.
 - Run the exported `TicketStatusCategories1792886400000` migration: it adds
   `category`, `description` and `isSystem` to ticket statuses. Existing rows
   get a category from `isClosed` and their slug (`solved` when closed or
@@ -57,6 +74,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   end. Days saved with `enabled: false` stay closed.
 
 ### Added
+- Custom fields and custom objects as escalated-laravel has them
+  (CUSTOM-FIELDS-SPEC). With `ui.enabled`: `Admin/CustomFields/Index` and
+  `Form` (`/escalated/admin/custom-fields`, `/create`, `/:id/edit`; `fields`
+  with Laravel's keys, `contexts`), with store (the slug comes from the name,
+  `_2`, `_3` when taken), update, delete (its values go with it) and
+  `reorder`; `Admin/CustomObjects/Index`, `Form` and `Records`
+  (`/escalated/admin/custom-objects`, `/create`, `/:id/edit`, `/:id/records`)
+  with object and record create, update and delete. Record `data` is checked
+  against the object's schema (errors keyed `data.<name>`), and a record
+  reached through another object is a 404. API clients get the custom object
+  routes as JSON (422 for invalid input).
+- Ticket custom field values: agent ticket create and update, and customer
+  ticket create (API and screen), take `custom_fields` keyed by field slug. `Customer/Create` gets the active
+  ticket field definitions as `custom_fields`; `Customer/Show`,
+  `Agent/TicketShow`, `Admin/Tickets/Show` and the agent and customer JSON
+  ticket details get `custom_fields` with each field's decoded `value`
+  (`multi_select` an array, `checkbox` a boolean, `number` a number). Guest and
+  widget ticket creation do not take custom fields yet.
 - Status categories as escalated-laravel has them: every ticket status
   belongs to `new`, `open`, `pending`, `on_hold` or `solved`, and lifecycle
   keys off the category. A custom status in the `solved` category stamps
