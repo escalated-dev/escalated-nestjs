@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Customer/KnowledgeBase/Index` and `Article` (`/escalated/kb`, with helpful
   feedback), as escalated-laravel serves them. Off with
   `enableKnowledgeBase: false`.
+- Guest screens (with `ui.enabled`): `Guest/Create` (`/escalated/guest/create`)
+  files a ticket with an emailed verification code and redirects to
+  `Guest/Show` (`/escalated/guest/:grant`) through an expiring grant, with
+  guest replies and ratings, as escalated-laravel's Guest\TicketController.
+  The guest policy helpers move to `services/guest-policy.ts`, shared with
+  the widget.
 - `WebhookService.retryDelivery(id)` sends one stored delivery again now.
 - Macros run escalated-laravel's action names (`status` by slug, `priority`,
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the
