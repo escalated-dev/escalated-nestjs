@@ -195,6 +195,27 @@ Admin (`adminGuard`):
   `solved`, the distinction this backend stores (`isClosed`); a new status
   gets a slug from its label, an edit keeps it, and a status tickets still
   have cannot be deleted. Status descriptions are not stored
+- Reports, as escalated-laravel's ReportController sends them (`?days=`, and
+  `?period=` on the advanced reports; 30 by default):
+  `GET /escalated/admin/reports` - `Admin/Reports`; `/reports/dashboard` -
+  `Reports/Dashboard`; `/reports/agents` - `Reports/AgentMetrics`;
+  `/reports/sla` - `Reports/SlaReport`; `/reports/csat` - `Reports/CsatReport`;
+  `/reports/sla-trends` (`group_by` `day`, `week` or `month`) -
+  `Reports/SlaTrends`; `/reports/response-times` (also `/reports/frt`) -
+  `Reports/ResponseTimes` (target 4 hours); `/reports/resolution-times` (also
+  `/reports/resolution`) - `Reports/ResolutionTimes` (target 24 hours);
+  `/reports/agent-ranking` - `Reports/AgentRanking`; `/reports/cohorts` -
+  `Reports/Cohorts`; `/reports/comparison` - `Reports/Comparison`.
+  Times between two timestamps are worked out from the selected tickets rather
+  than with each database's date functions, so they are fractional hours on
+  every database, and days, ISO weeks and months are UTC. Agents are named by
+  `ui.resolveUsers` or their agent profile. Cohort `csat` is the cohorts'
+  average rating (Laravel sends 0). `Reports/AgentDetail` is not served:
+  escalated-laravel's own props for it do not match the component.
+  `GET /escalated/admin/reports/export/:type?format=csv|json` exports
+  `tickets`, `agent_performance`, `sla_compliance`, `csat`, `resolution_times`
+  or `first_response_times` (served without `ui.enabled` too; each export is
+  audit-logged as `report.exported`)
 - `GET /escalated/admin/macros` - `Admin/Macros/Index` (every macro with its
   `creator`); the screen's action names (`status` by slug, `priority`,
   `assign`, `tags`, `department`, `reply`, `note`) now run when a macro is

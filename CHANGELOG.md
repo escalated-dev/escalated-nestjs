@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Report screens (with `ui.enabled`): `Admin/Reports` and
+  `Admin/Reports/Dashboard`, `AgentMetrics`, `SlaReport`, `CsatReport`,
+  `SlaTrends`, `ResponseTimes`, `ResolutionTimes`, `AgentRanking`, `Cohorts`
+  and `Comparison` under `/escalated/admin/reports`, with the props and route
+  names of escalated-laravel's ReportController, computed by a new
+  `ReportingService` with queries that run the same on PostgreSQL, MySQL and
+  SQLite. `GET /escalated/admin/reports/export/:type` exports a report as CSV
+  or JSON (admin guard; audit-logged). See `docs/ui.md`.
 - Admin ticket screens (with `ui.enabled`): `Escalated/Admin/Tickets/Index`
   (`GET /escalated/admin/tickets`, with `agents` and `savedViews`) and
   `Escalated/Admin/Tickets/Show` (`GET /escalated/admin/tickets/:reference`,
