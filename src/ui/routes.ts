@@ -352,6 +352,49 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/admin/departments/{department}',
     methods: DELETE,
   },
+  // Operations
+  'escalated.admin.automations.index': { uri: 'escalated/admin/automations', methods: GET },
+  'escalated.admin.automations.create': { uri: 'escalated/admin/automations/create', methods: GET },
+  'escalated.admin.automations.store': { uri: 'escalated/admin/automations', methods: POST },
+  'escalated.admin.automations.edit': {
+    uri: 'escalated/admin/automations/{automation}/edit',
+    methods: GET,
+  },
+  'escalated.admin.automations.update': {
+    uri: 'escalated/admin/automations/{automation}',
+    methods: PUT,
+  },
+  'escalated.admin.automations.destroy': {
+    uri: 'escalated/admin/automations/{automation}',
+    methods: DELETE,
+  },
+  'escalated.admin.business-hours.index': { uri: 'escalated/admin/business-hours', methods: GET },
+  'escalated.admin.business-hours.create': {
+    uri: 'escalated/admin/business-hours/create',
+    methods: GET,
+  },
+  'escalated.admin.business-hours.store': { uri: 'escalated/admin/business-hours', methods: POST },
+  'escalated.admin.business-hours.edit': {
+    uri: 'escalated/admin/business-hours/{business_hour}/edit',
+    methods: GET,
+  },
+  'escalated.admin.business-hours.update': {
+    uri: 'escalated/admin/business-hours/{business_hour}',
+    methods: PUT,
+  },
+  'escalated.admin.business-hours.destroy': {
+    uri: 'escalated/admin/business-hours/{business_hour}',
+    methods: DELETE,
+  },
+  'escalated.admin.skills.index': { uri: 'escalated/admin/skills', methods: GET },
+  'escalated.admin.skills.create': { uri: 'escalated/admin/skills/create', methods: GET },
+  'escalated.admin.skills.store': { uri: 'escalated/admin/skills', methods: POST },
+  'escalated.admin.skills.edit': { uri: 'escalated/admin/skills/{skill}/edit', methods: GET },
+  'escalated.admin.skills.update': { uri: 'escalated/admin/skills/{skill}', methods: PUT },
+  'escalated.admin.skills.destroy': { uri: 'escalated/admin/skills/{skill}', methods: DELETE },
+  'escalated.admin.capacity.index': { uri: 'escalated/admin/capacity', methods: GET },
+  'escalated.admin.capacity.update': { uri: 'escalated/admin/capacity/{capacity}', methods: PUT },
+  'escalated.admin.audit-log': { uri: 'escalated/admin/audit-log', methods: GET },
   // Import wizard
   'escalated.admin.import.index': { uri: 'escalated/admin/import', methods: GET },
   'escalated.admin.import.connect': {

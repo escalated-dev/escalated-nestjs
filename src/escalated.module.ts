@@ -177,6 +177,7 @@ import { AdminTicketsUiController } from './ui/controllers/admin-tickets-ui.cont
 import { AdminConfigUiController } from './ui/controllers/admin-config-ui.controller';
 import { AdminImportUiController } from './ui/controllers/admin-import-ui.controller';
 import { AdminReportsUiController } from './ui/controllers/admin-reports-ui.controller';
+import { AdminOperationsUiController } from './ui/controllers/admin-operations-ui.controller';
 import { AdminReportExportController } from './controllers/admin/report-export.controller';
 import {
   AdminKnowledgeBaseUiController,
@@ -392,6 +393,7 @@ export class EscalatedModule implements NestModule {
         AdminConfigUiController,
         AdminImportUiController,
         AdminReportsUiController,
+        AdminOperationsUiController,
         AdminKnowledgeBaseUiController,
         CustomerKnowledgeBaseUiController,
         GuestUiController,

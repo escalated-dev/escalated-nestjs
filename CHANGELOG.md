@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- With `ui.enabled`, the admin operations screens, with escalated-laravel's
+  controllers as the prop contract: `Admin/Automations/Index` and `Form`,
+  `Admin/BusinessHours/Index` and `Form` (`/escalated/admin/business-hours`,
+  holidays saved with the schedule, one default), `Admin/Skills/Index` and
+  `Form` (routing tags, departments and agents with proficiency),
+  `Admin/Capacity/Index` (`/escalated/admin/capacity`, one `default` channel
+  per agent, as this backend keeps one limit per agent) and
+  `Admin/AuditLog/Index` (`/escalated/admin/audit-log`, paginated, filtered by
+  user, action, resource type and date; stored verbs show as Laravel's
+  `created`/`updated`/`deleted`). Rendered pages: 81 of 91.
+
+### Changed
+- `GET /escalated/admin/automations` and `/escalated/admin/skills` and their
+  writes answer browser and Inertia requests with the screens when
+  `ui.enabled`; API clients get the same JSON as before. New
+  `GET .../automations/create`, `.../automations/:id/edit` and
+  `.../skills/create` exist only for the screens (404 otherwise). Nothing
+  changes with `ui.enabled` off.
+
 ## [1.2.5] - 2026-10-22
 
 ### Upgrading
