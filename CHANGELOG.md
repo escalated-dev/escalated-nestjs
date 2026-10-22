@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ESCALATED_GUEST_ACCESS_SECRET`, then `inbound.replySecret`). Set one in a
   multi-instance or restarting deployment, or unfinished jobs cannot read
   their credentials after a restart.
+- To import attachments, pass `importAttachmentStorage` (for example a
+  `LocalFileAttachmentStorage` on a directory the web server does not serve);
+  import adapters must send each file's bytes as `content`.
 - Run the exported `CustomFieldsAndObjects1792972800000` migration: it adds
   nullable `placeholder`, `description`, `validationRules` and `conditions` to
   `escalated_custom_fields` (existing definitions keep everything) and creates
@@ -101,7 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     paused or cancelled. It imports agents, contacts (host users, else
     Escalated contacts on guest tickets), tags, departments, tickets (status
     and priority falling back to the default status and medium, requester,
-    assignee, department, tags, source timestamps) and replies.
+    assignee, department, tags, source timestamps), replies, custom fields,
+    attachments and satisfaction ratings.
   - Tested credentials wait in an HttpOnly cookie scoped to the import paths,
     sealed with AES-256-GCM, until the import starts, then on the job; never
     in a page. A completed or cancelled job drops them.
@@ -110,6 +114,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Import mode (`ImportContext`, bound to the run's async context) holds back
     SLA policy attachment, SLA breach and warning checks, escalation rules and
     automations during a run.
+  - Custom fields: a `custom_fields` record (`name`, `type`, `options`) is
+    found by slug or created through the admin form's rules
+    (`CustomFieldService.adminCreate`), as Laravel's `persistCustomField`. A
+    ticket record's `custom_fields` object (`{key: value}`) becomes the
+    ticket's values: the wizard's ticket field mapping decides each key
+    (`"custom_fields.<slug>"` lands on that field, `""` skips it), else the key
+    is a custom field source id from the same import, else a slug. Each value
+    is checked by `resolveTicketInput` as a ticket update is; one that fails
+    is left out and logged under `custom_field_values` with the ticket's
+    source id, and the ticket is kept. Fields a record does not carry are not
+    required.
+  - Attachments: an `attachments` record (`parent_type` `ticket` or `reply`,
+    default `reply`; `parent_source_id`, `filename`, `content` as a Buffer or
+    base64) is held to Laravel's live-upload rules (`importAttachmentMaxKb`,
+    default 10240; Laravel's allowed extensions; markup refused whatever the
+    name; the type from the extension; the base name only) and written
+    through `importAttachmentStorage` (or the `ATTACHMENT_STORAGE` provider),
+    so it is served only by the authorised download route. Unlike Laravel, a
+    source `path` is never trusted: a record without `content` fails, and
+    with no storage every attachment fails.
+  - Satisfaction ratings: a `satisfaction_ratings` record (`ticket_source_id`,
+    `rating` or `score`, `comment`, `created_at`) is written on its imported
+    ticket as a 1-5 integer, one per ticket, credited to the ticket's
+    requester and assignee, with no rating token and none of a live rating's
+    rules or effects. These three record types used to fail with "Unknown
+    entity type".
 - Custom fields and custom objects as escalated-laravel has them
   (CUSTOM-FIELDS-SPEC). With `ui.enabled`: `Admin/CustomFields/Index` and
   `Form` (`/escalated/admin/custom-fields`, `/create`, `/:id/edit`; `fields`

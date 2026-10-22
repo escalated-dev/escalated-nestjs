@@ -6,6 +6,7 @@ import type { ThrottlerStorage } from '@nestjs/throttler';
 import type { AccountIdentity, AccountReference, TicketActor } from './ticket-access';
 import type { EscalatedUiOptions } from '../ui/ui-options';
 import type { ImportAdapter } from '../services/import-adapter';
+import type { AttachmentStorage } from '../services/email/attachment-downloader.service';
 
 export interface EscalatedModuleOptions {
   visibility?: 'all' | 'department';
@@ -362,6 +363,18 @@ export interface EscalatedModuleOptions {
    * response.
    */
   importDispatcher?: (jobId: string) => void;
+
+  /**
+   * Stores the bytes of imported attachments (a `LocalFileAttachmentStorage`
+   * rooted outside anything the web server serves, or the host's S3/GCS
+   * storage); they are served only by the authorised download route. Default:
+   * the `ATTACHMENT_STORAGE` provider when one is visible, else none, and then
+   * every imported attachment fails.
+   */
+  importAttachmentStorage?: AttachmentStorage;
+
+  /** Caps one imported attachment, in KB. Default: Laravel's live-upload limit, 10240. */
+  importAttachmentMaxKb?: number;
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
