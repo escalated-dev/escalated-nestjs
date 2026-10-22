@@ -124,7 +124,11 @@ export class InertiaReplyFilter implements ExceptionFilter {
     const adapter = this.adapterHost.httpAdapter;
     const response = host.switchToHttp().getResponse();
     const { status, headers, body } = exception.reply;
-    for (const [name, value] of Object.entries(headers)) adapter.setHeader(response, name, value);
+    for (const [name, value] of Object.entries(headers)) {
+      // A cookie the handler set (the import wizard's) stays beside the flash one.
+      if (name.toLowerCase() === 'set-cookie') adapter.appendHeader(response, name, value);
+      else adapter.setHeader(response, name, value);
+    }
     adapter.reply(response, body ?? '', status);
   }
 }

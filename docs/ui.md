@@ -163,6 +163,14 @@ Admin (`adminGuard`):
   `widget_greeting`, `widget_allowed_origins`, the keys this backend stores
   and reads, so the page hides the rest); `POST /escalated/admin/settings`
   saves them
+- `GET /escalated/admin/import` - `Admin/Import/Index` (`adapters` from
+  `importAdapters`, the 20 newest `jobs`); `/import/:platform/connect` -
+  `Admin/Import/Connect` (`POST .../test-connection` answers
+  `{success[, error]}`); `/import/:platform/mapping` - `Admin/Import/Mapping`;
+  `POST /import/:platform/review` - `Admin/Import/Review` (writes nothing);
+  `POST /import/:platform/start` starts the import; `/import/progress/:job` -
+  `Admin/Import/Progress`, polled through `GET /import/status/:job`;
+  `POST /import/{pause,resume,cancel}/:job`. Credentials never reach a page
 - `GET /escalated/admin/workflows` - `Admin/Workflows/Index`;
   `/workflows/create` and `/workflows/:id/edit` - `Admin/Workflows/Form`; the
   builder's `POST`, `PUT`, `DELETE`, `toggle` and `reorder` redirect back to the

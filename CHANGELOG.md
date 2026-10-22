@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- Run the exported `ImportJobs1793059200000` migration: it creates
+  `escalated_import_jobs` and `escalated_import_source_maps` for the admin
+  Import wizard. Nothing existing changes.
+- The Import wizard keeps tested source credentials sealed under
+  `importSecret` (default: `guestAccess.secret`, then
+  `ESCALATED_GUEST_ACCESS_SECRET`, then `inbound.replySecret`). Set one in a
+  multi-instance or restarting deployment, or unfinished jobs cannot read
+  their credentials after a restart.
 - Run the exported `CustomFieldsAndObjects1792972800000` migration: it adds
   nullable `placeholder`, `description`, `validationRules` and `conditions` to
   `escalated_custom_fields` (existing definitions keep everything) and creates
@@ -74,6 +82,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   end. Days saved with `enabled: false` stay closed.
 
 ### Added
+- The admin Import wizard and the import framework behind it, as
+  escalated-laravel's: the shared `Admin/Import/Index`, `Connect`, `Mapping`,
+  `Review` and `Progress` pages on Laravel's paths and props under
+  `/escalated/admin/import` (route names `escalated.admin.import.*`), admins
+  only, with `ui.enabled`. `POST .../:platform/test-connection` answers
+  `{success[, error]}` (422 when the source throws); `review` writes nothing;
+  `start` creates the job and queues it; `status/:job` answers the Progress
+  poll; `pause`, `resume` and `cancel` act on the job.
+  - Sources are the module option `importAdapters` (the `ImportAdapter`
+    interface); Escalated ships none, so a Zendesk or Freshdesk adapter is the
+    host's or a plugin package's. `importUserIdByEmail` maps imported agents
+    (required) and contacts (optional) to host users.
+  - `ImportJob`, `ImportSourceMap` and `ImportJobService`, which resumes each
+    entity type from its saved cursor, skips what is already mapped (so a
+    paused, failed or interrupted run imports nothing twice), saves progress
+    and an error log per batch, and stops between batches when the job is
+    paused or cancelled. It imports agents, contacts (host users, else
+    Escalated contacts on guest tickets), tags, departments, tickets (status
+    and priority falling back to the default status and medium, requester,
+    assignee, department, tags, source timestamps) and replies.
+  - Tested credentials wait in an HttpOnly cookie scoped to the import paths,
+    sealed with AES-256-GCM, until the import starts, then on the job; never
+    in a page. A completed or cancelled job drops them.
+  - Imports run in the process after the response; pass `importDispatcher`
+    to hand them to a queue that calls `ImportJobService.run(jobId)`.
+  - Import mode (`ImportContext`, bound to the run's async context) holds back
+    SLA policy attachment, SLA breach and warning checks, escalation rules and
+    automations during a run.
 - Custom fields and custom objects as escalated-laravel has them
   (CUSTOM-FIELDS-SPEC). With `ui.enabled`: `Admin/CustomFields/Index` and
   `Form` (`/escalated/admin/custom-fields`, `/create`, `/:id/edit`; `fields`

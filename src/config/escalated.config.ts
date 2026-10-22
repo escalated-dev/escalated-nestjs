@@ -5,6 +5,7 @@ import type { ThrottlerStorage } from '@nestjs/throttler';
 
 import type { AccountIdentity, AccountReference, TicketActor } from './ticket-access';
 import type { EscalatedUiOptions } from '../ui/ui-options';
+import type { ImportAdapter } from '../services/import-adapter';
 
 export interface EscalatedModuleOptions {
   visibility?: 'all' | 'department';
@@ -332,6 +333,35 @@ export interface EscalatedModuleOptions {
     ) => Promise<Record<string, any> | null>;
     logout?: (token: string) => Promise<void>;
   };
+
+  /**
+   * Sources the admin Import wizard offers (`/escalated/admin/import`), as
+   * escalated-laravel's `import.adapters` filter. Escalated ships none: a
+   * Zendesk or Freshdesk adapter is the host's or a plugin package's.
+   */
+  importAdapters?: ImportAdapter[];
+
+  /**
+   * Key that seals source credentials between wizard steps and on the job.
+   * Default: `guestAccess.secret`, else `ESCALATED_GUEST_ACCESS_SECRET`, else
+   * `inbound.replySecret`, else a random per-process key (a restart then
+   * drops the credentials of jobs not yet finished).
+   */
+  importSecret?: string;
+
+  /**
+   * The host user with this email, or null. Imported agents must resolve
+   * through it; imported contacts that do become those users, the others
+   * Escalated contacts.
+   */
+  importUserIdByEmail?: (email: string) => Promise<UserId | null> | UserId | null;
+
+  /**
+   * Hands a started or resumed import to the host's queue, whose worker calls
+   * `ImportJobService.run(jobId)`. Default: runs in this process after the
+   * response.
+   */
+  importDispatcher?: (jobId: string) => void;
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
