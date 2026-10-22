@@ -190,6 +190,62 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/admin/webhooks/deliveries/{delivery}/retry',
     methods: POST,
   },
+  'escalated.admin.custom-fields.index': { uri: 'escalated/admin/custom-fields', methods: GET },
+  'escalated.admin.custom-fields.create': {
+    uri: 'escalated/admin/custom-fields/create',
+    methods: GET,
+  },
+  'escalated.admin.custom-fields.store': { uri: 'escalated/admin/custom-fields', methods: POST },
+  'escalated.admin.custom-fields.reorder': {
+    uri: 'escalated/admin/custom-fields/reorder',
+    methods: POST,
+  },
+  'escalated.admin.custom-fields.edit': {
+    uri: 'escalated/admin/custom-fields/{custom_field}/edit',
+    methods: GET,
+  },
+  'escalated.admin.custom-fields.update': {
+    uri: 'escalated/admin/custom-fields/{custom_field}',
+    methods: PUT,
+  },
+  'escalated.admin.custom-fields.destroy': {
+    uri: 'escalated/admin/custom-fields/{custom_field}',
+    methods: DELETE,
+  },
+  'escalated.admin.custom-objects.index': { uri: 'escalated/admin/custom-objects', methods: GET },
+  'escalated.admin.custom-objects.create': {
+    uri: 'escalated/admin/custom-objects/create',
+    methods: GET,
+  },
+  'escalated.admin.custom-objects.store': { uri: 'escalated/admin/custom-objects', methods: POST },
+  'escalated.admin.custom-objects.edit': {
+    uri: 'escalated/admin/custom-objects/{custom_object}/edit',
+    methods: GET,
+  },
+  'escalated.admin.custom-objects.update': {
+    uri: 'escalated/admin/custom-objects/{custom_object}',
+    methods: PUT,
+  },
+  'escalated.admin.custom-objects.destroy': {
+    uri: 'escalated/admin/custom-objects/{custom_object}',
+    methods: DELETE,
+  },
+  'escalated.admin.custom-objects.records': {
+    uri: 'escalated/admin/custom-objects/{custom_object}/records',
+    methods: GET,
+  },
+  'escalated.admin.custom-objects.records.store': {
+    uri: 'escalated/admin/custom-objects/{custom_object}/records',
+    methods: POST,
+  },
+  'escalated.admin.custom-objects.records.update': {
+    uri: 'escalated/admin/custom-objects/{custom_object}/records/{record}',
+    methods: PUT,
+  },
+  'escalated.admin.custom-objects.records.destroy': {
+    uri: 'escalated/admin/custom-objects/{custom_object}/records/{record}',
+    methods: DELETE,
+  },
   'escalated.admin.roles.index': { uri: 'escalated/admin/roles', methods: GET },
   'escalated.admin.roles.create': { uri: 'escalated/admin/roles/create', methods: GET },
   'escalated.admin.roles.store': { uri: 'escalated/admin/roles', methods: POST },

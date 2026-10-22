@@ -87,7 +87,10 @@ export class CustomerTicketController {
     }
 
     if (this.ui && wantsPage(this.options, req)) {
-      return inertia('Escalated/Customer/Show', { ticket: await this.ui.customerTicket(ticket) });
+      return inertia('Escalated/Customer/Show', {
+        ticket: await this.ui.customerTicket(ticket),
+        custom_fields: await this.ticketService.customFieldValues(id),
+      });
     }
 
     const [replies, activities, chatContext, requesterTicketCount, relatedTickets] =
@@ -111,6 +114,7 @@ export class CustomerTicketController {
         chat_metadata: chatContext?.chat_metadata ?? null,
         requester_ticket_count: requesterTicketCount,
         related_tickets: relatedTickets,
+        custom_fields: await this.ticketService.customFieldValues(id),
       },
       replies,
       activities,
@@ -123,7 +127,7 @@ export class CustomerTicketController {
     if (!userId) throw new ForbiddenException();
 
     dto.channel = dto.channel || 'web';
-    return this.ticketService.create(dto, userId);
+    return this.ticketService.create(dto, userId, { customFieldsRequired: true });
   }
 
   @Post(':id/replies')

@@ -58,6 +58,7 @@ export { VerifiedGuestAccess1792627200000 } from './migrations/1792627200000-Ver
 export { EscalationRuleContract1792713600000 } from './migrations/1792713600000-EscalationRuleContract';
 export { BusinessSchedulePrecedence1792800000000 } from './migrations/1792800000000-BusinessSchedulePrecedence';
 export { TicketStatusCategories1792886400000 } from './migrations/1792886400000-TicketStatusCategories';
+export { CustomFieldsAndObjects1792972800000 } from './migrations/1792972800000-CustomFieldsAndObjects';
 export * from './events/event-names';
 
 // Widget embedding

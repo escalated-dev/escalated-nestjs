@@ -55,6 +55,8 @@ import {
   AuditLog,
   CustomField,
   CustomFieldValue,
+  CustomObject,
+  CustomObjectRecord,
   EscalatedSettings,
   SavedView,
   KbCategory,
@@ -80,6 +82,7 @@ import {
   MacroService,
   CannedResponseService,
   CustomFieldService,
+  CustomObjectService,
   KnowledgeBaseService,
   WebhookService,
   AgentService,
@@ -137,6 +140,10 @@ import { AgentTicketSubjectController } from './controllers/agent/ticket-subject
 import { AdminSlaController } from './controllers/admin/sla.controller';
 import { AdminAgentController } from './controllers/admin/agent.controller';
 import { AdminSettingsController } from './controllers/admin/settings.controller';
+import {
+  AdminCustomFieldController,
+  AdminCustomObjectController,
+} from './controllers/admin/custom-field.controller';
 import { AdminWebhookController } from './controllers/admin/webhook.controller';
 import { AdminApiTokenController } from './controllers/admin/api-token.controller';
 import { AdminImportController } from './controllers/admin/import.controller';
@@ -223,6 +230,8 @@ const entities = [
   AuditLog,
   CustomField,
   CustomFieldValue,
+  CustomObject,
+  CustomObjectRecord,
   EscalatedSettings,
   SavedView,
   KbCategory,
@@ -247,6 +256,7 @@ const services = [
   MacroService,
   CannedResponseService,
   CustomFieldService,
+  CustomObjectService,
   KnowledgeBaseService,
   WebhookService,
   AgentService,
@@ -294,6 +304,8 @@ const controllers = [
   AdminSlaController,
   AdminAgentController,
   AdminSettingsController,
+  AdminCustomFieldController,
+  AdminCustomObjectController,
   AdminWebhookController,
   AdminApiTokenController,
   AdminImportController,

@@ -19,7 +19,6 @@ import {
 import { SettingsService } from '../../services/settings.service';
 import { DepartmentService } from '../../services/department.service';
 import { TagService } from '../../services/tag.service';
-import { CustomFieldService } from '../../services/custom-field.service';
 import { RoleService } from '../../services/role.service';
 import { AuditLogService } from '../../services/audit-log.service';
 import {
@@ -55,7 +54,6 @@ export class AdminSettingsController {
     private readonly settingsService: SettingsService,
     private readonly departmentService: DepartmentService,
     private readonly tagService: TagService,
-    private readonly customFieldService: CustomFieldService,
     private readonly roleService: RoleService,
     private readonly auditLogService: AuditLogService,
     @Optional() private readonly ui?: UiDataService,
@@ -222,30 +220,6 @@ export class AdminSettingsController {
     if (this.screen(req)) {
       return back(routeUrl('escalated.admin.tags.index'), { success: 'Tag deleted.' });
     }
-  }
-
-  // Custom Fields
-  @Get('custom-fields')
-  async listCustomFields(@Query('entityType') entityType?: string) {
-    return this.customFieldService.findAll(entityType);
-  }
-
-  @Post('custom-fields')
-  @AuditAction('create', 'custom_field')
-  async createCustomField(@Body() body: any) {
-    return this.customFieldService.create(body);
-  }
-
-  @Put('custom-fields/:id')
-  @AuditAction('update', 'custom_field')
-  async updateCustomField(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-    return this.customFieldService.update(id, body);
-  }
-
-  @Delete('custom-fields/:id')
-  @HttpCode(204)
-  async deleteCustomField(@Param('id', ParseIntPipe) id: number) {
-    await this.customFieldService.delete(id);
   }
 
   // Roles

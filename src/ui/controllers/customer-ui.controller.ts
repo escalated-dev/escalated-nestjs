@@ -102,6 +102,7 @@ export class CustomerUiController {
     return inertia('Escalated/Customer/Create', {
       departments: await this.data.departmentOptions(),
       priorities: CUSTOMER_PRIORITIES,
+      custom_fields: await this.tickets.customFieldDefinitions(),
     });
   }
 
@@ -129,8 +130,17 @@ export class CustomerUiController {
     }
 
     const ticket = await this.tickets.create(
-      { subject, description, priority, ticketType, departmentId, channel: 'web' },
+      {
+        subject,
+        description,
+        priority,
+        ticketType,
+        departmentId,
+        channel: 'web',
+        custom_fields: body?.custom_fields,
+      },
       userId,
+      { customFieldsRequired: true },
     );
     if (!wantsPage(this.options, req)) return { message: 'Ticket created.', ticket };
     return redirect(

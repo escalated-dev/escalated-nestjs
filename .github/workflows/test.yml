@@ -82,7 +82,7 @@ jobs:
         run: npm ci
 
       - name: Synchronize the schema on PostgreSQL
-        run: npx jest --runInBand test/entities/schema-portability.spec.ts test/entities/ticket-access-migration.spec.ts test/entities/sla-warning-flags-migration.spec.ts test/entities/verified-guest-access-migration.spec.ts test/entities/escalation-rule-contract-migration.spec.ts test/entities/ticket-status-categories-migration.spec.ts test/integration/ticket-access.spec.ts test/integration/reporting-databases.spec.ts
+        run: npx jest --runInBand test/entities/schema-portability.spec.ts test/entities/ticket-access-migration.spec.ts test/entities/sla-warning-flags-migration.spec.ts test/entities/verified-guest-access-migration.spec.ts test/entities/escalation-rule-contract-migration.spec.ts test/entities/ticket-status-categories-migration.spec.ts test/entities/custom-fields-objects-migration.spec.ts test/integration/ticket-access.spec.ts test/integration/reporting-databases.spec.ts
 
   access-mysql:
     name: Access and migration (MySQL)
@@ -109,4 +109,4 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx jest --runInBand test/entities/ticket-access-migration.spec.ts test/entities/sla-warning-flags-migration.spec.ts test/entities/verified-guest-access-migration.spec.ts test/entities/escalation-rule-contract-migration.spec.ts test/entities/ticket-status-categories-migration.spec.ts test/integration/ticket-access.spec.ts test/integration/reporting-databases.spec.ts
+      - run: npx jest --runInBand test/entities/ticket-access-migration.spec.ts test/entities/sla-warning-flags-migration.spec.ts test/entities/verified-guest-access-migration.spec.ts test/entities/escalation-rule-contract-migration.spec.ts test/entities/ticket-status-categories-migration.spec.ts test/entities/custom-fields-objects-migration.spec.ts test/integration/ticket-access.spec.ts test/integration/reporting-databases.spec.ts
