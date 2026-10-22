@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-10-22
+
 ### Added
 - With `ui.enabled`, `Admin/Users/Index` at `/escalated/admin/users`, with
   escalated-laravel's props (`users` paginated 20 a page, `filters.search`,
