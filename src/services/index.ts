@@ -2,6 +2,8 @@ export { TicketService } from './ticket.service';
 export { ReplyService } from './reply.service';
 export { SlaService } from './sla.service';
 export { EscalationService } from './escalation.service';
+export { RuleFireLog } from './rule-fire-log.service';
+export * from './escalation-rules';
 export { MacroService } from './macro.service';
 export { CannedResponseService } from './canned-response.service';
 export { CustomFieldService } from './custom-field.service';

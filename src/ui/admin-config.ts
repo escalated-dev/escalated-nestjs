@@ -1,9 +1,11 @@
 import type { CannedResponse } from '../entities/canned-response.entity';
+import type { EscalationRule } from '../entities/escalation-rule.entity';
 import type { Macro } from '../entities/macro.entity';
 import type { SlaPolicy } from '../entities/sla-policy.entity';
 import type { TicketStatus } from '../entities/ticket-status.entity';
 import type { Webhook } from '../entities/webhook.entity';
 import type { WebhookDelivery } from '../entities/webhook-delivery.entity';
+import { normalizeEscalationRule } from '../services/escalation-rules';
 import { webhookEventNames } from '../services/webhook.service';
 import { UiValidationException } from './inertia.interceptor';
 import { iso, person, type UserDirectory } from './serializers';
@@ -357,5 +359,84 @@ export function webhookInput(body: any): Partial<Webhook> {
     events,
     ...(typeof secret === 'string' && secret ? { secret } : {}),
     isActive: flag(body?.active, 'active', true),
+  };
+}
+
+// Escalation rules
+
+/** A rule as escalated-laravel's EscalationRule model serializes it. */
+export function serializeEscalationRule(rule: EscalationRule) {
+  const { conditions, actions } = normalizeEscalationRule(rule);
+  return {
+    id: rule.id,
+    name: rule.name,
+    description: rule.description ?? null,
+    trigger_type: rule.triggerType,
+    conditions,
+    actions,
+    order: rule.sortOrder ?? 0,
+    is_active: rule.isActive !== false,
+    repeat_after_hours: rule.repeatAfterHours ?? null,
+    // Not stored by this backend; the screen groups such rules as Uncategorized.
+    category: null,
+    created_at: iso(rule.createdAt),
+    updated_at: iso(rule.updatedAt),
+  };
+}
+
+function list(value: unknown, field: string): Record<string, unknown>[] {
+  if (!Array.isArray(value) || !value.length) {
+    throw new UiValidationException({ [field]: `The ${field} field is required.` });
+  }
+  return value.map((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      throw new UiValidationException({ [`${field}.${index}`]: `The ${field} are invalid.` });
+    }
+    return item as Record<string, unknown>;
+  });
+}
+
+/**
+ * The escalation rule form's fields (Laravel's StoreEscalationRuleRequest).
+ * A rule saved here carries everything in its conditions, so it has no SLA
+ * policy of its own: a rule saved before the contract shows its policy as an
+ * `sla_policy_id` condition, which saving keeps.
+ */
+export function escalationRuleInput(body: any): Partial<EscalationRule> {
+  const conditions = list(body?.conditions, 'conditions').map((condition) => ({
+    field: typeof condition.field === 'string' ? condition.field : '',
+    value: condition.value ?? null,
+  }));
+  const actions = list(body?.actions, 'actions').map((action) => ({
+    type: typeof action.type === 'string' ? action.type : '',
+    value: action.value ?? null,
+  }));
+
+  const order = body?.order == null || body.order === '' ? 0 : Number(body.order);
+  if (!Number.isInteger(order)) {
+    throw new UiValidationException({ order: 'The order must be an integer.' });
+  }
+  const repeat = body?.repeat_after_hours;
+  let repeatAfterHours: number | null = null;
+  if (repeat !== undefined && repeat !== null && repeat !== '') {
+    repeatAfterHours = Number(repeat);
+    if (!Number.isInteger(repeatAfterHours) || repeatAfterHours < 1 || repeatAfterHours > 8760) {
+      throw new UiValidationException({
+        repeat_after_hours: 'The repeat after hours must be between 1 and 8760.',
+      });
+    }
+  }
+
+  return {
+    name: requiredText(body?.name, 'name'),
+    description: optionalText(body?.description),
+    triggerType: requiredText(body?.trigger_type, 'trigger_type', 50),
+    conditions,
+    actions,
+    sortOrder: order,
+    isActive: flag(body?.is_active, 'is_active', true),
+    repeatAfterHours,
+    slaPolicyId: null,
+    minutesBefore: 0,
   };
 }
