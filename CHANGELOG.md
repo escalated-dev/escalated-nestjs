@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-10-22
+
 ### Upgrading
 - **Run the exported `HashApiTokens1793145600000` migration when deploying.**
   API tokens are now stored as the SHA-256 digest of the token, and
