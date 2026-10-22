@@ -4,17 +4,35 @@ import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 import type { UserId } from '../config/user-id-column';
+import { Attachment } from '../entities/attachment.entity';
 import { Contact } from '../entities/contact.entity';
+import { CustomField } from '../entities/custom-field.entity';
 import { Department } from '../entities/department.entity';
 import { ImportJob } from '../entities/import-job.entity';
 import { ImportSourceMap } from '../entities/import-source-map.entity';
 import { Reply } from '../entities/reply.entity';
+import { SatisfactionRating } from '../entities/satisfaction-rating.entity';
 import { pickDefaultStatus } from '../entities/status-category';
 import { Tag } from '../entities/tag.entity';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { requesterIdForPolicy } from './guest-policy';
+import {
+  CustomFieldService,
+  fieldSlug,
+  type PendingCustomFieldValues,
+} from './custom-field.service';
+import { ATTACHMENT_STORAGE, type AttachmentStorage } from './email/attachment-downloader.service';
 import { ImportAdapter, ImportContext, ImportCredentials } from './import-adapter';
+import {
+  attachmentContent,
+  extensionOf,
+  importFilename,
+  importRating,
+  importAttachmentType,
+  isMarkup,
+  validationMessage,
+} from './import-records';
 
 const MAX_ERRORS = 10000;
 const CONTACT_PREFIX = 'contact:';
@@ -48,6 +66,13 @@ export class ImportJobService {
     @InjectRepository(Contact) private readonly contacts: Repository<Contact>,
     @InjectRepository(Reply) private readonly replies: Repository<Reply>,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
+    @Optional() @InjectRepository(CustomField) private readonly fields?: Repository<CustomField>,
+    @Optional() private readonly customFields?: CustomFieldService,
+    @Optional() @InjectRepository(Attachment) private readonly attachments?: Repository<Attachment>,
+    @Optional()
+    @InjectRepository(SatisfactionRating)
+    private readonly ratings?: Repository<SatisfactionRating>,
+    @Optional() @Inject(ATTACHMENT_STORAGE) private readonly storage?: AttachmentStorage,
   ) {
     const secret =
       this.options?.importSecret ||
@@ -163,10 +188,22 @@ export class ImportJobService {
           skipped++;
           continue;
         }
+        const notes: Array<[string, string]> = [];
         try {
-          const escalatedId = await this.persist(jobId, entityType, record);
+          const escalatedId = await this.persist(jobId, entityType, record, notes);
           await this.maps.insert({ importJobId: jobId, entityType, sourceId, escalatedId });
           processed++;
+          // What the record was imported past (a custom field value that failed
+          // its check), logged against it.
+          for (const [type, message] of notes) {
+            if (errors.length >= MAX_ERRORS) break;
+            errors.push({
+              entity_type: type,
+              source_id: sourceId,
+              error: message,
+              timestamp: new Date().toISOString(),
+            });
+          }
         } catch (error: any) {
           failed++;
           if (errors.length < MAX_ERRORS) {
@@ -211,7 +248,12 @@ export class ImportJobService {
     return id ? this.resolve(jobId, entityType, id) : Promise.resolve(null);
   }
 
-  private async persist(jobId: string, entityType: string, record: ImportRecord): Promise<string> {
+  private async persist(
+    jobId: string,
+    entityType: string,
+    record: ImportRecord,
+    notes: Array<[string, string]> = [],
+  ): Promise<string> {
     switch (entityType) {
       case 'agents':
         return this.persistAgent(record);
@@ -222,9 +264,15 @@ export class ImportJobService {
       case 'departments':
         return this.persistDepartment(record);
       case 'tickets':
-        return this.persistTicket(jobId, record);
+        return this.persistTicket(jobId, record, notes);
       case 'replies':
         return this.persistReply(jobId, record);
+      case 'custom_fields':
+        return this.persistCustomField(record);
+      case 'attachments':
+        return this.persistAttachment(jobId, record);
+      case 'satisfaction_ratings':
+        return this.persistSatisfactionRating(jobId, record);
       default:
         throw new Error(`Unknown entity type: ${entityType}`);
     }
@@ -286,7 +334,11 @@ export class ImportJobService {
     return pickDefaultStatus((await this.statuses.find({ where: { isDefault: true } })) ?? [])?.id;
   }
 
-  private async persistTicket(jobId: string, record: ImportRecord): Promise<string> {
+  private async persistTicket(
+    jobId: string,
+    record: ImportRecord,
+    notes: Array<[string, string]> = [],
+  ): Promise<string> {
     const subject = text(record.title) ?? text(record.subject) ?? 'Imported ticket';
     const priority = text(record.priority);
     const values: Partial<Ticket> = {
@@ -323,6 +375,7 @@ export class ImportJobService {
       await this.tickets.createQueryBuilder().relation(Ticket, 'tags').of(ticket.id).add(tagIds);
     }
     await this.keepTimestamps(this.tickets, ticket.id, record);
+    await this.importFieldValues(jobId, ticket.id, record, notes);
     return String(ticket.id);
   }
 
@@ -347,6 +400,213 @@ export class ImportJobService {
     );
     await this.keepTimestamps(this.replies, reply.id, record);
     return String(reply.id);
+  }
+
+  // ---- Custom fields, attachments and satisfaction ratings ----
+
+  /**
+   * Laravel's persistCustomField: the definition is found by its slug or
+   * created with the source's name, type and options through the admin form's
+   * rules (`CustomFieldService.adminCreate`: a known type, options for a select).
+   */
+  private async persistCustomField(record: ImportRecord): Promise<string> {
+    if (!this.fields || !this.customFields) throw new Error('Custom fields are not available.');
+    const name = text(record.name);
+    if (!name) throw new Error('Custom field has no name.');
+    const existing = await this.fields.findOne({ where: { slug: fieldSlug(name) || 'field' } });
+    if (existing) return String(existing.id);
+    try {
+      const field = await this.customFields.adminCreate({
+        name,
+        type: text(record.type) ?? 'text',
+        context: 'ticket',
+        ...(Array.isArray(record.options) ? { options: record.options } : {}),
+      });
+      return String(field.id);
+    } catch (error: any) {
+      throw new Error(validationMessage(error));
+    }
+  }
+
+  /**
+   * The custom field slug a ticket record's `custom_fields` key names, or null
+   * to skip it. The wizard's ticket field mapping decides first: a key mapped
+   * to `custom_fields.<slug>` lands on that field, a key mapped to "" (Skip
+   * field) is dropped. Otherwise the key is a custom field's source id from
+   * this import, or a slug.
+   */
+  private async fieldSlugFor(
+    jobId: string,
+    mappings: Record<string, unknown> | null,
+    key: string,
+    notes: Array<[string, string]>,
+  ): Promise<string | null> {
+    if (mappings && Object.prototype.hasOwnProperty.call(mappings, key)) {
+      const target = text(mappings[key]) ?? '';
+      if (!target) return null;
+      if (target.startsWith('custom_fields.')) return target.slice('custom_fields.'.length);
+      notes.push([
+        'custom_field_values',
+        `custom_fields.${key}: mapped to '${target}', which is not a custom field.`,
+      ]);
+      return null;
+    }
+    const fieldId = await this.resolve(jobId, 'custom_fields', key);
+    if (fieldId && this.fields) {
+      const field = await this.fields.findOne({ where: { id: Number(fieldId) } });
+      if (field) return field.slug;
+    }
+    return key;
+  }
+
+  /**
+   * Stores a ticket record's `custom_fields` values, each checked as a ticket
+   * update checks it (`resolveTicketInput`: active ticket fields, type,
+   * options). One that fails is left out and logged under
+   * `custom_field_values`; the ticket is kept. Fields the record does not carry
+   * are not required: imported history predates them.
+   */
+  private async importFieldValues(
+    jobId: string,
+    ticketId: number,
+    record: ImportRecord,
+    notes: Array<[string, string]>,
+  ): Promise<void> {
+    const given = record.custom_fields;
+    if (!this.customFields || !isRecord(given)) return;
+    const job = await this.jobs.findOne({ where: { id: jobId } });
+    const mappings = isRecord(job?.fieldMappings?.tickets)
+      ? (job!.fieldMappings!.tickets as Record<string, unknown>)
+      : null;
+    const pending: PendingCustomFieldValues = [];
+    for (const key of Object.keys(given as Record<string, unknown>).sort()) {
+      const slug = await this.fieldSlugFor(jobId, mappings, key, notes);
+      if (slug === null) continue;
+      try {
+        const checked = await this.customFields.resolveTicketInput({
+          custom_fields: { [slug]: (given as Record<string, unknown>)[key] },
+        });
+        pending.push(...(checked ?? []));
+      } catch (error: any) {
+        const errors: Record<string, string> = error?.errors ?? { [key]: validationMessage(error) };
+        for (const [field, message] of Object.entries(errors)) {
+          notes.push(['custom_field_values', `${field}: ${message}`]);
+        }
+      }
+    }
+    await this.customFields.saveTicketValues(ticketId, pending);
+  }
+
+  /**
+   * Laravel's persistAttachment (`parent_type` ticket or reply, default reply;
+   * `parent_source_id`), with the rules of a live upload: the record carries
+   * the file's bytes (`content`), checked against `importAttachmentMaxKb` and
+   * Laravel's allowed types, and written through the attachment storage, so
+   * they are served only by the authorised download route. A storage path from
+   * the source is never trusted.
+   */
+  private async persistAttachment(jobId: string, record: ImportRecord): Promise<string> {
+    if (!this.attachments) throw new Error('Attachments are not available.');
+    const parentType = text(record.parent_type) ?? 'reply';
+    let ticketId: number;
+    let replyId: number | undefined;
+    if (parentType === 'ticket') {
+      const id = await this.ref(jobId, 'tickets', record.parent_source_id);
+      if (!id) throw new Error('Parent ticket not found for attachment.');
+      ticketId = Number(id);
+    } else if (parentType === 'reply') {
+      const id = await this.ref(jobId, 'replies', record.parent_source_id);
+      const reply = id ? await this.replies.findOne({ where: { id: Number(id) } }) : null;
+      if (!reply) throw new Error('Parent reply not found for attachment.');
+      ticketId = reply.ticketId;
+      replyId = reply.id;
+    } else {
+      throw new Error(`Unknown attachment parent type '${parentType}'.`);
+    }
+
+    const storage = this.options?.importAttachmentStorage ?? this.storage;
+    if (!storage) {
+      throw new Error('No attachment storage is configured (importAttachmentStorage).');
+    }
+    const content = attachmentContent(record.content);
+    if (!content || content.length === 0) {
+      throw new Error(
+        "Attachment has no content: imports store the file's bytes, never a source path.",
+      );
+    }
+    const limitKb = this.options?.importAttachmentMaxKb ?? 10240;
+    if (limitKb > 0 && content.length > limitKb * 1024) {
+      throw new Error(`Attachment exceeds the ${limitKb} KB upload limit.`);
+    }
+    const fileName = importFilename(text(record.filename));
+    const mimeType = importAttachmentType(fileName);
+    if (!mimeType) {
+      throw new Error(`Attachment type '${extensionOf(fileName)}' is not allowed.`);
+    }
+    if (isMarkup(content)) throw new Error('Attachment content (markup) is not allowed.');
+
+    const filePath = await storage.put(fileName, content, mimeType);
+    const attachment = await this.attachments.save(
+      this.attachments.create({
+        ticketId,
+        replyId,
+        fileName,
+        filePath,
+        mimeType,
+        fileSize: content.length,
+      }),
+    );
+    const created = text(record.created_at);
+    const at = created ? new Date(created) : null;
+    if (at && !Number.isNaN(at.getTime())) {
+      await this.attachments
+        .createQueryBuilder()
+        .update()
+        .set({ createdAt: at })
+        .where('id = :id', { id: attachment.id })
+        .updateEntity(false)
+        .execute();
+    }
+    return String(attachment.id);
+  }
+
+  /**
+   * Laravel's persistSatisfactionRating: the rating (or score) and comment, on
+   * the imported ticket, at the source's time. Only the rows are written (the
+   * rating, credited to the ticket's requester and assignee as a live one is,
+   * and the ticket's link to it): no rating token, no resolved/closed rule,
+   * nothing a live rating sets off. A ticket keeps one rating.
+   */
+  private async persistSatisfactionRating(jobId: string, record: ImportRecord): Promise<string> {
+    if (!this.ratings) throw new Error('Satisfaction ratings are not available.');
+    const ticketId = await this.ref(jobId, 'tickets', record.ticket_source_id);
+    if (!ticketId) throw new Error('Ticket not found for satisfaction rating.');
+    const raw =
+      record.rating !== undefined && record.rating !== null ? record.rating : record.score;
+    const score = importRating(raw);
+    if (score === null) throw new Error('The rating must be an integer between 1 and 5.');
+    const ticket = await this.tickets.findOneOrFail({ where: { id: Number(ticketId) } });
+    if (await this.ratings.exists({ where: { ticketId: ticket.id } })) {
+      throw new Error('The ticket already has a satisfaction rating.');
+    }
+    const rating = await this.ratings.save(
+      this.ratings.create({
+        ticketId: ticket.id,
+        customerId: ticket.requesterId,
+        agentId: ticket.assigneeId ?? null,
+        rating: score,
+        comment: text(record.comment) ?? undefined,
+      }),
+    );
+    await this.tickets
+      .createQueryBuilder()
+      .update()
+      .set({ satisfactionRatingId: rating.id, updatedAt: ticket.updatedAt })
+      .where('id = :id', { id: ticket.id })
+      .updateEntity(false)
+      .execute();
+    await this.keepTimestamps(this.ratings, rating.id, { created_at: record.created_at });
+    return String(rating.id);
   }
 
   /** The source's created_at / updated_at over the ones set on insert. */

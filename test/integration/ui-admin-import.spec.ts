@@ -2,13 +2,18 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import manifest from '../fixtures/escalated-pages.json';
 import {
+  Attachment,
   Contact,
+  CustomField,
+  CustomFieldValue,
   ImportJob,
   ImportSourceMap,
   Reply,
+  SatisfactionRating,
   Ticket,
   TicketStatus,
 } from '../../src/entities';
+import type { AttachmentStorage } from '../../src/services/email/attachment-downloader.service';
 import {
   ImportAdapter,
   ImportContext,
@@ -18,6 +23,23 @@ import { ImportJobService } from '../../src/services/import-job.service';
 import { ADMIN, bootUi, cookieFrom, inertiaFetch, page } from './ui-harness';
 
 jest.setTimeout(60000);
+
+/** A real PDF header and PNG signature. */
+const PDF = Buffer.from('%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n', 'latin1');
+const PNG = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52,
+]);
+
+/** Attachment storage that keeps the bytes it is given. */
+class MemoryStorage implements AttachmentStorage {
+  readonly name = 'memory';
+  files = new Map<string, Buffer>();
+  async put(filename: string, content: Buffer): Promise<string> {
+    const path = `memory/${this.files.size + 1}/${filename}`;
+    this.files.set(path, Buffer.from(content));
+    return path;
+  }
+}
 
 const RECORDS: Record<string, Record<string, ImportExtractResult>> = {
   agents: {
@@ -39,6 +61,15 @@ const RECORDS: Record<string, Record<string, ImportExtractResult>> = {
     },
   },
   tags: { start: { records: [{ source_id: 'g1', name: 'Billing' }], cursor: null } },
+  custom_fields: {
+    start: {
+      records: [
+        { source_id: 'f1', name: 'Plan', type: 'select', options: ['free', 'pro'] },
+        { source_id: 'f2', name: 'Seats', type: 'number' },
+      ],
+      cursor: null,
+    },
+  },
   tickets: {
     start: {
       records: [
@@ -52,6 +83,7 @@ const RECORDS: Record<string, Record<string, ImportExtractResult>> = {
           assignee_source_id: 'a1',
           tag_source_ids: ['g1'],
           created_at: '2024-01-02T03:04:05.000Z',
+          custom_fields: { f1: 'pro', f2: 12 },
         },
         {
           source_id: 't2',
@@ -76,12 +108,44 @@ const RECORDS: Record<string, Record<string, ImportExtractResult>> = {
       cursor: null,
     },
   },
+  attachments: {
+    start: {
+      records: [
+        {
+          source_id: 'a1',
+          parent_type: 'ticket',
+          parent_source_id: 't1',
+          filename: 'receipt.pdf',
+          mime_type: 'application/pdf',
+          content: PDF.toString('base64'),
+        },
+        { source_id: 'a2', parent_source_id: 'r1', filename: 'screen.png', content: PNG },
+      ],
+      cursor: null,
+    },
+  },
+  satisfaction_ratings: {
+    start: {
+      records: [
+        {
+          source_id: 's1',
+          ticket_source_id: 't1',
+          rating: 4,
+          comment: 'Quick fix',
+          created_at: '2024-02-03T04:05:06.000Z',
+        },
+      ],
+      cursor: null,
+    },
+  },
 };
 
 /** A source with a few records; Escalated ships no adapter of its own. */
 class FakeAdapter implements ImportAdapter {
   calls: Array<{ type: string; cursor: string | null; importing: boolean }> = [];
   afterBatch: ((type: string, cursor: string | null) => Promise<void>) | null = null;
+  /** Replaces RECORDS when set. */
+  records: Record<string, Record<string, ImportExtractResult>> | null = null;
 
   name() {
     return 'fake';
@@ -97,7 +161,16 @@ class FakeAdapter implements ImportAdapter {
     return credentials.token === 'secret-token';
   }
   entityTypes() {
-    return ['agents', 'contacts', 'tags', 'tickets', 'replies'];
+    return [
+      'agents',
+      'contacts',
+      'tags',
+      'custom_fields',
+      'tickets',
+      'replies',
+      'attachments',
+      'satisfaction_ratings',
+    ];
   }
   defaultFieldMappings(type: string) {
     return type === 'tickets' ? { subject: 'title' } : {};
@@ -110,7 +183,10 @@ class FakeAdapter implements ImportAdapter {
   async extract(type: string, credentials: Record<string, string>, cursor: string | null) {
     if (credentials.token !== 'secret-token') throw new Error('Not authorized');
     this.calls.push({ type, cursor, importing: ImportContext.isImporting() });
-    const result = RECORDS[type][cursor ?? 'start'];
+    const result = (this.records ?? RECORDS)[type]?.[cursor ?? 'start'] ?? {
+      records: [],
+      cursor: null,
+    };
     if (this.afterBatch) await this.afterBatch(type, cursor);
     return result;
   }
@@ -122,6 +198,7 @@ describe('admin import wizard (ui.enabled)', () => {
   let base: string;
   let imports: ImportJobService;
   const adapter = new FakeAdapter();
+  const storage = new MemoryStorage();
   const asAdmin = { as: 'admin' as const };
 
   const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
@@ -151,6 +228,8 @@ describe('admin import wizard (ui.enabled)', () => {
   beforeAll(async () => {
     ({ app, source, base } = await bootUi({
       importAdapters: [adapter],
+      importAttachmentStorage: storage,
+      importAttachmentMaxKb: 8,
       importUserIdByEmail: (email) => (email === 'admin@example.com' ? ADMIN : null),
     }));
     imports = app.get(ImportJobService);
@@ -169,7 +248,18 @@ describe('admin import wizard (ui.enabled)', () => {
     await imports.settled();
     adapter.calls = [];
     adapter.afterBatch = null;
-    for (const entity of [Reply, ImportSourceMap, ImportJob, Contact]) {
+    adapter.records = null;
+    storage.files.clear();
+    for (const entity of [
+      Attachment,
+      SatisfactionRating,
+      CustomFieldValue,
+      CustomField,
+      Reply,
+      ImportSourceMap,
+      ImportJob,
+      Contact,
+    ]) {
       await source.getRepository(entity).clear();
     }
     await source.query('DELETE FROM escalated_ticket_tags');
@@ -346,6 +436,45 @@ describe('admin import wizard (ui.enabled)', () => {
       [tickets[0].id, 'Thanks', 0],
     ]);
 
+    // Custom field definitions (Laravel's persistCustomField) and the ticket's values.
+    const plan = await source.getRepository(CustomField).findOneByOrFail({ slug: 'plan' });
+    expect(plan).toMatchObject({
+      fieldType: 'select',
+      options: ['free', 'pro'],
+      entityType: 'ticket',
+    });
+    expect(
+      (await source.getRepository(CustomField).findOneByOrFail({ slug: 'seats' })).fieldType,
+    ).toBe('number');
+    expect(await valuesOf(tickets[0].id)).toEqual({ plan: 'pro', seats: '12' });
+
+    // Attachments: the bytes went through the attachment storage.
+    const attachments = await source.getRepository(Attachment).find({ order: { id: 'ASC' } });
+    expect(
+      attachments.map((a) => [a.ticketId, a.replyId, a.fileName, a.mimeType, a.fileSize]),
+    ).toEqual([
+      [tickets[0].id, null, 'receipt.pdf', 'application/pdf', PDF.length],
+      [tickets[0].id, replies[0].id, 'screen.png', 'image/png', PNG.length],
+    ]);
+    expect(storage.files.get(attachments[0].filePath)).toEqual(PDF);
+    expect(storage.files.get(attachments[1].filePath)).toEqual(PNG);
+
+    // The rating, on its ticket, at the source's time; no rating token.
+    const rating = await source
+      .getRepository(SatisfactionRating)
+      .findOneByOrFail({ ticketId: tickets[0].id });
+    expect(rating).toMatchObject({
+      rating: 4,
+      comment: 'Quick fix',
+      agentId: ADMIN,
+      ratingToken: null,
+    });
+    expect(rating.createdAt.toISOString()).toBe('2024-02-03T04:05:06.000Z');
+    expect(
+      (await source.getRepository(Ticket).findOneByOrFail({ id: tickets[0].id }))
+        .satisfactionRatingId,
+    ).toBe(rating.id);
+
     const status = await fetch(`${base}${location.replace('/progress/', '/status/')}`, {
       headers: { 'x-role': 'agent,admin,customer', 'x-user': String(ADMIN) },
     });
@@ -360,6 +489,180 @@ describe('admin import wizard (ui.enabled)', () => {
     expect(progress.component).toBe('Escalated/Admin/Import/Progress');
     expect(progress.props.job).toMatchObject({ id: job.id, status: 'completed', platform: 'fake' });
     expect(progress.props.job).not.toHaveProperty('credentials');
+  });
+
+  const valuesOf = async (ticketId: number) => {
+    const rows = await source
+      .getRepository(CustomFieldValue)
+      .find({ where: { entityType: 'ticket', entityId: ticketId } });
+    const fields = await source.getRepository(CustomField).find();
+    return Object.fromEntries(
+      rows.map((row) => [fields.find((f) => f.id === row.customFieldId)!.slug, row.value]),
+    );
+  };
+
+  const errorsByType = (job: ImportJob) => {
+    const out: Record<string, Record<string, string>> = {};
+    for (const entry of (job.errorLog ?? []) as Array<Record<string, string>>) {
+      const bySource = (out[entry.entity_type] ??= {});
+      bySource[entry.source_id] = [bySource[entry.source_id], entry.error]
+        .filter(Boolean)
+        .join('; ');
+    }
+    return out;
+  };
+
+  it('holds imported custom fields, attachments and ratings to the live rules', async () => {
+    const pdf = PDF.toString('base64');
+    const one = (rest: Record<string, unknown>) => ({ start: { records: [rest], cursor: null } });
+    adapter.records = {
+      contacts: one({ source_id: 'c1', email: 'ada@example.com' }),
+      custom_fields: {
+        start: {
+          records: [
+            { source_id: 'f1', name: 'Plan', type: 'select', options: ['free', 'pro'] },
+            { source_id: 'f2', name: 'Seats', type: 'number' },
+            { source_id: 'f8', name: 'Hologram', type: 'hologram' },
+            { source_id: 'f9', name: 'Broken', type: 'select' },
+          ],
+          cursor: null,
+        },
+      },
+      tickets: {
+        start: {
+          records: [
+            {
+              source_id: 'k1',
+              title: 'One',
+              requester_source_id: 'c1',
+              custom_fields: { plan_code: 'pro', f2: 'many', skipped_src: 'x', nope: 'y' },
+            },
+            { source_id: 'k2', title: 'Two' },
+          ],
+          cursor: null,
+        },
+      },
+      replies: one({ source_id: 'r1', ticket_source_id: 'k1', body: 'Hi' }),
+      attachments: {
+        start: {
+          records: [
+            {
+              source_id: 'a1',
+              parent_type: 'ticket',
+              parent_source_id: 'k1',
+              filename: 'x.pdf',
+              path: '/etc/passwd',
+            },
+            {
+              source_id: 'a2',
+              parent_type: 'ticket',
+              parent_source_id: 'k1',
+              filename: 'big.pdf',
+              content: Buffer.concat([PDF, Buffer.alloc(9 * 1024)]).toString('base64'),
+            },
+            {
+              source_id: 'a3',
+              parent_type: 'ticket',
+              parent_source_id: 'k1',
+              filename: 'run.exe',
+              content: Buffer.from('MZ').toString('base64'),
+            },
+            {
+              source_id: 'a4',
+              parent_type: 'ticket',
+              parent_source_id: 'k1',
+              filename: 'notes.txt',
+              content: Buffer.from('<html><script>alert(1)</script></html>').toString('base64'),
+            },
+            {
+              source_id: 'a5',
+              parent_type: 'ticket',
+              parent_source_id: 'zz',
+              filename: 'y.pdf',
+              content: pdf,
+            },
+            {
+              source_id: 'a6',
+              parent_type: 'ticket',
+              parent_source_id: 'k1',
+              filename: '../../evil.pdf',
+              content: pdf,
+            },
+            {
+              source_id: 'a7',
+              parent_type: 'ticket',
+              parent_source_id: 'k1',
+              filename: 'z.pdf',
+              content: '!!not base64!!',
+            },
+          ],
+          cursor: null,
+        },
+      },
+      satisfaction_ratings: {
+        start: {
+          records: [
+            { source_id: 's1', ticket_source_id: 'k1', rating: 9 },
+            { source_id: 's2', ticket_source_id: 'k1', rating: 'x' },
+            { source_id: 's3', ticket_source_id: 'zz', rating: 3 },
+            { source_id: 's4', ticket_source_id: 'k2', score: 5 },
+            { source_id: 's5', ticket_source_id: 'k2', rating: 3 },
+            { source_id: 's6', ticket_source_id: 'k1', rating: 2.5 },
+          ],
+          cursor: null,
+        },
+      },
+    };
+
+    const res = await post(
+      '/escalated/admin/import/fake/start',
+      { field_mappings: { tickets: { plan_code: 'custom_fields.plan', skipped_src: '' } } },
+      { cookie: await connected() },
+    );
+    expect(res.status).toBe(303);
+    await imports.settled();
+    const job = await source.getRepository(ImportJob).findOneByOrFail({});
+    expect(job.status).toBe('completed');
+    const errors = errorsByType(job);
+    const counts = (type: string) =>
+      `${(job.progress as any)[type].processed} ${(job.progress as any)[type].failed}`;
+
+    // Definitions: an unknown type and an option-less select fail, as the admin form refuses them.
+    expect(counts('custom_fields')).toBe('2 2');
+    expect(Object.keys(errors.custom_fields).sort()).toEqual(['f8', 'f9']);
+
+    // Values: mapped, skipped, invalid and unknown keys; the ticket is kept.
+    expect(counts('tickets')).toBe('2 0');
+    const k1 = Number(
+      (
+        await source
+          .getRepository(ImportSourceMap)
+          .findOneByOrFail({ entityType: 'tickets', sourceId: 'k1' })
+      ).escalatedId,
+    );
+    expect(await valuesOf(k1)).toEqual({ plan: 'pro' });
+    expect(errors.custom_field_values.k1).toContain('custom_fields.seats');
+    expect(errors.custom_field_values.k1).toContain('nope');
+    expect(errors.custom_field_values.k1).not.toContain('skipped_src');
+
+    // Attachments: only the well-formed one under the limit is stored, under its base name.
+    expect(counts('attachments')).toBe('1 6');
+    expect(errors.attachments.a1).toContain('content');
+    expect(errors.attachments.a2).toContain('the 8 KB');
+    expect(errors.attachments.a3).toContain('not allowed');
+    expect(errors.attachments.a4).toContain('not allowed');
+    expect(errors.attachments.a5).toContain('Parent ticket not found');
+    expect(errors.attachments.a7).toContain('base64');
+    const stored = await source.getRepository(Attachment).find();
+    expect(stored.map((a) => a.fileName)).toEqual(['evil.pdf']);
+    expect(stored[0].filePath).not.toContain('..');
+    expect(storage.files.size).toBe(1);
+
+    // Ratings: 1-5 integers on an imported ticket, one per ticket.
+    expect(counts('satisfaction_ratings')).toBe('1 5');
+    expect(Object.keys(errors.satisfaction_ratings).sort()).toEqual(['s1', 's2', 's3', 's5', 's6']);
+    const ratings = await source.getRepository(SatisfactionRating).find();
+    expect(ratings.map((r) => r.rating)).toEqual([5]);
   });
 
   it('pauses between batches and resumes without importing anything twice', async () => {
