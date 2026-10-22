@@ -62,4 +62,14 @@ export class AgentProfile {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  /** Never serializes the TOTP seed or the recovery codes. */
+  toJSON() {
+    const {
+      twoFactorSecret: _twoFactorSecret,
+      twoFactorRecoveryCodes: _twoFactorRecoveryCodes,
+      ...rest
+    } = this;
+    return rest;
+  }
 }

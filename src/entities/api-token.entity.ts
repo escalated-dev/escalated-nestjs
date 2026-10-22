@@ -15,6 +15,7 @@ export class ApiToken {
   @Column({ length: 255 })
   name: string;
 
+  /** Looked up by the token guard; never serialized. Shown once, on creation. */
   @Column({ length: 255, unique: true })
   token: string;
 
@@ -38,4 +39,9 @@ export class ApiToken {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  toJSON() {
+    const { token: _token, ...rest } = this;
+    return rest;
+  }
 }

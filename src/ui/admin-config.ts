@@ -357,7 +357,8 @@ export function serializeWebhook(
     name: webhook.name,
     url: webhook.url,
     events: webhook.events ?? [],
-    secret: webhook.secret ?? null,
+    // The signing secret itself is never sent; the form keeps it unless replaced or cleared.
+    has_secret: !!webhook.secret,
     active: webhook.isActive !== false,
     failure_count: webhook.failureCount ?? 0,
     last_delivered_at: iso(webhook.lastDeliveredAt),
@@ -411,9 +412,20 @@ export function webhookInput(body: any): Partial<Webhook> {
     name: host.slice(0, 255),
     url,
     events,
-    ...(typeof secret === 'string' && secret ? { secret } : {}),
+    ...webhookSecretChange(body),
     isActive: flag(body?.active, 'active', true),
   };
+}
+
+/**
+ * The secret a webhook save writes, as escalated-laravel's WebhookController:
+ * pages never receive the stored secret, so a blank or missing one keeps it,
+ * a non-blank one replaces it, and `clear_secret: true` removes it.
+ */
+export function webhookSecretChange(body: any): { secret?: string } {
+  if (flag(body?.clear_secret, 'clear_secret', false)) return { secret: '' };
+  const secret = body?.secret;
+  return typeof secret === 'string' && secret ? { secret } : {};
 }
 
 // Escalation rules

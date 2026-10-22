@@ -82,4 +82,10 @@ export class ImportJob {
   get resumable(): boolean {
     return this.status === 'paused' || this.status === 'failed';
   }
+
+  /** Never serializes the sealed credentials; the import run reads them server-side. */
+  toJSON() {
+    const { credentials: _credentials, ...rest } = this;
+    return rest;
+  }
 }
