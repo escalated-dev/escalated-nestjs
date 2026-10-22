@@ -294,6 +294,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   existing `set_status`, `set_priority`, `set_department`, `assign`,
   `add_reply`, `add_note`.
 
+### Changed
+- The bundled widget is now `@escalated-dev/escalated` 0.12.4. The widget's source did not change in 0.12.4; the bundle is rebuilt with the frontend's newer build tools, so it behaves as before.
+
 ### Security
 - **API tokens are no longer stored in plain text.** `escalated_api_tokens.token`
   held each token itself, so anyone who could read the table (a backup, a
