@@ -7,6 +7,7 @@ import {
   Ticket,
   TicketStatus,
   Workflow,
+  WorkflowLog,
 } from '../../src/entities';
 import { WORKFLOW_TRIGGERS } from '../../src/events/workflow-triggers';
 import {
@@ -375,6 +376,92 @@ describe('admin screens (ui.enabled)', () => {
       const res = await apiFetch(base, '/escalated/admin/workflows', { ...asAdmin, body: EXAMPLE });
       expect(res.status).toBe(201);
       expect(await res.json()).toMatchObject({ name: EXAMPLE.name, trigger: 'ticket.created' });
+    });
+
+    it('serves Escalated/Admin/Workflows/Logs with the workflows to filter by', async () => {
+      const workflows = source.getRepository(Workflow);
+      const first = await workflows.save(
+        workflows.create({
+          name: 'First',
+          triggerEvent: 'ticket.created',
+          conditions: {},
+          actions: [],
+          position: 0,
+        } as Partial<Workflow>),
+      );
+      const second = await workflows.save(
+        workflows.create({
+          name: 'Second',
+          triggerEvent: 'ticket.created',
+          conditions: {},
+          actions: [],
+          position: 1,
+        } as Partial<Workflow>),
+      );
+      const ticket = await source.getRepository(Ticket).save({
+        referenceNumber: 'WFL-1',
+        subject: 'Logged',
+        description: 'x',
+        priority: 'low',
+        channel: 'web',
+        statusId: open.id,
+        requesterId: CUSTOMER,
+      });
+      const logs = source.getRepository(WorkflowLog);
+      await logs.save([
+        logs.create({
+          workflow: first,
+          ticket,
+          triggerEvent: 'ticket.created',
+          conditionsMatched: true,
+          actionsExecutedRaw: [{ type: 'change_priority', value: 'high' }],
+        }),
+        logs.create({
+          workflow: second,
+          ticket,
+          triggerEvent: 'ticket.created',
+          conditionsMatched: false,
+          actionsExecutedRaw: [],
+          errorMessage: 'boom',
+        }),
+      ]);
+
+      try {
+        const result = await page(base, '/escalated/admin/workflows/logs', asAdmin);
+        expect(result.component).toBe('Escalated/Admin/Workflows/Logs');
+        expectManifestProps(result);
+        expect(result.props.workflows).toEqual([
+          { id: first.id, name: 'First' },
+          { id: second.id, name: 'Second' },
+        ]);
+        expect(result.props.logs).toHaveLength(2);
+        expect(result.props.logs).toContainEqual(
+          expect.objectContaining({
+            workflow_name: 'First',
+            ticket_reference: 'WFL-1',
+            event: 'ticket.created',
+            matched: true,
+            actions_executed: 1,
+            action_details: [{ type: 'change_priority', value: 'high' }],
+            status: 'success',
+            created_at: expect.any(String),
+          }),
+        );
+
+        const one = await page(
+          base,
+          `/escalated/admin/workflows/logs?workflow=${second.id}`,
+          asAdmin,
+        );
+        expect(one.props.logs.map((l: any) => [l.workflow_name, l.status])).toEqual([
+          ['Second', 'failed'],
+        ]);
+
+        const json = await apiFetch(base, '/escalated/admin/workflows/logs', asAdmin);
+        expect((await json.json()).logs).toHaveLength(2);
+      } finally {
+        await logs.clear();
+      }
     });
   });
 });

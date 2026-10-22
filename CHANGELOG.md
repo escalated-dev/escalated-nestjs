@@ -41,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   guest replies and ratings, as escalated-laravel's Guest\TicketController.
   The guest policy helpers move to `services/guest-policy.ts`, shared with
   the widget.
+- `Admin/Workflows/Logs` (with `ui.enabled`) on `GET
+  /escalated/admin/workflows/logs`, with the workflows to filter by; the JSON
+  route also takes the screen's `?workflow=` filter.
 - `WebhookService.retryDelivery(id)` sends one stored delivery again now.
 - Macros run escalated-laravel's action names (`status` by slug, `priority`,
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the

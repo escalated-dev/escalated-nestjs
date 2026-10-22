@@ -243,6 +243,7 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/admin/workflows/{workflow}/toggle',
     methods: POST,
   },
+  'escalated.admin.workflows.logs': { uri: 'escalated/admin/workflows/logs', methods: GET },
   'escalated.admin.workflows.reorder': { uri: 'escalated/admin/workflows/reorder', methods: POST },
 
   // Customer
