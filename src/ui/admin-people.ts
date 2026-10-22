@@ -1,0 +1,128 @@
+import type { ApiToken } from '../entities/api-token.entity';
+import type { Permission } from '../entities/permission.entity';
+import type { Role } from '../entities/role.entity';
+import { UiValidationException } from './inertia.interceptor';
+import { iso, type UserDirectory } from './serializers';
+
+/**
+ * The people screens' shapes and form input (roles and API tokens), as
+ * escalated-laravel's Admin\RoleController and ApiTokenController send and
+ * validate them.
+ */
+
+export function serializePermission(permission: Permission) {
+  return {
+    id: permission.id,
+    name: permission.name,
+    slug: permission.slug,
+    group: permission.group ?? null,
+    description: permission.description ?? null,
+  };
+}
+
+/** Permissions keyed by group, as Laravel's `Permission::all()->groupBy('group')`. */
+export function groupPermissions(permissions: Permission[]) {
+  const grouped: Record<string, ReturnType<typeof serializePermission>[]> = {};
+  for (const permission of permissions) {
+    const group = permission.group || 'general';
+    (grouped[group] ??= []).push(serializePermission(permission));
+  }
+  return grouped;
+}
+
+export function serializeRole(role: Role, usersCount = 0) {
+  return {
+    id: role.id,
+    name: role.name,
+    slug: role.slug,
+    description: role.description ?? null,
+    is_system: role.isSystem === true,
+    users_count: usersCount,
+    permissions: (role.permissions ?? []).map(serializePermission),
+    created_at: iso(role.createdAt),
+    updated_at: iso(role.updatedAt),
+  };
+}
+
+export function roleInput(body: any): {
+  name: string;
+  description?: string;
+  permissionIds?: number[];
+} {
+  const name = body?.name;
+  if (typeof name !== 'string' || !name.trim()) {
+    throw new UiValidationException({ name: 'The name field is required.' });
+  }
+  if (name.length > 100) {
+    throw new UiValidationException({ name: 'The name may not be greater than 100 characters.' });
+  }
+  const raw = body?.permissions ?? [];
+  if (!Array.isArray(raw)) {
+    throw new UiValidationException({ permissions: 'The permissions must be a list.' });
+  }
+  const permissionIds = raw.map(Number);
+  if (permissionIds.some((id) => !Number.isInteger(id) || id < 1)) {
+    throw new UiValidationException({ permissions: 'The selected permissions are invalid.' });
+  }
+  const description = typeof body?.description === 'string' ? body.description : undefined;
+  return { name: name.trim(), description, permissionIds };
+}
+
+/** The abilities the shared token form offers. */
+export const TOKEN_ABILITIES = ['agent', 'admin', '*'];
+
+export function serializeApiToken(token: ApiToken, directory: UserDirectory) {
+  const user = directory.get(String(token.userId));
+  const expired = token.expiresAt != null && new Date(token.expiresAt) < new Date();
+  return {
+    id: token.id,
+    name: token.name,
+    user_id: token.userId,
+    user_name: user?.name ?? `User #${token.userId}`,
+    user_email: user?.email ?? null,
+    abilities: token.abilities ?? [],
+    last_used_at: iso(token.lastUsedAt),
+    // Not recorded by this backend.
+    last_used_ip: null,
+    expires_at: iso(token.expiresAt),
+    is_expired: expired,
+    is_active: token.isActive !== false,
+    created_at: iso(token.createdAt),
+  };
+}
+
+export function apiTokenInput(body: any): {
+  name: string;
+  userId: string | number;
+  abilities: string[];
+  expiresAt?: Date;
+} {
+  const name = body?.name;
+  if (typeof name !== 'string' || !name.trim() || name.length > 255) {
+    throw new UiValidationException({ name: 'The name field is required.' });
+  }
+  const userId = body?.user_id;
+  if (userId == null || userId === '' || typeof userId === 'object') {
+    throw new UiValidationException({ user_id: 'The user field is required.' });
+  }
+  const abilities = body?.abilities;
+  if (
+    !Array.isArray(abilities) ||
+    !abilities.length ||
+    abilities.some((a) => !TOKEN_ABILITIES.includes(a))
+  ) {
+    throw new UiValidationException({ abilities: 'Choose agent, admin or all abilities.' });
+  }
+  const days = body?.expires_in_days;
+  let expiresAt: Date | undefined;
+  if (days != null && days !== '') {
+    const n = Number(days);
+    if (!Number.isInteger(n) || n < 1 || n > 365) {
+      throw new UiValidationException({
+        expires_in_days: 'The token must expire in 1 to 365 days.',
+      });
+    }
+    expiresAt = new Date(Date.now() + n * 86_400_000);
+  }
+  return { name: name.trim(), userId, abilities: [...new Set<string>(abilities)], expiresAt };
+}

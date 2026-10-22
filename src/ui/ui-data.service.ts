@@ -19,6 +19,11 @@ import { MacroService } from '../services/macro.service';
 import { TicketSubjectService } from '../services/ticket-subject.service';
 import { CannedResponse } from '../entities/canned-response.entity';
 import { Macro } from '../entities/macro.entity';
+import { ApiToken } from '../entities/api-token.entity';
+import { Permission } from '../entities/permission.entity';
+import { Role } from '../entities/role.entity';
+import { groupPermissions, serializeApiToken, serializeRole } from './admin-people';
+import { slugify } from './admin-config';
 import { Webhook } from '../entities/webhook.entity';
 import { WebhookDelivery } from '../entities/webhook-delivery.entity';
 import {
@@ -85,6 +90,9 @@ export class UiDataService {
     @InjectRepository(Webhook) private readonly webhookRows: Repository<Webhook>,
     @InjectRepository(WebhookDelivery)
     private readonly deliveryRows: Repository<WebhookDelivery>,
+    @InjectRepository(Role) private readonly roleRows: Repository<Role>,
+    @InjectRepository(Permission) private readonly permissionRows: Repository<Permission>,
+    @InjectRepository(ApiToken) private readonly tokenRows: Repository<ApiToken>,
     private readonly replyService: ReplyService,
     private readonly ticketService: TicketService,
     private readonly cannedResponseService: CannedResponseService,
@@ -579,6 +587,50 @@ export class UiDataService {
       take: perPage,
     });
     return paginate(rows.map(serializeDelivery), total, current, perPage, path);
+  }
+
+  /** `Escalated/Admin/Roles/Index`: every role with the agents who have it (`users_count`). */
+  async adminRoles() {
+    const [roles, counts] = await Promise.all([
+      this.roleRows.find({ relations: { permissions: true }, order: { name: 'ASC' } }),
+      this.profiles
+        .createQueryBuilder('profile')
+        .select('profile.roleId', 'id')
+        .addSelect('COUNT(profile.id)', 'count')
+        .where('profile.roleId IS NOT NULL')
+        .groupBy('profile.roleId')
+        .getRawMany(),
+    ]);
+    const byRole = this.counts(counts);
+    return roles.map((role) => serializeRole(role, byRole.get(role.id) ?? 0));
+  }
+
+  async role(id: number) {
+    const role = await this.roleRows.findOne({ where: { id }, relations: { permissions: true } });
+    if (!role) throw new NotFoundException('Role not found');
+    return serializeRole(role);
+  }
+
+  /** Every permission, grouped as the role form's permission matrix reads them. */
+  async groupedPermissions() {
+    return groupPermissions(
+      await this.permissionRows.find({ order: { group: 'ASC', name: 'ASC' } }),
+    );
+  }
+
+  /** A slug no other role has, from a new role's name. */
+  async uniqueRoleSlug(name: string): Promise<string> {
+    const base = slugify(name).replace(/_/g, '-') || 'role';
+    let slug = base;
+    for (let n = 2; await this.roleRows.existsBy({ slug }); n += 1) slug = `${base}-${n}`;
+    return slug;
+  }
+
+  /** `Escalated/Admin/ApiTokens/Index`'s tokens, newest first, never the token itself. */
+  async adminApiTokens() {
+    const tokens = await this.tokenRows.find({ order: { createdAt: 'DESC', id: 'DESC' } });
+    const directory = await this.directory(tokens.map((t) => t.userId));
+    return tokens.map((token) => serializeApiToken(token, directory));
   }
 
   async isFollowing(ticketId: number, userId: UserId): Promise<boolean> {
