@@ -129,6 +129,48 @@ export class SkillService {
     };
   }
 
+  /**
+   * What the admin skill screens offer and accept: every tag (with its
+   * colour) and department, and the active agents, as escalated-laravel's
+   * SkillController::formPayload() lists them.
+   */
+  async screenReferences(): Promise<{
+    tags: Array<{ id: number; name: string; color: string | null }>;
+    departments: Array<{ id: number; name: string }>;
+    agents: Array<{ userId: UserId; name: string | null }>;
+  }> {
+    const [tags, departments, agents] = await Promise.all([
+      this.tagRepo.find({ order: { name: 'ASC' } }),
+      this.departmentRepo.find({ order: { name: 'ASC' } }),
+      this.agentProfileRepo.find({ where: { isActive: true }, order: { displayName: 'ASC' } }),
+    ]);
+    return {
+      tags: tags.map((t) => ({ id: t.id, name: t.name, color: t.color ?? null })),
+      departments: departments.map((d) => ({ id: d.id, name: d.name })),
+      agents: agents.map((a) => ({ userId: a.userId, name: a.displayName ?? null })),
+    };
+  }
+
+  /** Whether another skill already has this name (case-insensitive). */
+  async nameTaken(name: string, exceptId?: number): Promise<boolean> {
+    const qb = this.skillRepo
+      .createQueryBuilder('skill')
+      .where('LOWER(skill.name) = LOWER(:name)', { name });
+    if (exceptId != null) qb.andWhere('skill.id != :exceptId', { exceptId });
+    return (await qb.getCount()) > 0;
+  }
+
+  /** A slug for `name` that no other skill has. */
+  async uniqueSlug(name: string, exceptId?: number): Promise<string> {
+    const base = this.slugify(name) || 'skill';
+    let slug = base;
+    for (let n = 2; ; n += 1) {
+      const existing = await this.skillRepo.findOne({ where: { slug } });
+      if (!existing || existing.id === exceptId) return slug;
+      slug = `${base}-${n}`;
+    }
+  }
+
   async create(dto: CreateSkillDto): Promise<Skill> {
     const skill = this.skillRepo.create({
       name: dto.name,
