@@ -17,6 +17,13 @@ export type EscalatedRouteGroup = 'admin' | 'agent' | 'customer';
 /** Request property naming the route group whose host guard admitted the request. */
 export const ESCALATED_ROUTE_GROUP = 'escalatedRouteGroup';
 
+/**
+ * Request property naming the route group whose host guard is being asked
+ * right now, so a host guard (the API token guard) can tell an admin route
+ * from an agent one.
+ */
+export const ESCALATED_REQUESTED_GROUP = 'escalatedRequestedGroup';
+
 /** A host guard as accepted by `adminGuard` / `agentGuard` / `customerGuard`. */
 export type EscalatedHostGuard = Type<CanActivate> | CanActivate;
 
@@ -72,8 +79,10 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
     // With several groups (attachments are shared by agents and customers) any
     // one guard admitting the request is enough. The last refusal wins otherwise.
     let refusal: unknown;
+    const request = context.getType() === 'http' ? context.switchToHttp().getRequest() : null;
     for (const { group, guard } of hostGuards) {
       try {
+        if (request) request[ESCALATED_REQUESTED_GROUP] = group;
         if (await this.runHostGuard(guard, context)) {
           // Shared routes (attachments) authorise differently per group.
           if (context.getType() === 'http') {
