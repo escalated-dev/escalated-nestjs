@@ -303,6 +303,10 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/admin/reports/agent-ranking',
     methods: GET,
   },
+  'escalated.admin.reports.agent-detail': {
+    uri: 'escalated/admin/reports/agent/{id}/detail',
+    methods: GET,
+  },
   'escalated.admin.reports.cohorts': { uri: 'escalated/admin/reports/cohorts', methods: GET },
   'escalated.admin.reports.comparison': { uri: 'escalated/admin/reports/comparison', methods: GET },
   'escalated.admin.reports.export': { uri: 'escalated/admin/reports/export/{type}', methods: GET },

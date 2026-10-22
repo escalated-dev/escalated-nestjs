@@ -1,13 +1,19 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Between, Not, Repository } from 'typeorm';
 import { UserId } from '../../config/user-id-column';
+import { Reply } from '../../entities/reply.entity';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import {
   BucketBy,
   FIRST_RESPONSE_BUCKETS,
+  bucketOf,
   GroupedTimes,
+  percentile,
   periodDays,
   RESOLUTION_BUCKETS,
   ReportingService,
+  round1,
   TicketFact,
 } from '../../services/reporting.service';
 import { inertia } from '../inertia';
@@ -31,8 +37,10 @@ function labelled(buckets: Array<{ bucket: string; count: number }>) {
 
 /**
  * The admin report screens (`/escalated/admin/reports/*`), with
- * escalated-laravel's ReportController as the prop contract. `AgentDetail` is
- * not served: Laravel's own props for it do not match the component.
+ * escalated-laravel's ReportController as the prop contract. `AgentDetail`
+ * takes the names the component declares (as escalated-rails serves it):
+ * Laravel's own props for it (`agent_id`, `metrics`, `percentiles`) are not
+ * ones the component reads.
  */
 @UseGuards(EscalatedAdminGuard)
 @EscalatedUi()
@@ -41,6 +49,7 @@ export class AdminReportsUiController {
   constructor(
     private readonly reporting: ReportingService,
     private readonly data: UiDataService,
+    @InjectRepository(Reply) private readonly replies: Repository<Reply>,
   ) {}
 
   private window(days: number) {
@@ -369,6 +378,86 @@ export class AdminReportsUiController {
       period_days: days,
       current: await side(currentStart, now),
       previous: await side(previousStart, currentStart),
+    });
+  }
+
+  /** One agent's figures for tickets created in `[start, end]`. */
+  private async agentFigures(agentId: string, start: Date, end: Date) {
+    const [facts, ratings, replies] = await Promise.all([
+      this.reporting.facts(start, end),
+      this.reporting.ratingFacts(start, end),
+      this.replies.find({
+        select: { id: true, createdAt: true },
+        where: { userId: agentId as any, type: Not('system'), createdAt: Between(start, end) },
+      }),
+    ]);
+    const mine = facts.filter((fact) => String(fact.assigneeId) === agentId);
+    const rated = ratings.filter((rating) => String(rating.assigneeId) === agentId);
+    const response = this.reporting.hours(mine, 'firstRespondedAt');
+
+    const days = new Map<string, [number, number]>();
+    const day = (label: string) => days.get(label) ?? days.set(label, [0, 0]).get(label)!;
+    for (const reply of replies) day(bucketOf(reply.createdAt))[0] += 1;
+    for (const fact of mine) {
+      if (fact.resolvedAt && fact.resolvedAt >= start && fact.resolvedAt <= end) {
+        day(bucketOf(fact.resolvedAt))[1] += 1;
+      }
+    }
+
+    const count = (labels: string[]) => {
+      const tally = new Map<string, number>();
+      for (const label of labels) tally.set(label, (tally.get(label) ?? 0) + 1);
+      return [...tally.keys()].sort().map((label) => ({ label, value: tally.get(label)! }));
+    };
+
+    return {
+      total_tickets: mine.length,
+      resolved_tickets: mine.filter((fact) => fact.resolvedAt != null).length,
+      avg_frt: this.reporting.averageHours(mine, 'firstRespondedAt'),
+      avg_resolution: this.reporting.averageHours(mine, 'resolvedAt'),
+      csat_score: rated.length ? this.reporting.csatAverage(rated) : null,
+      response_percentiles: Object.fromEntries(
+        [50, 75, 90, 95, 99].map((p) => [`p${p}`, round1(percentile(response, p))]),
+      ),
+      productivity: [...days.keys()].sort().map((label) => {
+        const [written, resolved] = days.get(label)!;
+        return { label, value: written + resolved, values: [written, resolved] };
+      }),
+      workload: count(mine.map((fact) => bucketOf(fact.createdAt))),
+      csat_breakdown: count(rated.map((rating) => String(rating.rating))).map((row) => ({
+        label: `${row.label} stars`,
+        value: row.value,
+      })),
+    };
+  }
+
+  /** One agent over the period, against the period of the same length before it. */
+  @Get('agent/:id/detail')
+  async agentDetail(@Param('id') id: string, @Query() query: Record<string, unknown>) {
+    const days = periodDays(query);
+    const { start, end } = this.window(days);
+    const previousStart = new Date(start.getTime() - days * DAY);
+    const [current, previous, directory] = await Promise.all([
+      this.agentFigures(id, start, end),
+      this.agentFigures(id, previousStart, start),
+      this.data.directory([id]),
+    ]);
+    const user = directory.get(id);
+    const agentId = /^\d+$/.test(id) ? Number(id) : id;
+
+    return inertia('Escalated/Admin/Reports/AgentDetail', {
+      period_days: days,
+      agent: {
+        id: agentId,
+        name: user?.name || `User #${id}`,
+        email: user?.email ?? null,
+      },
+      ...current,
+      prev_total_tickets: previous.total_tickets,
+      prev_resolved_tickets: previous.resolved_tickets,
+      prev_avg_frt: previous.avg_frt,
+      prev_avg_resolution: previous.avg_resolution,
+      prev_csat_score: previous.csat_score,
     });
   }
 }

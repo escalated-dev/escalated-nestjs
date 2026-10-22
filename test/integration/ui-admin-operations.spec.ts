@@ -220,7 +220,7 @@ describe('admin operations screens (ui.enabled)', () => {
         holidays: [
           {
             id: expect.any(Number),
-            business_schedule_id: schedule.id,
+            schedule_id: schedule.id,
             name: 'Canada Day',
             date: '2026-07-01',
             recurring: true,

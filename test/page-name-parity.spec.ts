@@ -72,7 +72,6 @@ function explain(missing: string[], rendered: Map<string, Set<string>>): string 
  */
 const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/Plugins/Index',
-  'Escalated/Admin/Reports/AgentDetail',
   'Escalated/Admin/Settings/Sandbox',
   'Escalated/Admin/Settings/SsoSettings',
   'Escalated/Admin/Settings/TwoFactor',
