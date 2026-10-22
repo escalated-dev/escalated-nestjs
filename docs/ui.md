@@ -135,6 +135,16 @@ Customer (`customerGuard`):
 - `POST /escalated/customer/tickets/:ticket/` `reply`, `close`, `reopen`,
   `rate`
 
+Knowledge base (public, like the `/escalated/customer/kb` JSON routes; off
+with `enableKnowledgeBase: false`):
+
+- `GET /escalated/kb` - `Customer/KnowledgeBase/Index` (published articles, 15
+  a page, `search` and `category` filters, root categories with published
+  `articles_count`)
+- `GET /escalated/kb/:slug` - `Customer/KnowledgeBase/Article` (with up to 5
+  `related` articles; counts the view); `POST /escalated/kb/:slug/feedback`
+  (`helpful`) records helpful / not helpful
+
 Admin (`adminGuard`):
 
 - `GET /escalated/admin/settings` - `Escalated/Admin/Settings`, with
@@ -192,6 +202,13 @@ Admin (`adminGuard`):
   back with the plain token in the `plain_text_token` flash value, shown once.
   `Admin/Users/Index` is not served: it edits the host's user table, which
   this package does not own
+- `GET /escalated/admin/kb-articles` - `Admin/KnowledgeBase/Articles/Index`
+  (`search`, `status`, `category_id` filters, 20 a page);
+  `/kb-articles/create` and `/kb-articles/:id/edit` -
+  `Admin/KnowledgeBase/Articles/Form` (`body` is the article text; a slug is
+  made from the title when empty and must be unique);
+  `GET /escalated/admin/kb-categories` - `Admin/KnowledgeBase/Categories/Index`
+  (with `articles_count`, `parent_id`, `position`) and its create/update/delete
 
 On these shared JSON routes, a state-changing browser request (one asking for
 HTML) without `X-Inertia` / `X-Requested-With` is refused while the screens

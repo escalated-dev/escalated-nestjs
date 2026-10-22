@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Admin/ApiTokens/Index` on the API token routes (a new token's plain value
   is flashed once as `plain_text_token`; tokens can be issued to active
   agents only).
+- Knowledge base screens (with `ui.enabled`): `Admin/KnowledgeBase/Articles/Index`
+  and `Form` (`/escalated/admin/kb-articles`), `Admin/KnowledgeBase/Categories/Index`
+  (`/escalated/admin/kb-categories`), and the public
+  `Customer/KnowledgeBase/Index` and `Article` (`/escalated/kb`, with helpful
+  feedback), as escalated-laravel serves them. Off with
+  `enableKnowledgeBase: false`.
 - `WebhookService.retryDelivery(id)` sends one stored delivery again now.
 - Macros run escalated-laravel's action names (`status` by slug, `priority`,
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the

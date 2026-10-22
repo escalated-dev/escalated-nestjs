@@ -178,6 +178,31 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/admin/api-tokens/{token}',
     methods: DELETE,
   },
+  'escalated.admin.kb-articles.index': { uri: 'escalated/admin/kb-articles', methods: GET },
+  'escalated.admin.kb-articles.create': { uri: 'escalated/admin/kb-articles/create', methods: GET },
+  'escalated.admin.kb-articles.store': { uri: 'escalated/admin/kb-articles', methods: POST },
+  'escalated.admin.kb-articles.edit': {
+    uri: 'escalated/admin/kb-articles/{kb_article}/edit',
+    methods: GET,
+  },
+  'escalated.admin.kb-articles.update': {
+    uri: 'escalated/admin/kb-articles/{kb_article}',
+    methods: PUT,
+  },
+  'escalated.admin.kb-articles.destroy': {
+    uri: 'escalated/admin/kb-articles/{kb_article}',
+    methods: DELETE,
+  },
+  'escalated.admin.kb-categories.index': { uri: 'escalated/admin/kb-categories', methods: GET },
+  'escalated.admin.kb-categories.store': { uri: 'escalated/admin/kb-categories', methods: POST },
+  'escalated.admin.kb-categories.update': {
+    uri: 'escalated/admin/kb-categories/{kb_category}',
+    methods: PUT,
+  },
+  'escalated.admin.kb-categories.destroy': {
+    uri: 'escalated/admin/kb-categories/{kb_category}',
+    methods: DELETE,
+  },
   'escalated.admin.settings': { uri: 'escalated/admin/settings', methods: GET },
   'escalated.admin.settings.update': { uri: 'escalated/admin/settings', methods: POST },
   'escalated.admin.departments.index': { uri: 'escalated/admin/departments', methods: GET },
@@ -221,6 +246,9 @@ const routes: Record<string, NamedRoute> = {
   'escalated.admin.workflows.reorder': { uri: 'escalated/admin/workflows/reorder', methods: POST },
 
   // Customer
+  'escalated.customer.kb.index': { uri: 'escalated/kb', methods: GET },
+  'escalated.customer.kb.show': { uri: 'escalated/kb/{slug}', methods: GET },
+  'escalated.customer.kb.feedback': { uri: 'escalated/kb/{slug}/feedback', methods: POST },
   'escalated.customer.tickets.index': { uri: 'escalated', methods: GET },
   'escalated.customer.tickets.create': { uri: 'escalated/create', methods: GET },
   'escalated.customer.tickets.store': { uri: 'escalated', methods: POST },
