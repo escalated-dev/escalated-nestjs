@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- Saving a webhook with the secret left blank (screen or `PUT
+  /escalated/admin/webhooks/:id`) now keeps the stored secret, because pages
+  and the JSON API no longer receive it; the JSON API used to store the blank
+  value. Send `clear_secret: true` to remove it. Webhook JSON and page objects
+  carry `has_secret` instead of `secret`; `POST /escalated/admin/webhooks`
+  still returns `secret` once, so a generated one can be copied.
+- `Webhook`, `ImportJob`, `ApiToken` and `AgentProfile` entities now define
+  `toJSON()`, which leaves out `secret`, `credentials`, `token`,
+  `twoFactorSecret` and `twoFactorRecoveryCodes`. Host code that
+  `JSON.stringify`s these entities and needs the value must read the property
+  directly.
 - The scheduler now runs the data retention purge daily at 03:30. Every
   period defaults to `never`, so until an admin sets one on the Data retention
   page it only deletes expired guest verification codes. A closed ticket
@@ -272,6 +283,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `assign`, `tags` (adds), `department`, `reply`, `note`) as well as the
   existing `set_status`, `set_priority`, `set_department`, `assign`,
   `add_reply`, `add_note`.
+
+### Security
+- **Stored secrets are no longer sent to admin pages or the admin JSON API.**
+  The webhook index, edit and delivery-log pages, and the webhook JSON list,
+  show and update responses, carried each webhook's signing secret. The API
+  token JSON list (`GET /escalated/admin/api-tokens`) returned every token's
+  stored value, which is the token itself, and the agent JSON API
+  (`GET /escalated/admin/agents`, `/:id`, and the create/update responses)
+  returned each agent's two-factor secret and recovery codes. All of these are
+  now left out; webhooks expose `has_secret` instead. The import pages and
+  status JSON were already built from an explicit field list and are now
+  guarded by the same test. A new API token is still shown once, on creation,
+  and two-factor setup (`POST /escalated/admin/2fa/generate`) still returns
+  the new secret and recovery codes once.
 
 ### Fixed
 - `SlaService.addBusinessMinutes` looped forever on a schedule with no

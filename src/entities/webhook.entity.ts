@@ -19,6 +19,7 @@ export class Webhook {
   @Column({ length: 500 })
   url: string;
 
+  /** Signs deliveries; never serialized. Responses carry `has_secret` instead. */
   @Column({ length: 255 })
   secret: string;
 
@@ -42,4 +43,10 @@ export class Webhook {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  /** The JSON API's shape: everything but the signing secret, and whether one is set. */
+  toJSON() {
+    const { secret: _secret, ...rest } = this;
+    return { ...rest, has_secret: !!this.secret };
+  }
 }

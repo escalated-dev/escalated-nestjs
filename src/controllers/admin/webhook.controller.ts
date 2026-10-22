@@ -20,7 +20,12 @@ import { WebhookService } from '../../services/webhook.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
-import { availableWebhookEvents, serializeWebhook, webhookInput } from '../../ui/admin-config';
+import {
+  availableWebhookEvents,
+  serializeWebhook,
+  webhookInput,
+  webhookSecretChange,
+} from '../../ui/admin-config';
 import { inertia, redirect } from '../../ui/inertia';
 import { BrowserFormGuard, EscalatedUi } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
@@ -95,7 +100,10 @@ export class AdminWebhookController {
       await this.webhookService.create(webhookInput(body));
       return this.toIndex('Webhook created.');
     }
-    return this.webhookService.create(body);
+    // The one response that carries the secret: the caller just chose it, or
+    // it was generated here and cannot be read back later.
+    const webhook = await this.webhookService.create(body);
+    return { ...webhook.toJSON(), secret: webhook.secret };
   }
 
   @Put(':id')
@@ -112,7 +120,8 @@ export class AdminWebhookController {
       await this.webhookService.update(id, input);
       return this.toIndex('Webhook updated.');
     }
-    return this.webhookService.update(id, body);
+    const { secret: _secret, clear_secret: _clear, ...changes } = body ?? {};
+    return this.webhookService.update(id, { ...changes, ...webhookSecretChange(body) });
   }
 
   @Delete(':id')
