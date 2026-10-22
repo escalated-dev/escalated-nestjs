@@ -43,18 +43,13 @@ export class EscalationRuleContract1792713600000 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
         ],
-        indices: [
-          {
-            name: 'IDX_escalated_rule_exec_unique',
-            columnNames: [
-              column(execution, 'ruleType'),
-              column(execution, 'ruleId'),
-              column(execution, 'ticketId'),
-            ],
-            isUnique: true,
-          },
-          { name: 'IDX_escalated_rule_exec_ticket', columnNames: [column(execution, 'ticketId')] },
-        ],
+        // Named as the entity's metadata names them (from the table name), so
+        // a prefixed install gets its own names and synchronize sees no drift.
+        indices: execution.indices.map((index) => ({
+          name: index.name,
+          columnNames: index.columns.map((c) => c.databaseName),
+          isUnique: index.isUnique,
+        })),
       }),
     );
   }

@@ -6,8 +6,8 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
  * ticket; the row goes once the ticket stops matching, re-arming the rule.
  */
 @Entity('escalated_rule_executions')
-@Index('IDX_escalated_rule_exec_unique', ['ruleType', 'ruleId', 'ticketId'], { unique: true })
-@Index('IDX_escalated_rule_exec_ticket', ['ticketId'])
+@Index(['ruleType', 'ruleId', 'ticketId'], { unique: true })
+@Index(['ticketId'])
 export class RuleExecution {
   static readonly ESCALATION_RULE = 'escalation_rule';
 
