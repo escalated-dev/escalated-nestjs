@@ -82,8 +82,6 @@ const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/CustomObjects/Form',
   'Escalated/Admin/CustomObjects/Index',
   'Escalated/Admin/CustomObjects/Records',
-  'Escalated/Admin/EscalationRules/Form',
-  'Escalated/Admin/EscalationRules/Index',
   'Escalated/Admin/Import/Connect',
   'Escalated/Admin/Import/Index',
   'Escalated/Admin/Import/Mapping',

@@ -48,6 +48,7 @@ export { WidgetChatVisitorToken1792368000000 } from './migrations/1792368000000-
 export { SlaBreachFlags1792454400000 } from './migrations/1792454400000-SlaBreachFlags';
 export { SlaWarningFlags1792540800000 } from './migrations/1792540800000-SlaWarningFlags';
 export { VerifiedGuestAccess1792627200000 } from './migrations/1792627200000-VerifiedGuestAccess';
+export { EscalationRuleContract1792713600000 } from './migrations/1792713600000-EscalationRuleContract';
 export * from './events/event-names';
 
 // Widget embedding
