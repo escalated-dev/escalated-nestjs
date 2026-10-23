@@ -499,6 +499,11 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/agent/chat/{session}/transfer',
     methods: POST,
   },
+  // End Chat from the same action bar; escalated-laravel's name again.
+  'escalated.admin.chat.end': {
+    uri: 'escalated/agent/chat/{session}/end',
+    methods: POST,
+  },
 };
 
 /** Every named route the screens can call, keyed by name. */
