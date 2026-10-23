@@ -17,6 +17,7 @@ import { SlaService } from '../../src/services/sla.service';
 import { EscalationService } from '../../src/services/escalation.service';
 import { CANONICAL_EVENTS, LEGACY_EVENT_NAMES } from '../../src/events/event-names';
 import { GuestOutbox } from './guest-codes';
+import { routeUrl } from '../../src/ui/routes';
 
 jest.setTimeout(60000);
 
@@ -379,6 +380,25 @@ describe('shared event vocabulary', () => {
     const { session_id: sessionId } = await started.json();
     const res = await agent('POST', `/escalated/agent/chat/${sessionId}/transfer`, {});
     expect(res.status).toBe(400);
+  });
+
+  it('serves the transfer route the shared ticket view posts to', async () => {
+    // Agent/TicketShow posts route('escalated.admin.chat.transfer', session)
+    // with {"department_id"} (escalated-laravel's route name and body).
+    const started = await publicCall('POST', '/escalated/widget/chat/start', {
+      name: 'D',
+      email: 'd@example.com',
+      ...(await chatProof('d@example.com')),
+    });
+    const { session_id: sessionId } = await started.json();
+    expect((await agent('POST', `/escalated/agent/chat/${sessionId}/accept`)).status).toBe(201);
+
+    const url = routeUrl('escalated.admin.chat.transfer', { session: sessionId });
+    expect(url).toBe(`/escalated/agent/chat/${sessionId}/transfer`);
+    const res = await agent('POST', url, { department_id: billing.id });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body).toMatchObject({ status: 'waiting', agentId: null, departmentId: billing.id });
   });
 
   it('sends sla.warning once per deadline', async () => {
