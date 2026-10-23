@@ -401,6 +401,27 @@ describe('shared event vocabulary', () => {
     expect(body).toMatchObject({ status: 'waiting', agentId: null, departmentId: billing.id });
   });
 
+  it('serves the end route the shared ticket view posts to', async () => {
+    // Agent/TicketShow posts route('escalated.admin.chat.end', session) with
+    // body {} (escalated-laravel's route name).
+    const started = await publicCall('POST', '/escalated/widget/chat/start', {
+      name: 'E',
+      email: 'e@example.com',
+      ...(await chatProof('e@example.com')),
+    });
+    const { session_id: sessionId } = await started.json();
+    expect((await agent('POST', `/escalated/agent/chat/${sessionId}/accept`)).status).toBe(201);
+
+    const url = routeUrl('escalated.admin.chat.end', { session: sessionId });
+    expect(url).toBe(`/escalated/agent/chat/${sessionId}/end`);
+    const res = await agent('POST', url, {});
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ id: sessionId, status: 'ended' });
+
+    // Ending it again keeps the existing 400.
+    expect((await agent('POST', url, {})).status).toBe(400);
+  });
+
   it('sends sla.warning once per deadline', async () => {
     const soon = new Date(Date.now() + 10 * 60000);
     const t = await ticket({ firstResponseDueAt: soon, resolutionDueAt: soon } as any);

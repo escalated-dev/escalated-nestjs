@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   /escalated/agent/chat/{session}/transfer`. `Agent/TicketShow` in
   `@escalated-dev/escalated` posts the live chat Transfer menu there with
   `{"department_id"}` or `{"agent_id"}`, which this endpoint already accepts.
+- The shared UI's route table now names `escalated.admin.chat.end`
+  (escalated-laravel's name), pointing at `POST
+  /escalated/agent/chat/{session}/end`. `Agent/TicketShow` in
+  `@escalated-dev/escalated` posts End Chat there with `{}`; before, the name
+  did not resolve and the button never reached the server. The endpoint is
+  unchanged: ending an already-ended session still returns 400 (Laravel
+  returns 422).
 
 ## [1.2.6] - 2026-10-22
 
