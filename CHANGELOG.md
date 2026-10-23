@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.7] - 2026-10-22
+
+### Upgrading
+- Tokens are checked against their abilities now. As in Laravel, `admin` does
+  not imply `agent`: a token that must reach both admin and agent routes
+  needs `["agent", "admin"]` or `["*"]`. Tokens created without abilities
+  through `ApiTokenService.create` default to `["*"]` and are unaffected;
+  a token stored with an empty or null `abilities` list is refused on admin
+  and agent routes. Review existing tokens' abilities before upgrading.
+
 ### Security
 - **`ApiTokenGuard` enforces token abilities**, as escalated-laravel's
   `AuthenticateApiToken` does. It checked only that a token existed and had
@@ -21,14 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `EscalatedAdminGuard` / `EscalatedAgentGuard` on the route. Host routes can
   name an ability with the new `@ApiTokenAbility('admin')` decorator; host
   routes that name none are unchanged.
-
-### Upgrading
-- Tokens are checked against their abilities now. As in Laravel, `admin` does
-  not imply `agent`: a token that must reach both admin and agent routes
-  needs `["agent", "admin"]` or `["*"]`. Tokens created without abilities
-  through `ApiTokenService.create` default to `["*"]` and are unaffected;
-  a token stored with an empty or null `abilities` list is refused on admin
-  and agent routes. Review existing tokens' abilities before upgrading.
 
 ### Fixed
 - The shared UI's route table now names `escalated.admin.chat.transfer`
