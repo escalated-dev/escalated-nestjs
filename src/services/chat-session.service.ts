@@ -321,6 +321,7 @@ export class ChatSessionService {
   async transcript(session: ChatSession): Promise<{
     messages: ChatTranscriptMessage[];
     agent: { name: string } | null;
+    ticketReference: string | null;
   }> {
     const ticket = await this.ticketService.findById(session.ticketId);
     const replies: Reply[] = (await this.replyService.findByTicketId(session.ticketId, false))
@@ -349,6 +350,7 @@ export class ChatSessionService {
     return {
       messages,
       agent: isStaffAuthor(session.agentId) ? { name: staffName(session.agentId!) } : null,
+      ticketReference: ticket.referenceNumber ?? null,
     };
   }
 

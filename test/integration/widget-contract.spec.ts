@@ -220,10 +220,25 @@ describe('shared widget API contract', () => {
       expect(data.id).toMatch(/^[A-Za-z0-9_-]{40,}$/);
       expect(data.status).toBe('waiting');
       const session = await source.getRepository(ChatSession).findOneByOrFail({});
-      expect(data.session_id).toBe(session.id);
       expect(session.departmentId).toBe(sales.id);
       // Only a hash of the token is stored.
       expect(JSON.stringify(session)).not.toContain(data.id);
+    });
+
+    it('answers start with the same fields as escalated-laravel', async () => {
+      const { status, data } = await startChat();
+      const ticket = await source.getRepository(Ticket).findOneByOrFail({});
+
+      expect(status).toBe(201);
+      // `id` and `session_id` are both the visitor token, as in Laravel.
+      expect(data.session_id).toBe(data.id);
+      expect(new Date(data.expires_at).getTime()).toBeGreaterThan(Date.now());
+      expect(data.ticket_reference).toBe(ticket.referenceNumber);
+      expect(data.status).toBe('waiting');
+      expect(data).toHaveProperty('agent_name', null);
+      // The internal numeric ids the token replaced are not exposed.
+      expect(data).not.toHaveProperty('ticketId');
+      expect(data).not.toHaveProperty('ticket_id');
     });
 
     it('rejects an unknown department when starting a chat', async () => {

@@ -141,7 +141,7 @@ Validation errors answer 422 with `{ message, errors: { field: [message] } }`.
 | `GET /tickets/:reference` | `Authorization: Bearer <grant>` | `{ reference, subject, status, status_label, status_color, created_at, department, replies }` |
 | `POST /tickets/:reference/replies` | `{ body }`, `Authorization: Bearer <grant>` | the stored reply |
 | `GET /chat/availability` | `department_id?` | `{ available, queueDepth }` |
-| `POST /chat/start` | `name`, `email`, `department_id?`, `message?`, `metadata?`, `verification_id`, `verification_code` | 201 `{ id, session_id, ticketId, status, visitorName, createdAt }` |
+| `POST /chat/start` | `name`, `email`, `department_id?`, `message?`, `metadata?`, `verification_id`, `verification_code` | 201 `{ id, session_id, expires_at, ticket_reference, status, agent_name, messages, agent }`; `id` and `session_id` are both the chat token |
 | `GET /chat/:id/messages` | | `{ messages: [{ id, body, is_agent, author: { name }, created_at }], agent, typing, ended }` |
 | `POST /chat/:id/messages` | `{ body }` | the stored reply |
 | `POST /chat/:id/typing` | | `{ message }` |
