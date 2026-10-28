@@ -64,6 +64,7 @@ function makeStubs(settings: Record<string, string>) {
         token: 'visitor-token',
         expiresAt: new Date('2030-01-01T00:00:00Z'),
       })),
+      transcript: jest.fn(async () => ({ messages: [], agent: null, ticketReference: 'ESC-1' })),
     },
     departments: {
       findAll: jest.fn(async () => [

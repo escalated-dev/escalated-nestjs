@@ -86,17 +86,21 @@ export class WidgetChatController {
       metadata,
     );
     const { token, expiresAt } = await this.chatSessionService.issueVisitorToken(session);
+    const { messages, agent, ticketReference } = await this.chatSessionService.transcript(session);
 
+    // The same answer as escalated-laravel: `id` and `session_id` are both the
+    // visitor token; the numeric session and ticket ids stay internal.
     return {
       // The visitor's key for every /chat/:id route below.
       id: token,
-      session_id: session.id,
+      session_id: token,
       /** The token stops working after this; the visitor starts a new chat. */
       expires_at: expiresAt.toISOString(),
-      ticketId: session.ticketId,
+      ticket_reference: ticketReference,
       status: session.status,
-      visitorName: session.visitorName,
-      createdAt: session.createdAt,
+      agent_name: agent?.name ?? null,
+      messages,
+      agent,
     };
   }
 

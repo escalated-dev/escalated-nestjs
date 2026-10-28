@@ -1,7 +1,9 @@
 import { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { DataSource } from 'typeorm';
 import { bootEscalatedModule } from './boot-escalated-module';
 import {
+  ChatSession,
   Department,
   EscalationRule,
   SlaPolicy,
@@ -52,6 +54,14 @@ describe('shared event vocabulary', () => {
   let sales: Department;
   let billing: Department;
   let seq = 0;
+
+  // The widget only sees its token; the agent chat routes take the session id.
+  const chatSessionId = async (token: string) =>
+    (
+      await source.getRepository(ChatSession).findOneByOrFail({
+        visitorTokenHash: createHash('sha256').update(token).digest('hex'),
+      })
+    ).id;
   const realFetch = globalThis.fetch;
   const outbox = new GuestOutbox();
   const chatProof = (email: string) => outbox.proof(`${base}/escalated/widget`, email, 'chat');
@@ -336,7 +346,8 @@ describe('shared event vocabulary', () => {
       ...(await chatProof('visitor@example.com')),
     });
     expect(started.status).toBe(201);
-    const { id: token, session_id: sessionId } = await started.json();
+    const { id: token } = await started.json();
+    const sessionId = await chatSessionId(token);
 
     expect((await agent('POST', `/escalated/agent/chat/${sessionId}/accept`)).status).toBe(201);
     expect(
@@ -377,7 +388,7 @@ describe('shared event vocabulary', () => {
       email: 'v@example.com',
       ...(await chatProof('v@example.com')),
     });
-    const { session_id: sessionId } = await started.json();
+    const sessionId = await chatSessionId((await started.json()).id);
     const res = await agent('POST', `/escalated/agent/chat/${sessionId}/transfer`, {});
     expect(res.status).toBe(400);
   });
@@ -390,7 +401,7 @@ describe('shared event vocabulary', () => {
       email: 'd@example.com',
       ...(await chatProof('d@example.com')),
     });
-    const { session_id: sessionId } = await started.json();
+    const sessionId = await chatSessionId((await started.json()).id);
     expect((await agent('POST', `/escalated/agent/chat/${sessionId}/accept`)).status).toBe(201);
 
     const url = routeUrl('escalated.admin.chat.transfer', { session: sessionId });
@@ -409,7 +420,7 @@ describe('shared event vocabulary', () => {
       email: 'e@example.com',
       ...(await chatProof('e@example.com')),
     });
-    const { session_id: sessionId } = await started.json();
+    const sessionId = await chatSessionId((await started.json()).id);
     expect((await agent('POST', `/escalated/agent/chat/${sessionId}/accept`)).status).toBe(201);
 
     const url = routeUrl('escalated.admin.chat.end', { session: sessionId });

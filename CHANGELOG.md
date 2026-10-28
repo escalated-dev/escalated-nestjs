@@ -22,8 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `POST widget/chat/start` also returns `expires_at`, when the chat token stops
   working. Only the token's SHA-256 is stored, as before. An ended chat stays
   readable (`GET .../messages` with `ended: true`) and rateable until then.
+- `POST widget/chat/start` now answers exactly as escalated-laravel: `201
+  { id, session_id, expires_at, ticket_reference, status, agent_name }`, where
+  `id` and `session_id` are both the chat token, plus the widget's `messages`
+  and `agent`. The numeric `session_id` and `ticketId`, and `visitorName` and
+  `createdAt`, are no longer returned: the token replaced them.
 
 ### Upgrading
+- A client that read the numeric `session_id` or `ticketId` from
+  `POST widget/chat/start` should use `id` (the chat token) for the widget chat
+  routes and `ticket_reference` to name the ticket. Agent chat routes still
+  take the numeric session id, which agents get from their own chat lists.
 - The mobile guest routes are public and always mounted, like the widget
   routes (this package has no REST-API switch). Nothing to migrate. Redact the
   `:token` path segment of `/escalated/api/v1/mobile/guest/tickets/*` from
