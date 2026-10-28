@@ -269,6 +269,8 @@ describe('Escalated route guards', () => {
       ['GET', '/escalated/customer/kb/categories', 200],
       // Guest-token guard, not a route-group guard.
       ['GET', '/escalated/widget/tickets/1', 403],
+      // Mobile guest grant guard: anything but an active grant is a 404.
+      ['GET', '/escalated/api/v1/mobile/guest/tickets/1', 404],
       // Host auth callbacks are not configured.
       ['POST', '/escalated/api/v1/auth/login', 501],
       // Inbound signature guard: no webhook secret configured.

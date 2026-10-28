@@ -1,6 +1,7 @@
 export { ApiTokenGuard, ApiTokenAbility, API_TOKEN_ABILITY_KEY } from './api-token.guard';
 export { PermissionsGuard, RequirePermissions, PERMISSIONS_KEY } from './permissions.guard';
 export { GuestAccessGuard } from './guest-access.guard';
+export { MobileGuestGrantGuard } from './mobile-guest-grant.guard';
 export { PublicSubmitThrottleGuard } from './public-submit-throttle.guard';
 export {
   GuestThrottleGuard,
