@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.8] - 2026-10-28
+
+### Upgrading
+- A client that read the numeric `session_id` or `ticketId` from
+  `POST widget/chat/start` should use `id` (the chat token) for the widget chat
+  routes and `ticket_reference` to name the ticket. Agent chat routes still
+  take the numeric session id, which agents get from their own chat lists.
+- The mobile guest routes are public and always mounted, like the widget
+  routes (this package has no REST-API switch). Nothing to migrate. Redact the
+  `:token` path segment of `/escalated/api/v1/mobile/guest/tickets/*` from
+  access logs, as you do guest grants elsewhere.
+- Run the new `ChatVisitorTokenExpiry1793232000000` migration (exported from
+  the package). It adds a nullable `visitorTokenExpiresAt` column to chat
+  sessions. Chats already in progress keep working: the next widget request
+  with their token gives it a full lifetime.
+- Widget chat tokens now expire `guestAccess.ttlMinutes` after the chat starts
+  (default 1440, clamped to 5 minutes .. 7 days), as in escalated-laravel.
+  After that every `widget/chat/:token/*` route answers 404 and the visitor
+  starts a new chat. Raise `guestAccess.ttlMinutes` if chats run longer.
+
 ### Added
 - **Mobile guest API** at `/escalated/api/v1/mobile/guest`: `POST verification`,
   `POST lookup`, `POST tickets`, `GET tickets/:token` and
@@ -27,24 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `id` and `session_id` are both the chat token, plus the widget's `messages`
   and `agent`. The numeric `session_id` and `ticketId`, and `visitorName` and
   `createdAt`, are no longer returned: the token replaced them.
-
-### Upgrading
-- A client that read the numeric `session_id` or `ticketId` from
-  `POST widget/chat/start` should use `id` (the chat token) for the widget chat
-  routes and `ticket_reference` to name the ticket. Agent chat routes still
-  take the numeric session id, which agents get from their own chat lists.
-- The mobile guest routes are public and always mounted, like the widget
-  routes (this package has no REST-API switch). Nothing to migrate. Redact the
-  `:token` path segment of `/escalated/api/v1/mobile/guest/tickets/*` from
-  access logs, as you do guest grants elsewhere.
-- Run the new `ChatVisitorTokenExpiry1793232000000` migration (exported from
-  the package). It adds a nullable `visitorTokenExpiresAt` column to chat
-  sessions. Chats already in progress keep working: the next widget request
-  with their token gives it a full lifetime.
-- Widget chat tokens now expire `guestAccess.ttlMinutes` after the chat starts
-  (default 1440, clamped to 5 minutes .. 7 days), as in escalated-laravel.
-  After that every `widget/chat/:token/*` route answers 404 and the visitor
-  starts a new chat. Raise `guestAccess.ttlMinutes` if chats run longer.
 
 ## [1.2.7] - 2026-10-22
 
