@@ -216,6 +216,7 @@ None of the three guards apply to these routes, which are public or carry their 
 - `/escalated/customer/kb/*` (published knowledge base articles)
 - `/escalated/webhook/email/*` (`X-Escalated-Inbound-Secret`, see below)
 - `/escalated/api/v1/auth/*` (your `apiAuth` callbacks)
+- `/escalated/api/v1/mobile/guest/*` (the mobile guest API: email codes and expiring grants, see [Verified guest access](docs/guest-access.md#mobile-guest-api))
 - `/escalated/n/*` and `/escalated/webhooks/newsletter/*` (newsletter tracking, unsubscribe and ESP webhooks)
 
 The newsletter admin routes (`/admin/newsletters/*`) check the `newsletters.manage` and `newsletters.send` permissions on every request.

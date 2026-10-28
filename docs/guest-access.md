@@ -119,9 +119,63 @@ An ended chat refuses messages, typing and a second end with 422, but its
 transcript and rating stay available until the token expires. Chats started
 before tokens expired get a full lifetime from their next request.
 
+## Mobile guest API
+
+The mobile face of verified guest access, under the REST API prefix plus
+`/mobile`. It follows the canonical contract,
+[mobile-guest-api](https://github.com/escalated-dev/escalated-developer-context/blob/main/domain-model/mobile-guest-api.md):
+
+| Method | Path | Guest budget |
+|---|---|---|
+| POST | `/escalated/api/v1/mobile/guest/verification` | `verificationsPerMinute` |
+| POST | `/escalated/api/v1/mobile/guest/lookup` | `verificationsPerMinute` |
+| POST | `/escalated/api/v1/mobile/guest/tickets` | `ticketsPerMinute` (+ 10 per email per hour) |
+| GET | `/escalated/api/v1/mobile/guest/tickets/:token` | none |
+| POST | `/escalated/api/v1/mobile/guest/tickets/:token/replies` | `repliesPerMinute` |
+
+`verification` and `lookup` run the same handlers as on `/escalated/widget`
+and `/escalated/guest`. The routes use the same codes, grants and per-IP guest
+budgets as those prefixes (one budget per IP across all three), so a grant
+from the mobile create opens the widget and guest routes, and a grant from a
+widget create or a lookup opens the mobile ones.
+
+- `POST guest/tickets` takes JSON `{ name, email, subject, description,
+  verification_id, verification_code, priority?, department_id? }`. Fields are
+  checked first (422), then the `ticket` code (422 on `verification_code`,
+  nothing created), then the ticket is filed with channel `web` under the guest
+  policy. It answers `201 { data: <mobile ticket>, message: "Ticket created." }`
+  with `data.guest_access_token` and `data.guest_access_expires_at` set.
+  Other fields (`metadata`, `external_reference`, status, assignee) are
+  ignored.
+- `GET guest/tickets/:token` answers `{ data: <mobile ticket> }` with the
+  public replies, newest first.
+- `POST guest/tickets/:token/replies` takes `{ email, body }`. A closed ticket
+  is 422 `This ticket is closed.`; the email (any case) must be the ticket's
+  guest email, else 403. It answers `201 { message: "Reply sent." }`.
+
+`:token` is the grant itself. An expired, rotated, revoked, malformed or
+over-long grant, or a chat visitor token, is a 404. The mobile ticket object is
+allow-listed: staff appear only as `{ id: 0, name, email: "" }` (the agent
+profile's display name, or `Support`), `metadata` is always `{}`, and internal
+notes, contact ids and grant hashes never appear. Every answer, errors and
+429s included, carries `Cache-Control: private, no-store` and
+`Referrer-Policy: no-referrer`. Redact the `:token` path segment from access
+logs.
+
+These routes are registered with the package's other REST API routes
+(`/escalated/api/v1/auth/*`). This package has no REST-API-enabled switch, so
+they are always mounted, like the widget routes.
+
 ## Not in this package
 
-- Mobile guest routes: this package has none.
+- Mobile guest attachments. The mobile routes take JSON only (no
+  `multipart/form-data` uploads), and reply attachments are listed with
+  `url: null` because there is no guest-authorised download route yet.
+- The contract's API-layer limiter (`X-RateLimit-*`, 60 per minute) and the
+  shared 60-per-minute guest `requests` bucket: this package has neither. The
+  mobile routes use the existing guest buckets above.
+- A guest-tickets or chat on/off switch: guest tickets and chats are always
+  on here, so the contract's 403 for a disabled feature never applies.
 - Lookup matches the Escalated reference only, not a host
   `external_reference`.
 - Spending a code and the operation are not one database transaction. The code

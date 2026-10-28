@@ -115,6 +115,7 @@ import {
   WorkflowAdminService,
   GuestAccessService,
   GuestTicketsService,
+  MobileGuestTicketsService,
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
@@ -132,6 +133,7 @@ import {
 import { TicketActionRegistry } from './services/ticket-action-registry.service';
 import { InboundEmailController } from './controllers/inbound-email.controller';
 import { ApiAuthController } from './controllers/api/auth.controller';
+import { MobileGuestController } from './controllers/api/mobile-guest.controller';
 import { InboundWebhookSignatureGuard } from './guards/inbound-webhook-signature.guard';
 
 // Controllers
@@ -187,6 +189,7 @@ import { GuestUiController } from './ui/controllers/guest-ui.controller';
 
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
+import { GuestPrivacyHeadersMiddleware } from './middleware/guest-privacy-headers.middleware';
 
 // Guards
 import { ApiTokenGuard } from './guards/api-token.guard';
@@ -194,6 +197,7 @@ import { PermissionsGuard } from './guards/permissions.guard';
 import { GuestAccessGuard } from './guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from './guards/public-submit-throttle.guard';
 import { GuestThrottleGuard } from './guards/guest-throttle.guard';
+import { MobileGuestGrantGuard } from './guards/mobile-guest-grant.guard';
 
 // Interceptors
 import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
@@ -296,6 +300,7 @@ const services = [
   WorkflowAdminService,
   GuestAccessService,
   GuestTicketsService,
+  MobileGuestTicketsService,
   EmailService,
   PostmarkInboundParser,
   MailgunInboundParser,
@@ -337,6 +342,7 @@ const controllers = [
   AttachmentController,
   InboundEmailController,
   ApiAuthController,
+  MobileGuestController,
 ];
 
 @Module({})
@@ -349,6 +355,8 @@ export class EscalatedModule implements NestModule {
     consumer
       .apply(WidgetCorsMiddleware)
       .forRoutes(...routesOf(WidgetController, WidgetChatController));
+    // Guest privacy headers on every mobile guest answer, guard refusals too.
+    consumer.apply(GuestPrivacyHeadersMiddleware).forRoutes(...routesOf(MobileGuestController));
   }
 
   static forRoot(options: EscalatedModuleOptions = {}): DynamicModule {
@@ -455,6 +463,7 @@ export class EscalatedModule implements NestModule {
         GuestAccessGuard,
         PublicSubmitThrottleGuard,
         GuestThrottleGuard,
+        MobileGuestGrantGuard,
         InboundWebhookSignatureGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
