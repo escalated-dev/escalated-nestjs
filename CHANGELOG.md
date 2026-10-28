@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Mobile guest API** at `/escalated/api/v1/mobile/guest`: `POST verification`,
+  `POST lookup`, `POST tickets`, `GET tickets/:token` and
+  `POST tickets/:token/replies`, per the shared
+  [mobile-guest-api](https://github.com/escalated-dev/escalated-developer-context/blob/main/domain-model/mobile-guest-api.md)
+  contract and escalated-laravel. They reuse verified guest access: the same
+  email codes, grants and per-IP guest budgets as the widget and guest routes,
+  so grants work across all three. A bad or expired grant is a 404; answers
+  carry `Cache-Control: private, no-store` and `Referrer-Policy: no-referrer`.
+  See `docs/guest-access.md`.
+
+### Upgrading
+- The mobile guest routes are public and always mounted, like the widget
+  routes (this package has no REST-API switch). Nothing to migrate. Redact the
+  `:token` path segment of `/escalated/api/v1/mobile/guest/tickets/*` from
+  access logs, as you do guest grants elsewhere.
+
 ## [1.2.7] - 2026-10-22
 
 ### Upgrading
