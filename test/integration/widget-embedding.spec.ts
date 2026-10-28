@@ -60,7 +60,10 @@ function makeStubs(settings: Record<string, string>) {
     contacts: { findOrCreateByEmail: jest.fn(async () => ({ id: 99, email: 'jane@example.com' })) },
     chat: {
       start: jest.fn(async () => ({ id: 5, ticketId: 1, status: 'waiting', visitorName: 'John' })),
-      issueVisitorToken: jest.fn(async () => 'visitor-token'),
+      issueVisitorToken: jest.fn(async () => ({
+        token: 'visitor-token',
+        expiresAt: new Date('2030-01-01T00:00:00Z'),
+      })),
     },
     departments: {
       findAll: jest.fn(async () => [

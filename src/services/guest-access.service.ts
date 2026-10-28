@@ -70,6 +70,11 @@ function clamp(value: unknown, fallback: number, low: number, high: number): num
   return Math.max(low, Math.min(high, Math.floor(number)));
 }
 
+/** Lifetime of guest and chat grants: `guestAccess.ttlMinutes`, default 1440, 5 min .. 7 days. */
+export function guestAccessTtlMinutes(options?: EscalatedModuleOptions | null): number {
+  return clamp(options?.guestAccess?.ttlMinutes, 1440, 5, 10080);
+}
+
 export function normalizeEmail(email: unknown): string {
   return String(email ?? '')
     .trim()
@@ -105,7 +110,7 @@ export class GuestAccessService {
   }
 
   ttlMinutes(): number {
-    return clamp(this.config.ttlMinutes, 1440, 5, 10080);
+    return guestAccessTtlMinutes(this.options);
   }
 
   private secret(): string {

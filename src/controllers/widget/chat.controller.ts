@@ -85,12 +85,14 @@ export class WidgetChatController {
       departmentId,
       metadata,
     );
-    const token = await this.chatSessionService.issueVisitorToken(session);
+    const { token, expiresAt } = await this.chatSessionService.issueVisitorToken(session);
 
     return {
       // The visitor's key for every /chat/:id route below.
       id: token,
       session_id: session.id,
+      /** The token stops working after this; the visitor starts a new chat. */
+      expires_at: expiresAt.toISOString(),
       ticketId: session.ticketId,
       status: session.status,
       visitorName: session.visitorName,

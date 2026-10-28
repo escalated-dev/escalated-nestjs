@@ -110,8 +110,14 @@ spent either way.
 
 `POST /escalated/widget/chat/start` needs a `chat` code for the visitor's
 email, and is limited to 5 starts per IP per minute
-(`guestRateLimit.chatsPerMinute`). The chat routes still use the chat's
-random visitor token (`id`). Chat tokens do not expire in this package.
+(`guestRateLimit.chatsPerMinute`). The chat routes use the chat's random
+visitor token (`id`); only its SHA-256 is stored. The token expires
+`guestAccess.ttlMinutes` after the chat starts (`expires_at` in the start
+response). After that, and for any unknown token, every
+`widget/chat/:token/*` route answers 404 and the visitor starts a new chat.
+An ended chat refuses messages, typing and a second end with 422, but its
+transcript and rating stay available until the token expires. Chats started
+before tokens expired get a full lifetime from their next request.
 
 ## Not in this package
 

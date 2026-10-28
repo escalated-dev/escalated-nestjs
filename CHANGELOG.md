@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrading
+- Run the new `ChatVisitorTokenExpiry1793232000000` migration (exported from
+  the package). It adds a nullable `visitorTokenExpiresAt` column to chat
+  sessions. Chats already in progress keep working: the next widget request
+  with their token gives it a full lifetime.
+- Widget chat tokens now expire `guestAccess.ttlMinutes` after the chat starts
+  (default 1440, clamped to 5 minutes .. 7 days), as in escalated-laravel.
+  After that every `widget/chat/:token/*` route answers 404 and the visitor
+  starts a new chat. Raise `guestAccess.ttlMinutes` if chats run longer.
+
+### Changed
+- `POST widget/chat/start` also returns `expires_at`, when the chat token stops
+  working. Only the token's SHA-256 is stored, as before. An ended chat stays
+  readable (`GET .../messages` with `ended: true`) and rateable until then.
+
 ## [1.2.7] - 2026-10-22
 
 ### Upgrading
