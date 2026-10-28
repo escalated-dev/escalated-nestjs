@@ -2,7 +2,8 @@ import { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm';
 import { bootEscalatedModule } from './boot-escalated-module';
 import { GuestOutbox } from './guest-codes';
-import { Contact, GuestVerification, Ticket, TicketStatus } from '../../src/entities';
+import { createHash } from 'crypto';
+import { ChatSession, Contact, GuestVerification, Ticket, TicketStatus } from '../../src/entities';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 
 jest.setTimeout(60000);
@@ -415,6 +416,91 @@ describe('verified guest access', () => {
       expect(res.status).toBe(201);
       expect((await res.json()).id).toEqual(expect.any(String));
     });
+
+    const startChat = async () => {
+      const email = uniqueEmail('chat');
+      const proof = await outbox.proof(widget, email, 'chat');
+      const res = await post(`${widget}/chat/start`, { name: 'V', email, message: 'Hi', ...proof });
+      expect(res.status).toBe(201);
+      return res.json();
+    };
+    const chatRow = (token: string) =>
+      source
+        .getRepository(ChatSession)
+        .createQueryBuilder('chat')
+        .where('chat.visitorTokenHash = :hash', {
+          hash: createHash('sha256').update(token).digest('hex'),
+        })
+        .getOneOrFail();
+
+    it('issues an expiring chat grant and stores only its hash', async () => {
+      const before = Date.now();
+      const chat = await startChat();
+      const expiresAt = Date.parse(chat.expires_at);
+      expect(expiresAt).toBeGreaterThanOrEqual(before + 1440 * 60_000 - 5_000);
+      expect(expiresAt).toBeLessThanOrEqual(Date.now() + 1440 * 60_000 + 5_000);
+      const row = await chatRow(chat.id);
+      expect(JSON.stringify(row)).not.toContain(chat.id);
+      expect(row.visitorTokenExpiresAt?.getTime()).toBe(expiresAt);
+      expect((await fetch(`${widget}/chat/${chat.id}/messages`)).status).toBe(200);
+    });
+
+    it('refuses every chat route with 404 once the grant has expired', async () => {
+      const chat = await startChat();
+      const row = await chatRow(chat.id);
+      await source
+        .getRepository(ChatSession)
+        .update(row.id, { visitorTokenExpiresAt: new Date(Date.now() - 1000) });
+      const path = `${widget}/chat/${chat.id}`;
+      expect((await fetch(`${path}/messages`)).status).toBe(404);
+      expect((await post(`${path}/messages`, { body: 'Hello?' })).status).toBe(404);
+      expect((await post(`${path}/typing`, {})).status).toBe(404);
+      expect((await post(`${path}/end`, {})).status).toBe(404);
+      expect((await post(`${path}/rate`, { rating: 5 })).status).toBe(404);
+    });
+
+    it('keeps an ended chat readable and rateable until expiry, but closed to messages', async () => {
+      const chat = await startChat();
+      const path = `${widget}/chat/${chat.id}`;
+      expect((await post(`${path}/end`, {})).status).toBe(201);
+      expect((await post(`${path}/messages`, { body: 'Late' })).status).toBe(422);
+      expect((await post(`${path}/typing`, {})).status).toBe(422);
+      expect((await post(`${path}/end`, {})).status).toBe(422);
+      const transcript = await fetch(`${path}/messages`);
+      expect(transcript.status).toBe(200);
+      expect((await transcript.json()).ended).toBe(true);
+      expect((await post(`${path}/rate`, { rating: 5 })).status).toBe(200);
+    });
+
+    it('gives a chat started before grants expired a full lifetime from its next request', async () => {
+      const chat = await startChat();
+      const row = await chatRow(chat.id);
+      await source.getRepository(ChatSession).update(row.id, { visitorTokenExpiresAt: null });
+      const before = Date.now();
+      expect((await fetch(`${widget}/chat/${chat.id}/messages`)).status).toBe(200);
+      const stamped = (await chatRow(chat.id)).visitorTokenExpiresAt!.getTime();
+      expect(stamped).toBeGreaterThanOrEqual(before + 1440 * 60_000 - 5_000);
+    });
+  });
+});
+
+describe('verified guest access chat grant lifetime', () => {
+  it('follows guestAccess.ttlMinutes', async () => {
+    const outbox = new GuestOutbox();
+    const { app, base } = await start(outbox, { guestAccess: { ttlMinutes: 30 } });
+    try {
+      const email = uniqueEmail('chat');
+      const widget = `${base}/escalated/widget`;
+      const proof = await outbox.proof(widget, email, 'chat');
+      const before = Date.now();
+      const res = await post(`${widget}/chat/start`, { name: 'V', email, ...proof });
+      expect(res.status).toBe(201);
+      const expiresAt = Date.parse((await res.json()).expires_at);
+      expect(expiresAt).toBeGreaterThanOrEqual(before + 30 * 60_000 - 5_000);
+      expect(expiresAt).toBeLessThanOrEqual(Date.now() + 30 * 60_000 + 5_000);
+    } finally {
+      await app.close();
+    }
   });
 });
 

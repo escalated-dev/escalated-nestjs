@@ -55,6 +55,14 @@ export class ChatSession {
   @Column({ type: 'varchar', length: 64, nullable: true, select: false })
   visitorTokenHash: string | null;
 
+  /**
+   * When the visitor token stops working (`guestAccess.ttlMinutes` after the
+   * chat starts). Null only for chats started before tokens expired; the next
+   * request with such a token gives it a full lifetime.
+   */
+  @Column({ type: Date, nullable: true })
+  visitorTokenExpiresAt: Date | null;
+
   @ManyToOne(() => Ticket, { nullable: true })
   @JoinColumn({ name: 'ticketId' })
   ticket: Ticket;

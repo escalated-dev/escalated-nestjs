@@ -330,6 +330,10 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
       typeof chatToken === 'string' &&
       chatToken &&
       session.visitorTokenHash &&
+      !(
+        session.visitorTokenExpiresAt &&
+        new Date(session.visitorTokenExpiresAt).getTime() <= Date.now()
+      ) &&
       tokensMatch(createHash('sha256').update(chatToken).digest('hex'), session.visitorTokenHash)
     )
       return true;

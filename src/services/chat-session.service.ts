@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Optional,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, In } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -18,6 +24,8 @@ import {
   ChatTransferredEvent,
 } from '../events/escalated.events';
 import { TicketAccess } from '../config/ticket-access';
+import { ESCALATED_OPTIONS, EscalatedModuleOptions } from '../config/escalated.config';
+import { guestAccessTtlMinutes } from './guest-access.service';
 import { UserId } from '../config/user-id-column';
 
 /** One line of a chat transcript, in the shape the shared widget reads. */
@@ -51,7 +59,14 @@ export class ChatSessionService {
     @Optional()
     @InjectRepository(AgentProfile)
     private readonly agentProfileRepo?: Repository<AgentProfile>,
+    @Optional()
+    @Inject(ESCALATED_OPTIONS)
+    private readonly options?: EscalatedModuleOptions,
   ) {}
+
+  private visitorTokenExpiry(): Date {
+    return new Date(Date.now() + guestAccessTtlMinutes(this.options) * 60_000);
+  }
 
   /**
    * Start a new chat session. Creates an underlying ticket with channel "chat".
@@ -264,13 +279,21 @@ export class ChatSessionService {
    * Give the visitor of a chat a fresh, unguessable token. Only its hash is
    * stored, so the token is returned once and cannot be read back.
    */
-  async issueVisitorToken(session: ChatSession): Promise<string> {
+  async issueVisitorToken(session: ChatSession): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
-    await this.chatSessionRepo.update(session.id, { visitorTokenHash: hashVisitorToken(token) });
-    return token;
+    const expiresAt = this.visitorTokenExpiry();
+    await this.chatSessionRepo.update(session.id, {
+      visitorTokenHash: hashVisitorToken(token),
+      visitorTokenExpiresAt: expiresAt,
+    });
+    return { token, expiresAt };
   }
 
-  /** The chat a visitor token belongs to; 404 for anything else. */
+  /**
+   * The chat a visitor token belongs to; 404 for anything else, including a
+   * token past its expiry. A chat started before tokens expired gets a full
+   * lifetime from this request.
+   */
   async findByVisitorToken(token: string): Promise<ChatSession> {
     const session = token
       ? await this.chatSessionRepo.findOne({
@@ -278,6 +301,14 @@ export class ChatSessionService {
         })
       : null;
     if (!session) {
+      throw new NotFoundException('Chat session not found');
+    }
+    if (!session.visitorTokenExpiresAt) {
+      session.visitorTokenExpiresAt = this.visitorTokenExpiry();
+      await this.chatSessionRepo.update(session.id, {
+        visitorTokenExpiresAt: session.visitorTokenExpiresAt,
+      });
+    } else if (new Date(session.visitorTokenExpiresAt).getTime() <= Date.now()) {
       throw new NotFoundException('Chat session not found');
     }
     return session;
