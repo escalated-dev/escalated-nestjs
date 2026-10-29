@@ -163,6 +163,12 @@ export interface EscalatedPluginDefinition {
   cron?: Record<string, (ctx: PluginContext) => unknown>;
 }
 
+/**
+ * The plugin registry's injection token, for code that must not import the
+ * registry itself (it would close an import cycle through the services).
+ */
+export const PLUGIN_REGISTRY = 'ESCALATED_PLUGIN_REGISTRY';
+
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
 
 /** One endpoint or webhook route, parsed from its `METHOD /path` key. */

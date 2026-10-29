@@ -49,8 +49,9 @@ Run the `Plugins1793318400000` migration first. It creates
 | `endpoints` | `/escalated/api/plugins/{slug}{path}` | `adminGuard`, plus the endpoint's `capability` |
 | `webhooks` | `/escalated/webhooks/plugins/{slug}{path}` | Anyone. The plugin must authenticate the sender. |
 | `onActivate`, `onDeactivate` | Called when an admin activates or deactivates it | |
-| `actions` | `plugin.activated`, `plugin.deactivated`, `plugin.uninstalling`, and whatever active plugins `ctx.emit` | |
+| `actions` | The canonical events, `plugin.activated`, `plugin.deactivated`, `plugin.uninstalling`, and whatever active plugins `ctx.emit` | |
 | `filters` | `PluginRegistry.applyFilters(hook, value)`, for host code that wants a filter point | |
+| `pages[].menu`, `components`, `widgets` | Shared with every screen as `escalated.plugins` (`menuItems`, `pageComponents`, `dashboardWidgets`) | Viewers who hold the item's `capability`; admin menu items for admins only |
 
 Only active plugins answer; anything else is a 404.
 
@@ -71,10 +72,34 @@ Only active plugins answer; anything else is a 404.
   the `EscalatedPlugins` log.
 - Timeouts: actions and endpoints 30 s, filters 5 s, webhooks 60 s.
 
+## Events
+
+Every canonical event (`ticket.created`, `reply.created`, `ticket.status_changed`
+and the rest of ADR 2026-10-21) reaches active plugins' `actions` under that
+name, after the change is written. Merged and split tickets, which are not in
+the shared vocabulary, are not delivered, and legacy names never are. A plugin
+action that throws or takes longer than 30 s is logged; the request that
+caused the event is not affected.
+
+The payload carries the subject flat and under its own key, because the
+official plugins read both:
+
+- ticket events: the ticket (`id`, `reference`, `subject`, `title`,
+  `description`, `status` (slug), `status_id`, `priority`, `channel`,
+  `ticket_type`, `department_id`, `requester_id`, `contact_id`,
+  `assigned_to`, `metadata`, `tags`, `created_at`, `updated_at`) plus
+  `ticket`, and the event's extras: `old_status`/`new_status`,
+  `agent_id`/`previous_agent_id`, `old_priority`/`new_priority`,
+  `old_department_id`/`new_department_id`, `tag`, `changes`, `reason`;
+- `reply.created` and `note.created`: the reply (`id`, `ticket_id`, `body`,
+  `type`, `is_internal`, `user_id`, `created_at`, `updated_at`) plus `reply`
+  and `ticket`;
+- `sla.warning` and `sla.breached`: the ticket plus `ticket` and `type`;
+- `chat.*`: `{ session }`.
+
 ## The context
 
-`ctx.config`, `ctx.store`, `ctx.http`, `ctx.log`, `ctx.emit` and
-`ctx.currentUser` work. Everything is scoped to the plugin's name.
+Everything in `ctx` is scoped to the plugin's name.
 
 - `ctx.store.query` filters in this process: equality (an array field matches
   when it contains the value), `$gt`, `$gte`, `$lt`, `$lte`, `$ne`, `$in`,
@@ -82,10 +107,24 @@ Only active plugins answer; anything else is a 404.
   `limit`. A field name that is not a dotted path is an error.
 - `ctx.emit` fires an action to the active plugins. The canonical event names
   and the `plugin.*` lifecycle names belong to the host and are dropped.
+- `ctx.tickets` and `ctx.replies` go through `TicketService` and
+  `ReplyService`, so what a plugin writes fires the same events as anything
+  else. `create` takes `subject` (or `title`), `description` (or `body`),
+  `priority`, `status` (a slug), `department_id`, `ticket_type`, `channel`
+  (default `api`), `metadata`, and `contact_id` or
+  `requester_email`/`requester_name`; `update` takes the same minus the
+  requester. A plugin never picks who it acts as: that is the signed-in user
+  of the request it serves, or nobody (0). `query` filters on `id`,
+  `reference`, `status`, `priority`, `channel`, `ticket_type`,
+  `department_id`, `requester_id`, `contact_id`, `assigned_to` (replies:
+  `ticket_id`, `is_internal`, `type`), at most 500 rows; any other key is an
+  error. `ctx.replies.create` needs `ticket_id` and `body`, and
+  `is_internal: true` makes a note.
+- `ctx.contacts` are Escalated's contacts (found or created by email), not
+  your users. `ctx.agents` reads agent profiles: `id` is the user id, `name`
+  the display name, and `email` is null because the package does not hold it.
 - `ctx.broadcast` does nothing yet: the WebSocket gateway authorises each room
   per connection, and plugins cannot broadcast through it.
-- `ctx.tickets`, `ctx.replies`, `ctx.contacts`, `ctx.tags`,
-  `ctx.departments` and `ctx.agents` are not wired yet; they reject.
 
 ## Trust
 

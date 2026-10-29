@@ -201,6 +201,9 @@ import {
   registerPlugins,
 } from './plugins/plugin-registry.service';
 import { PluginStoreService } from './plugins/plugin-store.service';
+import { PLUGIN_REGISTRY } from './plugins/plugin-definition';
+import { PluginDomainService } from './plugins/plugin-domain.service';
+import { PluginEventsListener } from './plugins/plugin-events.listener';
 
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
@@ -326,6 +329,7 @@ const services = [
   AutomationService,
   WidgetOriginsService,
   PluginStoreService,
+  PluginDomainService,
   PluginRegistry,
 ];
 
@@ -480,6 +484,7 @@ export class EscalatedModule implements NestModule {
         },
         ticketActionRegistryProvider,
         pluginsProvider,
+        { provide: PLUGIN_REGISTRY, useExisting: PluginRegistry },
         PluginEndpointCsrfGuard,
         // Aliases the default repository tokens onto the named DataSource, so
         // the package's 164 `@InjectRepository(X)` sites need no change. Empty
@@ -500,6 +505,7 @@ export class EscalatedModule implements NestModule {
         WorkflowListener,
         EmailListener,
         RecordCustomActionInternalNoteListener,
+        PluginEventsListener,
       ],
       exports: [
         TicketAccess,
