@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- **Roles & permissions is now an install-level switch, off by default**
+  (`access.rolesPermissions` in `EscalatedModule.forRoot()`, env
+  `ESCALATED_ROLES_PERMISSIONS`; ADR 2026-10-29-configurable-access-features).
+  Roles were stored but only the newsletter screens and plugin capabilities
+  ever checked them, so off is how almost every install already behaved. The
+  visible differences while it is off:
+  - The roles screens and API (`/escalated/admin/roles*`,
+    `/escalated/admin/permissions`) answer 404.
+  - The newsletter screens no longer check `newsletters.manage` /
+    `newsletters.send`, and plugin capabilities, `PermissionsGuard` and
+    `@RequirePermissions()` no longer check roles: the host's `adminGuard` /
+    `agentGuard` decide. The newsletter admin screens (`/admin/newsletters*`)
+    are now behind `adminGuard` (they had no group guard). Installs that used
+    roles to restrict admins must turn the switch on.
+  - The role named `admin` no longer passes every check by its slug: a role
+    grants exactly the permissions it holds.
+  To enforce roles: run the new `RolesAndPermissions1793404800000` migration
+  (it seeds escalated-laravel's permission slugs and the `admin`, `agent` and
+  `light_agent` roles), give every staff user a role
+  (`RoleService.assignRole(userId, 'admin')` for yourself first), then set
+  `access: { rolesPermissions: true }` or `ESCALATED_ROLES_PERMISSIONS=true`.
+  An admin without a role is refused everywhere but their own two-factor
+  routes. See `docs/access-control.md`.
+- The shared `escalated.permissions` prop is `['*']` for staff while the
+  switch is off (it was always `[]`), and `escalated.features` carries
+  `roles_permissions`, `two_factor` and `sso`.
 - Run the new `Plugins1793318400000` migration (exported from the package). It
   creates `escalated_plugins` and `escalated_plugin_store`. Nothing else changes
   for a host that registers no plugins.
@@ -17,6 +43,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Admin > Plugins list.
 
 ### Added
+- **Roles & permissions are enforced when switched on.** Every admin and agent
+  route (JSON and screens, and API token requests, which act as the token's
+  owner) needs its permission from the user's Escalated role as well as the
+  host guard; the map is `src/access/route-permissions.ts`, a route missing
+  from it is refused, and a test checks every route is mapped. Status changes
+  to `resolved`/`closed`/`reopened` (or any solved status) also need
+  `ticket.close`, bulk actions need each action's permission, an assignee
+  change needs `ticket.assign` and an internal reply `reply.create_internal`.
+  Failing answers 403.
+- `RoleService.assignRole(userId, roleSlug)` gives a user a role, and
+  `RoleService.seedPermissions()` seeds the same permissions and roles as the
+  migration.
 - `ctx.broadcast` reaches the Socket.IO gateway (it was a no-op): `toUser`
   goes to that user's sockets, `toTicket` to sockets in the ticket's room that
   may see it, and `toChannel` to sockets that joined the plugin channel with the

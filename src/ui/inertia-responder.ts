@@ -1,3 +1,5 @@
+import { AccessControlService } from '../access/access-control.service';
+import { sharedAccessFeatures } from '../access/access-features';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { isObservable, lastValueFrom } from 'rxjs';
@@ -181,8 +183,11 @@ export class InertiaResponder {
         broadcasting: { channel_prefix: '' },
         is_agent: isAgent,
         is_admin: isAdmin,
-        permissions: [],
-        features: { newsletters: this.options.enableNewsletters === true },
+        permissions: await this.permissions(user, isAgent),
+        features: {
+          newsletters: this.options.enableNewsletters === true,
+          ...sharedAccessFeatures(this.options),
+        },
         guest_tickets_enabled: true,
         show_powered_by: await this.setting('show_powered_by', true),
         knowledge_base_enabled: this.options.enableKnowledgeBase !== false,
@@ -268,6 +273,20 @@ export class InertiaResponder {
       this.guards.set(type, instance);
     }
     return instance;
+  }
+
+  /**
+   * `escalated.permissions`: the user's role permissions while roles &
+   * permissions is on, `['*']` for staff while it is off, `[]` otherwise.
+   */
+  private async permissions(user: { id: unknown } | null, isStaff: boolean): Promise<string[]> {
+    if (!user) return [];
+    try {
+      const access = this.moduleRef.get(AccessControlService, { strict: false });
+      return await access.sharedPermissions(user.id as any, isStaff);
+    } catch {
+      return [];
+    }
   }
 
   /** Active plugins' menu items, slots and widgets; `{}` without plugins. */

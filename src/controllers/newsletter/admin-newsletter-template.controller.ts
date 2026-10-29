@@ -10,7 +10,9 @@ import {
   Post,
   Put,
   Req,
+  UseGuards,
 } from '@nestjs/common';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -28,6 +30,7 @@ import {
 } from './newsletter-http.utils';
 
 @EscalatedUi()
+@UseGuards(EscalatedAdminGuard)
 @Controller('admin/newsletters/templates')
 export class AdminNewsletterTemplateController {
   constructor(

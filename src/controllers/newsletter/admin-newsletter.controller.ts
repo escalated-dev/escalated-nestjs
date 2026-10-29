@@ -12,7 +12,9 @@ import {
   Put,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -59,6 +61,7 @@ interface NewsletterForm {
 }
 
 @EscalatedUi()
+@UseGuards(EscalatedAdminGuard)
 @Controller('admin/newsletters')
 export class AdminNewsletterController {
   constructor(

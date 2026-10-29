@@ -63,6 +63,8 @@ export { ImportJobs1793059200000 } from './migrations/1793059200000-ImportJobs';
 export { HashApiTokens1793145600000 } from './migrations/1793145600000-HashApiTokens';
 export { ChatVisitorTokenExpiry1793232000000 } from './migrations/1793232000000-ChatVisitorTokenExpiry';
 export { Plugins1793318400000 } from './migrations/1793318400000-Plugins';
+export { RolesAndPermissions1793404800000 } from './migrations/1793404800000-RolesAndPermissions';
+export * from './access';
 export * from './events/event-names';
 
 // Widget embedding

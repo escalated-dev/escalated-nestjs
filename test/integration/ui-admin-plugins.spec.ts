@@ -154,6 +154,16 @@ describe('plugins (ui.enabled)', () => {
     calls.length = 0;
   });
 
+  // Plugin capabilities apply while roles & permissions is switched on (ADR
+  // 2026-10-29). The env switch is read per request; plugin pages and
+  // endpoints map to no route permission, so only the capability decides.
+  const rolesOn = () => {
+    process.env.ESCALATED_ROLES_PERMISSIONS = 'true';
+  };
+  afterEach(() => {
+    delete process.env.ESCALATED_ROLES_PERMISSIONS;
+  });
+
   describe('Escalated/Admin/Plugins/Index', () => {
     it('lists every registered plugin, inactive until activated, without upload', async () => {
       const index = await page(base, '/escalated/admin/plugins', asAdmin);
@@ -328,10 +338,15 @@ describe('plugins (ui.enabled)', () => {
     });
 
     it('renders a page with no props endpoint with empty props, behind its capability', async () => {
-      // An admin whose role lacks the capability is refused...
       const role = await source.getRepository(Role).save({ name: 'Manager', slug: 'manager' });
       await source.getRepository(AgentProfile).save({ userId: ADMIN, roleId: role.id });
       const path = `/escalated/admin/plugins/${CRM}/reports/overview`;
+
+      // While roles & permissions is off the admin guard decides alone...
+      expect((await inertiaFetch(base, path, asAdmin)).status).toBe(200);
+
+      // ...and while it is on, an admin whose role lacks the capability is refused...
+      rolesOn();
       expect((await inertiaFetch(base, path, asAdmin)).status).toBe(403);
 
       // ...until the role has it.
@@ -419,11 +434,22 @@ describe('plugins (ui.enabled)', () => {
           method: 'DELETE',
           headers: { 'x-requested-with': 'XMLHttpRequest' },
         });
+      // Roles & permissions off: the admin guard decides alone.
+      expect((await del()).status).toBe(200);
+
+      rolesOn();
       expect((await del()).status).toBe(403);
 
+      // The role must hold the capability; its slug grants nothing.
       await source.getRepository(AgentProfile).delete({ userId: ADMIN });
-      const admin = await source.getRepository(Role).save({ name: 'Admin', slug: 'admin' });
+      const crm = await source.getRepository(Permission).findOneByOrFail({ slug: 'manage_crm' });
+      const admin = await source
+        .getRepository(Role)
+        .save({ name: 'Admin', slug: 'admin', permissions: [] });
       await source.getRepository(AgentProfile).save({ userId: ADMIN, roleId: admin.id });
+      expect((await del()).status).toBe(403);
+      admin.permissions = [crm];
+      await source.getRepository(Role).save(admin);
       expect((await del()).status).toBe(200);
     });
 

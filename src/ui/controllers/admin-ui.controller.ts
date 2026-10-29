@@ -1,3 +1,4 @@
+import { RequiresAccessFeature } from '../../access/access-feature.guard';
 import {
   Body,
   Controller,
@@ -174,6 +175,7 @@ export class AdminUiController {
     });
   }
 
+  @RequiresAccessFeature('roles_permissions')
   @Get('roles/create')
   async createRole() {
     return inertia('Escalated/Admin/Roles/Form', {
@@ -182,6 +184,7 @@ export class AdminUiController {
     });
   }
 
+  @RequiresAccessFeature('roles_permissions')
   @Get('roles/:id/edit')
   async editRole(@Param('id', ParseIntPipe) id: number) {
     return inertia('Escalated/Admin/Roles/Form', {

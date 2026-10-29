@@ -1,3 +1,4 @@
+import { accessFeatureEnabled } from '../access/access-features';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -389,11 +390,14 @@ export class PluginRegistry {
   // Access
 
   /**
-   * Whether the request's user holds `capability`: an agent role with that
-   * permission, or the admin role, as the package's PermissionsGuard decides.
+   * Whether the request's user holds `capability`. While roles & permissions
+   * is switched off the host guards decide everything and this is always
+   * true; while on, the user's Escalated role must grant it (ADR
+   * 2026-10-29-configurable-access-features).
    */
   async allows(request: any, capability: string | null | undefined): Promise<boolean> {
     if (!capability) return true;
+    if (!accessFeatureEnabled(this.options, 'roles_permissions')) return true;
     const user = this.options.userResolver?.(request) ?? request?.user;
     const userId = user?.id ?? request?.apiUserId;
     if (userId === undefined || userId === null) return false;
@@ -403,8 +407,7 @@ export class PluginRegistry {
       where: { id: profile.roleId },
       relations: { permissions: true },
     });
-    if (!role) return false;
-    return role.slug === 'admin' || (role.permissions ?? []).some((p) => p.slug === capability);
+    return (role?.permissions ?? []).some((p) => p.slug === capability);
   }
 
   // Context

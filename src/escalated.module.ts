@@ -212,6 +212,8 @@ import { GuestPrivacyHeadersMiddleware } from './middleware/guest-privacy-header
 // Guards
 import { ApiTokenGuard } from './guards/api-token.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
+import { AccessControlService } from './access/access-control.service';
+import { AccessFeatureGuard } from './access/access-feature.guard';
 import { GuestAccessGuard } from './guards/guest-access.guard';
 import { PublicSubmitThrottleGuard } from './guards/public-submit-throttle.guard';
 import { GuestThrottleGuard } from './guards/guest-throttle.guard';
@@ -280,6 +282,7 @@ const entities = [
 ];
 
 const services = [
+  AccessControlService,
   TicketService,
   ReplyService,
   SlaService,
@@ -495,6 +498,7 @@ export class EscalatedModule implements NestModule {
         ...conditionalProviders,
         ApiTokenGuard,
         PermissionsGuard,
+        AccessFeatureGuard,
         GuestAccessGuard,
         PublicSubmitThrottleGuard,
         GuestThrottleGuard,

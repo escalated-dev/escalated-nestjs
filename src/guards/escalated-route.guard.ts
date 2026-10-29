@@ -11,6 +11,8 @@ import {
 import { ModuleRef } from '@nestjs/core';
 import { isObservable, lastValueFrom } from 'rxjs';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
+import { accessFeatureEnabled } from '../access/access-features';
+import { AccessControlService } from '../access/access-control.service';
 
 export type EscalatedRouteGroup = 'admin' | 'agent' | 'customer';
 
@@ -87,6 +89,9 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
           // Shared routes (attachments) authorise differently per group.
           if (context.getType() === 'http') {
             context.switchToHttp().getRequest()[ESCALATED_ROUTE_GROUP] = group;
+            // Roles & permissions: the host guard decides who reaches the
+            // area; the user's role must also grant the route's permission.
+            if (group !== 'customer') await this.enforcePermissions(context);
           }
           return true;
         }
@@ -99,6 +104,17 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
       throw refusal;
     }
     return false;
+  }
+
+  private async enforcePermissions(context: ExecutionContext): Promise<void> {
+    if (!accessFeatureEnabled(this.options, 'roles_permissions')) return;
+    let access: AccessControlService;
+    try {
+      access = this.moduleRef.get(AccessControlService, { strict: false });
+    } catch {
+      throw new ForbiddenException();
+    }
+    await access.enforceRoute(context);
   }
 
   private async runHostGuard(

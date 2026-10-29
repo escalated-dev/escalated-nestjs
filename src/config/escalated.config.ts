@@ -250,6 +250,24 @@ export interface EscalatedModuleOptions {
   widgetOrigins?: string[];
 
   /**
+   * Install-level access switches (ADR 2026-10-29-configurable-access-features),
+   * all off by default. Each falls back to its env var (`ESCALATED_ROLES_PERMISSIONS`,
+   * `ESCALATED_TWO_FACTOR`, `ESCALATED_SSO`, `true`/`1` for on). They are read
+   * from configuration only: no admin setting changes them.
+   *
+   * Off: the feature's screens and routes answer 404, nothing is enforced and
+   * the host's admin/agent guards decide everything, as before. On: enforced.
+   * See docs/access-control.md.
+   */
+  access?: {
+    /**
+     * Every admin and agent route also needs its permission (the map in
+     * `src/access/route-permissions.ts`) from the user's Escalated role.
+     */
+    rolesPermissions?: boolean;
+  };
+
+  /**
    * Fallback language for i18n when none is detected from the request
    * (default: `'en'`). The full set of supported languages comes from
    * the central `@escalated-dev/locale` package.

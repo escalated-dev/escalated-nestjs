@@ -11,7 +11,9 @@ import {
   Req,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -34,6 +36,7 @@ import {
 } from './newsletter-http.utils';
 
 @EscalatedUi()
+@UseGuards(EscalatedAdminGuard)
 @Controller('admin/newsletters/lists')
 export class AdminNewsletterListController {
   constructor(
