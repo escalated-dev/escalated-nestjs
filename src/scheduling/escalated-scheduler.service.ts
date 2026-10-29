@@ -13,6 +13,7 @@ import { NewsletterDispatcherService } from '../services/newsletter/newsletter-d
 import { NewsletterPlannerService } from '../services/newsletter/newsletter-planner.service';
 import { Ticket } from '../entities/ticket.entity';
 import { DataRetentionService } from '../services/data-retention.service';
+import { PluginRegistry } from '../plugins/plugin-registry.service';
 
 @Injectable()
 export class EscalatedSchedulerService {
@@ -38,7 +39,20 @@ export class EscalatedSchedulerService {
     private readonly newsletterRepo?: Repository<Newsletter>,
     @Optional()
     private readonly dataRetention?: DataRetentionService,
+    @Optional()
+    private readonly plugins?: PluginRegistry,
   ) {}
+
+  /** Runs active plugins' cron schedules that are due this minute. */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async runPluginCron(now: Date = new Date()): Promise<void> {
+    if (!this.plugins?.all().length) return;
+    try {
+      await this.plugins.runDueCron(now);
+    } catch (error) {
+      this.logger.error('Error running plugin cron schedules', error);
+    }
+  }
 
   /**
    * Apply the data retention periods daily at 03:30, as escalated-laravel
