@@ -4,6 +4,8 @@ import { isObservable, lastValueFrom } from 'rxjs';
 import type { EscalatedModuleOptions } from '../config/escalated.config';
 import { ESCALATED_ROUTE_GROUP } from '../guards/escalated-route.guard';
 import { SettingsService } from '../services/settings.service';
+import { PLUGIN_REGISTRY } from '../plugins/plugin-definition';
+import type { PluginRegistry } from '../plugins/plugin-registry.service';
 import { clearFlashCookie, flashCookie, readFlash, type FlashState } from './flash';
 import { InertiaBack, InertiaPage, InertiaRedirect } from './inertia';
 import { isInertiaRequest, requestUrl, sameOriginReferer } from './request';
@@ -197,6 +199,8 @@ export class InertiaResponder {
       },
     };
 
+    (shared.escalated as Record<string, unknown>).plugins = await this.plugins(request, isAdmin);
+
     const extra = this.ui.share ? await this.ui.share(request) : {};
     return { ...shared, ...(extra ?? {}) };
   }
@@ -264,6 +268,17 @@ export class InertiaResponder {
       this.guards.set(type, instance);
     }
     return instance;
+  }
+
+  /** Active plugins' menu items, slots and widgets; `{}` without plugins. */
+  private async plugins(request: any, isAdmin: boolean): Promise<Record<string, unknown>> {
+    try {
+      const registry = this.moduleRef.get<PluginRegistry>(PLUGIN_REGISTRY, { strict: false });
+      if (!registry.all().length) return {};
+      return await registry.uiExtensions(request, isAdmin);
+    } catch {
+      return {};
+    }
   }
 
   private async setting(key: string, fallback: boolean): Promise<boolean> {

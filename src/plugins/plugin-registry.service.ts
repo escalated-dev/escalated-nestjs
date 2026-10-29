@@ -14,6 +14,7 @@ import type {
 } from './plugin-definition';
 import { pageRoute, registerPlugin } from './plugin-definition';
 import { PluginStoreService } from './plugin-store.service';
+import { PluginDomainService } from './plugin-domain.service';
 
 /** The lifecycle actions, fired to every active plugin. */
 export const PLUGIN_LIFECYCLE_ACTIONS = [
@@ -92,6 +93,7 @@ export class PluginRegistry {
     @InjectRepository(AgentProfile) private readonly profiles: Repository<AgentProfile>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
     private readonly store: PluginStoreService,
+    private readonly domain: PluginDomainService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
   ) {}
 
@@ -262,6 +264,65 @@ export class PluginRegistry {
     return current as T;
   }
 
+  // UI extensions
+
+  /**
+   * `escalated.plugins` for the shared screens: active plugins' menu items,
+   * page components and dashboard widgets, without those whose capability
+   * the viewer lacks, and without admin menu items for anyone but an admin.
+   * `{}` when no plugin is active.
+   */
+  async uiExtensions(request: any, isAdmin: boolean): Promise<Record<string, unknown>> {
+    const active = await this.activePlugins();
+    if (!active.length) return {};
+    const menuItems: Record<string, unknown>[] = [];
+    const pageComponents: Record<string, Record<string, unknown>[]> = {};
+    const dashboardWidgets: Record<string, unknown>[] = [];
+
+    for (const plugin of active) {
+      const { slug } = plugin;
+      for (const page of plugin.pages) {
+        const route = pageRoute(page);
+        if (!page?.menu || !route || !page.component) continue;
+        const section = page.menu.section ?? 'admin';
+        if (section === 'admin' && !isAdmin) continue;
+        if (!(await this.allows(request, page.capability))) continue;
+        menuItems.push({
+          label: page.menu.label,
+          route: `/escalated/admin/plugins/${slug}/${route}`,
+          icon: page.menu.icon ?? null,
+          position: page.menu.position ?? 100,
+          section,
+          plugin: slug,
+        });
+      }
+      for (const item of plugin.definition.components ?? []) {
+        if (!item?.page || !item.slot || !item.component) continue;
+        if (!(await this.allows(request, item.capability))) continue;
+        const key = `${item.page}.${item.slot}`;
+        (pageComponents[key] ??= []).push({
+          plugin: slug,
+          component: item.component,
+          data: item.props ?? {},
+          position: item.order ?? 100,
+        });
+      }
+      for (const widget of plugin.definition.widgets ?? []) {
+        if (!widget?.component) continue;
+        if (!(await this.allows(request, widget.capability))) continue;
+        dashboardWidgets.push({
+          id: `${slug}.${widget.component}`,
+          title: widget.label,
+          component: widget.component,
+          plugin: slug,
+          position: widget.order ?? 100,
+          width: widget.size ?? 'half',
+        });
+      }
+    }
+    return { menuItems, pageComponents, dashboardWidgets };
+  }
+
   // Access
 
   /**
@@ -295,16 +356,11 @@ export class PluginRegistry {
       (message: string, data?: unknown): void => {
         logger[level](`[${name}] ${message}${data === undefined ? '' : ` ${safeJson(data)}`}`);
       };
-    const unavailable = (area: string) =>
-      new Proxy(
-        {},
-        {
-          get: (_target, method) => () =>
-            Promise.reject(
-              new Error(`ctx.${area}.${String(method)} is not available on this host yet.`),
-            ),
-        },
-      ) as Record<string, (...args: any[]) => Promise<any>>;
+    const domain = this.domain;
+    const actor = () => {
+      const user = request ? (this.options.userResolver?.(request) ?? request.user) : null;
+      return user?.id ?? request?.apiUserId ?? null;
+    };
 
     return {
       config: {
@@ -334,12 +390,34 @@ export class PluginRegistry {
         error: log('error'),
         debug: log('debug'),
       },
-      tickets: unavailable('tickets'),
-      replies: unavailable('replies'),
-      contacts: unavailable('contacts'),
-      tags: unavailable('tags'),
-      departments: unavailable('departments'),
-      agents: unavailable('agents'),
+      tickets: {
+        find: (id: unknown) => domain.findTicket(id),
+        query: (filter: unknown) => domain.queryTickets(filter),
+        create: (data: unknown) => domain.createTicket(data, actor()),
+        update: (id: unknown, data: unknown) => domain.updateTicket(id, data, actor()),
+      },
+      replies: {
+        find: (id: unknown) => domain.findReply(id),
+        query: (filter: unknown) => domain.queryReplies(filter),
+        create: (data: unknown) => domain.createReply(data, actor()),
+      },
+      contacts: {
+        find: (id: unknown) => domain.findContact(id),
+        findByEmail: (email: unknown) => domain.findContactByEmail(email),
+        create: (data: unknown) => domain.createContact(data),
+      },
+      tags: {
+        all: () => domain.allTags(),
+        create: (data: unknown) => domain.createTag(data),
+      },
+      departments: {
+        all: () => domain.allDepartments(),
+        find: (id: unknown) => domain.findDepartment(id),
+      },
+      agents: {
+        all: () => domain.allAgents(),
+        find: (id: unknown) => domain.findAgent(id),
+      },
       emit: async (hook, data) => {
         if (typeof hook !== 'string' || RESERVED_HOOKS.has(hook)) {
           log('warn')(`ctx.emit("${String(hook)}") dropped: that name belongs to the host`);

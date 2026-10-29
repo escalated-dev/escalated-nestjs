@@ -39,6 +39,16 @@ const WEBHOOK_EVENT_NAMES: Readonly<Record<string, string>> = {
   TicketSplitEvent: 'ticket.split',
 };
 
+/**
+ * The name `event` goes out under (webhooks, plugin actions), or null. An
+ * internal note goes out as `note.created` (NoteCreatedEvent), never as a reply.
+ */
+export function webhookEventName(event: any): string | null {
+  const name = WEBHOOK_EVENT_NAMES[event?.constructor?.name] ?? null;
+  if (name === 'reply.created' && event.reply?.isInternal) return null;
+  return name;
+}
+
 /** Every event name webhooks are sent under, in the shared vocabulary's order. */
 export function webhookEventNames(): string[] {
   return [...new Set(Object.values(WEBHOOK_EVENT_NAMES))];
@@ -279,9 +289,6 @@ export class WebhookService {
   }
 
   private resolveEventName(event: any): string | null {
-    const name = WEBHOOK_EVENT_NAMES[event?.constructor?.name] ?? null;
-    // Internal notes go out as `note.created` (NoteCreatedEvent), never as a reply.
-    if (name === 'reply.created' && event.reply?.isInternal) return null;
-    return name;
+    return webhookEventName(event);
   }
 }

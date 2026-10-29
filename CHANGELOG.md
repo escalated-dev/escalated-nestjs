@@ -31,6 +31,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ctx.config`, `ctx.store`, `ctx.http`, `ctx.log`, `ctx.emit` and
   `ctx.currentUser` work. A malformed plugin, or two with one slug, stop the
   module at boot. See `docs/plugins.md`.
+- **Plugin hooks**: active plugins receive the canonical events (ADR
+  2026-10-21) as actions, with the payload of the shared plugin contract (the
+  ticket or reply flat, plus `ticket`/`reply` and the event's extras). A
+  failing or slow plugin never affects the request. Legacy names, merged and
+  split are not delivered.
+- `ctx.tickets`, `ctx.replies`, `ctx.contacts`, `ctx.tags`, `ctx.departments`
+  and `ctx.agents`, through the package's services, so plugin writes fire the
+  usual events. Writes take only the fields the contract lists, and a plugin
+  never chooses the acting user.
+- Active plugins' menu items, page components and dashboard widgets are shared
+  with every screen as `escalated.plugins`, filtered by capability; admin menu
+  items go to admins only.
 
 ## [1.2.8] - 2026-10-28
 
