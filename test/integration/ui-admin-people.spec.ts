@@ -1,8 +1,11 @@
+import { seedRolesAndPermissions } from '../../src/access/permission-seed';
+import { RoleService } from '../../src/services/role.service';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AgentProfile, ApiToken, Permission, Role } from '../../src/entities';
 import { hashApiToken } from '../../src/services/api-token.service';
 import {
+  ADMIN,
   AGENT,
   apiFetch,
   bootUi,
@@ -45,7 +48,10 @@ describe('admin people screens (ui.enabled)', () => {
     });
 
   beforeAll(async () => {
+    // The roles screens exist only while roles & permissions is switched on,
+    // which also makes the admin need a role (ADR 2026-10-29).
     ({ app, source, base } = await bootUi({
+      access: { rolesPermissions: true },
       ui: {
         enabled: true,
         resolveUsers: (ids) =>
@@ -72,6 +78,8 @@ describe('admin people screens (ui.enabled)', () => {
     await source
       .getRepository(AgentProfile)
       .save({ userId: AGENT, displayName: 'Agent', isActive: true, roleId: support.id });
+    await seedRolesAndPermissions(source.manager);
+    await app.get(RoleService).assignRole(ADMIN, 'admin');
   });
 
   afterAll(async () => {
@@ -105,10 +113,13 @@ describe('admin people screens (ui.enabled)', () => {
       expect(create.component).toBe('Escalated/Admin/Roles/Form');
       expectManifestProps(create);
       expect(create.props.role).toBeNull();
-      expect(create.props.permissions).toEqual({
-        admin: [expect.objectContaining({ id: manageUsers.id, name: 'Manage users' })],
-        tickets: [expect.objectContaining({ id: viewTickets.id, name: 'View tickets' })],
-      });
+      // Beside the seeded groups (Tickets, Replies, ...), the two made here.
+      expect(create.props.permissions.admin).toEqual([
+        expect.objectContaining({ id: manageUsers.id, name: 'Manage users' }),
+      ]);
+      expect(create.props.permissions.tickets).toEqual([
+        expect.objectContaining({ id: viewTickets.id, name: 'View tickets' }),
+      ]);
 
       const res = await submit('/escalated/admin/roles', {
         name: 'Team Lead',
@@ -194,7 +205,9 @@ describe('admin people screens (ui.enabled)', () => {
       expect(stored.token).toBe(hashApiToken(shown));
       expect(JSON.stringify(index)).not.toContain(stored.token);
       expect(index.props.api_enabled).toBe(true);
+      // Agents: AGENT, and ADMIN, whose admin role lives on an agent profile.
       expect(index.props.users).toEqual([
+        { id: ADMIN, name: `Host user ${ADMIN}`, email: `u${ADMIN}@example.com` },
         { id: AGENT, name: `Host user ${AGENT}`, email: `u${AGENT}@example.com` },
       ]);
       const listed = index.props.tokens.find((t: any) => t.id === stored.id);

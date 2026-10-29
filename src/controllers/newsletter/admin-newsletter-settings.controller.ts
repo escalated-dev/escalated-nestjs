@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Put, Req, UseGuards } from '@nestjs/common';
+import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,6 +26,7 @@ const SETTING_KEYS = {
 } as const;
 
 @EscalatedUi()
+@UseGuards(EscalatedAdminGuard)
 @Controller('admin/newsletters/settings')
 export class AdminNewsletterSettingsController {
   constructor(

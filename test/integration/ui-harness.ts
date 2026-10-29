@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm';
 import manifest from '../fixtures/escalated-pages.json';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
-import { bootEscalatedModule } from './boot-escalated-module';
+import { bootEscalatedModule, type BootOptions } from './boot-escalated-module';
 
 /**
  * Boots the real module with the screens on, over HTTP and SQLite, with host
@@ -42,8 +42,12 @@ export interface UiApp {
   base: string;
 }
 
-export async function bootUi(escalated: EscalatedModuleOptions = {}): Promise<UiApp> {
+export async function bootUi(
+  escalated: EscalatedModuleOptions = {},
+  host?: BootOptions['host'],
+): Promise<UiApp> {
   const moduleRef = await bootEscalatedModule({
+    host,
     escalated: {
       adminGuard: guardFor('admin'),
       agentGuard: guardFor('agent'),

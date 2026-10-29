@@ -1,28 +1,22 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  SetMetadata,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AgentProfile } from '../entities/agent-profile.entity';
-import { Role } from '../entities/role.entity';
+import { AccessControlService } from '../access/access-control.service';
 
 export const PERMISSIONS_KEY = 'escalated_permissions';
 export const RequirePermissions = (...permissions: string[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);
 
+/**
+ * Requires `@RequirePermissions(...)` slugs from the user's Escalated role
+ * while roles & permissions is switched on (`access.rolesPermissions`). While
+ * it is off the host guards decide and this lets the request through (ADR
+ * 2026-10-29-configurable-access-features).
+ */
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @InjectRepository(AgentProfile)
-    private readonly agentProfileRepo: Repository<AgentProfile>,
-    @InjectRepository(Role)
-    private readonly roleRepo: Repository<Role>,
+    private readonly access: AccessControlService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -36,41 +30,9 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const userId = request.user?.id || request.apiUserId;
-
-    if (!userId) {
-      throw new ForbiddenException('User not authenticated');
+    for (const permission of requiredPermissions) {
+      await this.access.require(request, permission);
     }
-
-    const agentProfile = await this.agentProfileRepo.findOne({
-      where: { userId },
-    });
-
-    if (!agentProfile || !agentProfile.roleId) {
-      throw new ForbiddenException('No agent profile or role found');
-    }
-
-    const role = await this.roleRepo.findOne({
-      where: { id: agentProfile.roleId },
-      relations: { permissions: true },
-    });
-
-    if (!role) {
-      throw new ForbiddenException('Role not found');
-    }
-
-    // Admin role has all permissions
-    if (role.slug === 'admin') {
-      return true;
-    }
-
-    const userPermissions = role.permissions.map((p) => p.slug);
-    const hasAllPermissions = requiredPermissions.every((p) => userPermissions.includes(p));
-
-    if (!hasAllPermissions) {
-      throw new ForbiddenException('Insufficient permissions');
-    }
-
     return true;
   }
 }

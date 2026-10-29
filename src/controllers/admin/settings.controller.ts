@@ -1,3 +1,4 @@
+import { RequiresAccessFeature } from '../../access/access-feature.guard';
 import {
   Controller,
   Get,
@@ -223,6 +224,7 @@ export class AdminSettingsController {
   }
 
   // Roles
+  @RequiresAccessFeature('roles_permissions')
   @Get('roles')
   async listRoles(@Req() req?: any): Promise<any> {
     if (this.screen(req)) {
@@ -231,11 +233,13 @@ export class AdminSettingsController {
     return this.roleService.findAll();
   }
 
+  @RequiresAccessFeature('roles_permissions')
   @Get('permissions')
   async listPermissions() {
     return this.roleService.getAllPermissions();
   }
 
+  @RequiresAccessFeature('roles_permissions')
   @Post('roles')
   @AuditAction('create', 'role')
   async createRole(@Body() body: any, @Req() req?: any): Promise<any> {
@@ -247,6 +251,7 @@ export class AdminSettingsController {
     return this.roleService.create(body);
   }
 
+  @RequiresAccessFeature('roles_permissions')
   @Put('roles/:id')
   @AuditAction('update', 'role')
   async updateRole(
@@ -266,6 +271,7 @@ export class AdminSettingsController {
     return this.roleService.update(id, body);
   }
 
+  @RequiresAccessFeature('roles_permissions')
   @Delete('roles/:id')
   @HttpCode(204)
   async deleteRole(@Param('id', ParseIntPipe) id: number, @Req() req?: any): Promise<any> {

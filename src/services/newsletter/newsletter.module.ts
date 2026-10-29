@@ -6,6 +6,8 @@ import { AgentProfile } from '../../entities/agent-profile.entity';
 import { Contact } from '../../entities/contact.entity';
 import { EscalatedSettings } from '../../entities/escalated-settings.entity';
 import { Role } from '../../entities/role.entity';
+import { TicketStatus } from '../../entities/ticket-status.entity';
+import { AccessControlService } from '../../access/access-control.service';
 import { AdminNewsletterController } from '../../controllers/newsletter/admin-newsletter.controller';
 import { AdminNewsletterListController } from '../../controllers/newsletter/admin-newsletter-list.controller';
 import { AdminNewsletterSettingsController } from '../../controllers/newsletter/admin-newsletter-settings.controller';
@@ -50,6 +52,7 @@ const newsletterEntities = [
   EscalatedSettings,
   AgentProfile,
   Role,
+  TicketStatus,
 ];
 
 const newsletterControllers = [
@@ -86,6 +89,7 @@ export class NewsletterModule {
         ...escalatedRepositoryProviders(newsletterEntities, connection),
         ...newsletterServices,
         NewsletterEnabledGuard,
+        AccessControlService,
       ],
       exports: [TypeOrmModule, ...newsletterServices],
     };

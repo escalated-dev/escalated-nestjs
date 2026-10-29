@@ -45,6 +45,7 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 - **Widget API** -- Public endpoints for embeddable support widget with rate limiting
 - **Public Ticket System** -- Unauthenticated submission via widget form or inbound email, Contact-based identity with email dedupe, configurable guest policy, signed Reply-To for threaded email conversations
 - **Workflow Engine** -- Admin-configured rules fire on ticket/reply events (conditions + actions: assign, tag, set priority/status/department, insert canned reply, etc.); evaluation logs per execution
+- **Access control** -- Roles & permissions as an install-level switch (`access.rolesPermissions`), enforced on every admin and agent route when on and hidden when off (see [docs/access-control.md](docs/access-control.md))
 - **Plugins** -- `@escalated-dev/plugin-sdk` plugins registered in the module run in-process, with Admin > Plugins, plugin pages, endpoints and webhooks (see [docs/plugins.md](docs/plugins.md))
 - **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
 - **Capacity Management** -- Per-agent ticket limits with real-time tracking
@@ -154,6 +155,7 @@ two can live on different connections — there is no foreign key that would hav
 to span them.
 | `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
 | `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
+| `access`              | `object`   | all off       | Install-level access switches: `rolesPermissions` (env `ESCALATED_ROLES_PERMISSIONS`) (see [docs/access-control.md](docs/access-control.md)) |
 | `guestAccess`         | `object`   | --            | Verified guest access: `secret`, `ttlMinutes`, code budgets, `legacyTokens`, `sendCode` (see [docs/guest-access.md](docs/guest-access.md)) |
 | `slaWarningMinutes`   | `number`   | `30`          | Minutes before an SLA deadline that `sla.warning` fires (`0` = off) |
 | `widgetOrigins`       | `string[]` | `[]`          | Sites that may embed the widget (see [Embedding the widget](docs/embedding-the-widget.md)) |

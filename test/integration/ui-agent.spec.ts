@@ -133,8 +133,9 @@ describe('agent screens (ui.enabled)', () => {
         prefix: 'escalated',
         is_agent: true,
         is_admin: false,
-        permissions: [],
-        features: { newsletters: false },
+        // Roles & permissions off: staff get `*`, the guards decide.
+        permissions: ['*'],
+        features: { newsletters: false, roles_permissions: false, two_factor: false, sso: false },
         broadcasting: { channel_prefix: '' },
         knowledge_base_enabled: true,
       });

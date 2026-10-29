@@ -1,11 +1,19 @@
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { Department, Tag, Ticket, TicketStatus } from '../../src/entities';
+import {
+  AgentProfile,
+  Department,
+  Permission,
+  Role,
+  Tag,
+  Ticket,
+  TicketStatus,
+} from '../../src/entities';
 import type { EscalatedPluginDefinition, PluginContext } from '../../src/plugins/plugin-definition';
 import { PluginRegistry } from '../../src/plugins/plugin-registry.service';
 import { EscalatedSchedulerService } from '../../src/scheduling/escalated-scheduler.service';
 import { CANONICAL_EVENTS, LEGACY_EVENT_NAMES } from '../../src/events/event-names';
-import { apiFetch, bootUi, inertiaFetch, page } from './ui-harness';
+import { ADMIN, apiFetch, bootUi, inertiaFetch, page } from './ui-harness';
 
 jest.setTimeout(60000);
 
@@ -383,8 +391,31 @@ describe('plugin hooks and context', () => {
   });
 
   describe('escalated.plugins', () => {
-    it('shares active plugins’ menu items, page components and widgets', async () => {
+    it('leaves capability checks to roles & permissions, shown to every admin while it is off', async () => {
       const shown = await page(base, '/escalated/admin/plugins', { as: 'admin' });
+      expect(shown.props.escalated.plugins.menuItems.map((item: any) => item.label)).toContain(
+        'Secret',
+      );
+    });
+
+    it('shares active plugins’ menu items, page components and widgets', async () => {
+      // Capabilities apply while roles & permissions is on (ADR 2026-10-29).
+      // The admin's role may view plugins but has no `manage_crm`.
+      const view = await source
+        .getRepository(Permission)
+        .save({ slug: 'plugin.view', name: 'View plugins' });
+      const role = await source
+        .getRepository(Role)
+        .save({ name: 'Viewer', slug: 'viewer', permissions: [view] });
+      await source.getRepository(AgentProfile).save({ userId: ADMIN, roleId: role.id });
+      process.env.ESCALATED_ROLES_PERMISSIONS = 'true';
+      let shown: any;
+      try {
+        shown = await page(base, '/escalated/admin/plugins', { as: 'admin' });
+      } finally {
+        delete process.env.ESCALATED_ROLES_PERMISSIONS;
+        await source.getRepository(AgentProfile).delete({ userId: ADMIN });
+      }
       const plugins = shown.props.escalated.plugins;
 
       expect(plugins.menuItems).toEqual([
