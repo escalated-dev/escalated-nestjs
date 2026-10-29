@@ -13,6 +13,7 @@ import { isObservable, lastValueFrom } from 'rxjs';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 import { accessFeatureEnabled } from '../access/access-features';
 import { AccessControlService } from '../access/access-control.service';
+import { TwoFactorGate } from '../access/two-factor-gate';
 
 export type EscalatedRouteGroup = 'admin' | 'agent' | 'customer';
 
@@ -91,7 +92,11 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
             context.switchToHttp().getRequest()[ESCALATED_ROUTE_GROUP] = group;
             // Roles & permissions: the host guard decides who reaches the
             // area; the user's role must also grant the route's permission.
-            if (group !== 'customer') await this.enforcePermissions(context);
+            // Two-factor: an enrolled user must have passed the challenge.
+            if (group !== 'customer') {
+              await this.enforceTwoFactor(context);
+              await this.enforcePermissions(context);
+            }
           }
           return true;
         }
@@ -104,6 +109,17 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
       throw refusal;
     }
     return false;
+  }
+
+  private async enforceTwoFactor(context: ExecutionContext): Promise<void> {
+    if (!accessFeatureEnabled(this.options, 'two_factor')) return;
+    let gate: TwoFactorGate;
+    try {
+      gate = this.moduleRef.get(TwoFactorGate, { strict: false });
+    } catch {
+      throw new ForbiddenException();
+    }
+    await gate.check(context);
   }
 
   private async enforcePermissions(context: ExecutionContext): Promise<void> {
@@ -206,5 +222,19 @@ export class EscalatedAgentOrCustomerGuard extends EscalatedRouteGroupGuard {
     @Optional() @Inject(ESCALATED_OPTIONS) options?: EscalatedModuleOptions,
   ) {
     super(['agent', 'customer'], moduleRef, options);
+  }
+}
+
+/**
+ * Guards a staff member's own screens (two-factor enrolment and challenge):
+ * admitted when either `adminGuard` or `agentGuard` admits.
+ */
+@Injectable()
+export class EscalatedStaffGuard extends EscalatedRouteGroupGuard {
+  constructor(
+    moduleRef: ModuleRef,
+    @Optional() @Inject(ESCALATED_OPTIONS) options?: EscalatedModuleOptions,
+  ) {
+    super(['admin', 'agent'], moduleRef, options);
   }
 }

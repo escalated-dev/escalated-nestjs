@@ -57,7 +57,9 @@ function resource(path: string, group: string): PermissionEntry[] {
 
 export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   // ---- Personal ----------------------------------------------------------
-  ['*', `${A}/2fa/**`, []],
+  ['*', `${A}/settings/two-factor`, []],
+  ['*', `${A}/settings/two-factor/**`, []],
+  ['*', '/escalated/two-factor/challenge', []],
 
   // ---- Tickets (admin and agent panels) ----------------------------------
   ['GET', G, VIEW],

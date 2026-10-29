@@ -13,6 +13,7 @@ screen or stored setting changes them.
 | Feature | Option | Env var |
 |---|---|---|
 | Roles & permissions | `access.rolesPermissions` | `ESCALATED_ROLES_PERMISSIONS` |
+| Two-factor authentication | `access.twoFactor` | `ESCALATED_TWO_FACTOR` |
 
 ```ts
 EscalatedModule.forRoot({
@@ -86,3 +87,65 @@ user's agent profile, creating one if needed. Use it to give yourself the
 Every page gets `escalated.features.roles_permissions` (boolean) and
 `escalated.permissions`: the user's slugs while on, `['*']` for staff while
 off, `[]` for everyone else.
+
+## Two-factor authentication
+
+### Before turning it on
+
+- **A session.** Escalated owns no session, so the challenge is remembered in
+  the host's: any middleware that gives requests a `req.session` object
+  (express-session, cookie-session, ...). While two-factor is on, an enrolled
+  user on a host without one is refused (403) rather than let through.
+- **A new session on every login.** passport (0.6+) and most login handlers
+  regenerate the session when someone signs in, so every login is challenged.
+  If yours does not, call `forgetTwoFactorSession(req)` (exported) when a user
+  signs in or out.
+- **A sealing key.** TOTP secrets and recovery codes are sealed at rest with
+  AES-256-GCM. Set `twoFactor.secret` or `ESCALATED_TWO_FACTOR_SECRET` (it
+  falls back to `guestAccess.secret`, `ESCALATED_GUEST_ACCESS_SECRET`, then
+  `inbound.replySecret`) and keep it stable.
+- **The migration.** Run `TwoFactor1793491200000` (`escalated_two_factor`).
+
+Then set `access: { twoFactor: true }` or `ESCALATED_TWO_FACTOR=true`.
+
+### What is enforced
+
+- TOTP is RFC 6238 (SHA-1, 6 digits, 30 s) through the `otpauth` library, with
+  one step of drift either side. A code's time step is recorded when it is
+  accepted, and that step or an earlier one is refused afterwards.
+- A staff user with a confirmed enrolment who opens any admin or agent route
+  without having passed the challenge in this session is sent to
+  `GET /escalated/two-factor/challenge` (`Escalated/Auth/TwoFactorChallenge`,
+  props `action` and `error`). API clients get
+  `403 {"two_factor_required": true}` instead of a redirect.
+- The challenge posts `code` or `recovery_code` to
+  `POST /escalated/two-factor/challenge`. Success regenerates the session id
+  (keeping its data), marks the session for that user and returns to the page
+  they asked for. Failure is a validation error on the field sent. Five
+  attempts per user per minute; then 429.
+- Eight single-use recovery codes are issued at setup. A code that signs
+  someone in is removed.
+- Enrolment, `GET /escalated/admin/settings/two-factor`
+  (`Escalated/Admin/Settings/TwoFactor`) with `setup`, `confirm` and `disable`
+  posts, is open to every staff user (admin or agent guard), not only admins,
+  and needs no permission. Confirming marks the session as passed.
+- API token requests are not session-based and are not challenged.
+- Enrolments that earlier versions kept on the agent profile are moved to
+  `escalated_two_factor`, sealed, the first time they are used.
+
+### Requiring it
+
+`twoFactor.required` (`ESCALATED_TWO_FACTOR_REQUIRED`), or the
+`two_factor_required` setting in Admin > Settings (which wins once saved, and is
+offered only while two-factor is on). When required, a staff user without an
+enrolment is sent to enrol and can use nothing else until they do. Pages get
+`escalated.two_factor_required` for the signed-in staff user.
+
+### Lost device
+
+`moduleRef.get(TwoFactorService).reset(userId)` removes a user's enrolment.
+
+### While it is off
+
+The enrolment and challenge routes answer 404 and nobody is challenged.
+Enrolments are kept.

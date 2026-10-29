@@ -455,6 +455,26 @@ const routes: Record<string, NamedRoute> = {
   'escalated.admin.workflows.logs': { uri: 'escalated/admin/workflows/logs', methods: GET },
   'escalated.admin.workflows.reorder': { uri: 'escalated/admin/workflows/reorder', methods: POST },
 
+  // Two-factor (ADR 2026-10-29): enrolment for every staff user, and the challenge.
+  'escalated.admin.two-factor.index': {
+    uri: 'escalated/admin/settings/two-factor',
+    methods: GET,
+  },
+  'escalated.admin.two-factor.setup': {
+    uri: 'escalated/admin/settings/two-factor/setup',
+    methods: POST,
+  },
+  'escalated.admin.two-factor.confirm': {
+    uri: 'escalated/admin/settings/two-factor/confirm',
+    methods: POST,
+  },
+  'escalated.admin.two-factor.disable': {
+    uri: 'escalated/admin/settings/two-factor/disable',
+    methods: POST,
+  },
+  'escalated.two-factor.challenge': { uri: 'escalated/two-factor/challenge', methods: GET },
+  'escalated.two-factor.verify': { uri: 'escalated/two-factor/challenge', methods: POST },
+
   // Customer
   'escalated.customer.kb.index': { uri: 'escalated/kb', methods: GET },
   'escalated.customer.kb.show': { uri: 'escalated/kb/{slug}', methods: GET },

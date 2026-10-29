@@ -1,6 +1,10 @@
 import { RequiresAccessFeature } from '../../access/access-feature.guard';
+import { accessFeatureEnabled } from '../../access/access-features';
+import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import {
   Body,
+  Inject,
+  Optional,
   Controller,
   Get,
   HttpCode,
@@ -42,7 +46,21 @@ export const SUPPORTED_SETTINGS: Record<string, { kind: SettingKind; fallback: u
   widget_position: { kind: 'string', fallback: 'bottom-right' },
   widget_greeting: { kind: 'string', fallback: 'Hi there! How can we help?' },
   widget_allowed_origins: { kind: 'string', fallback: '' },
+  // Takes effect only while access.twoFactor is on (ADR 2026-10-29).
+  two_factor_required: { kind: 'boolean', fallback: false },
 };
+
+/**
+ * The settings this install offers: `two_factor_required` only while the
+ * two-factor switch is on, since it does nothing otherwise.
+ */
+export function supportedSettings(
+  options: EscalatedModuleOptions | null | undefined,
+): Record<string, { kind: SettingKind; fallback: unknown }> {
+  const all = { ...SUPPORTED_SETTINGS };
+  if (!accessFeatureEnabled(options, 'two_factor')) delete all.two_factor_required;
+  return all;
+}
 
 function boolean(value: unknown): boolean | null {
   if (typeof value === 'boolean') return value;
@@ -109,6 +127,7 @@ export class AdminUiController {
     private readonly departments: DepartmentService,
     private readonly data: UiDataService,
     @InjectRepository(BusinessSchedule) private readonly schedules: Repository<BusinessSchedule>,
+    @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
   ) {}
 
   @Post('settings')
@@ -117,7 +136,7 @@ export class AdminUiController {
     const errors: Record<string, string> = {};
     const writes: Array<[string, string, SettingKind]> = [];
 
-    for (const [key, { kind }] of Object.entries(SUPPORTED_SETTINGS)) {
+    for (const [key, { kind }] of Object.entries(supportedSettings(this.options))) {
       if (body?.[key] === undefined) continue;
       const value = body[key];
       if (kind === 'boolean') {

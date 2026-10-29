@@ -1,4 +1,6 @@
 import { AccessControlService } from '../access/access-control.service';
+import { takeSessionFlash } from '../access/two-factor-session';
+import { TwoFactorService } from '../services/two-factor.service';
 import { sharedAccessFeatures } from '../access/access-features';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
@@ -73,8 +75,17 @@ export class InertiaResponder {
     }
 
     const headers: Record<string, string> = { Vary: 'X-Inertia' };
-    const flash = readFlash(request);
-    if (flash) headers['Set-Cookie'] = clearFlashCookie(request);
+    const cookieFlash = readFlash(request);
+    if (cookieFlash) headers['Set-Cookie'] = clearFlashCookie(request);
+    // Flash that must not ride in a cookie (recovery codes) waits in the session.
+    const sessionFlash = takeSessionFlash(request);
+    const flash: FlashState | null =
+      cookieFlash || Object.keys(sessionFlash).length
+        ? {
+            flash: { ...(cookieFlash?.flash ?? {}), ...sessionFlash },
+            errors: cookieFlash?.errors ?? {},
+          }
+        : null;
 
     const props = this.partial(
       page.component,
@@ -205,6 +216,10 @@ export class InertiaResponder {
     };
 
     (shared.escalated as Record<string, unknown>).plugins = await this.plugins(request, isAdmin);
+    (shared.escalated as Record<string, unknown>).two_factor_required = await this.mustEnrol(
+      user,
+      isAgent,
+    );
 
     const extra = this.ui.share ? await this.ui.share(request) : {};
     return { ...shared, ...(extra ?? {}) };
@@ -286,6 +301,18 @@ export class InertiaResponder {
       return await access.sharedPermissions(user.id as any, isStaff);
     } catch {
       return [];
+    }
+  }
+
+  /** Whether the signed-in staff user must enrol in two-factor before going on. */
+  private async mustEnrol(user: { id: unknown } | null, isStaff: boolean): Promise<boolean> {
+    if (!user || !isStaff) return false;
+    try {
+      const twoFactor = this.moduleRef.get(TwoFactorService, { strict: false });
+      if (!(await twoFactor.required())) return false;
+      return !(await twoFactor.confirmedFor(user.id as any));
+    } catch {
+      return false;
     }
   }
 

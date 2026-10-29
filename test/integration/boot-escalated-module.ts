@@ -5,15 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EscalatedModule } from '../../src/escalated.module';
 import type { EscalatedModuleOptions } from '../../src/config/escalated.config';
 
-// otplib 13 depends on @scure/base, which ships ESM only and cannot be loaded by
-// Jest's CommonJS runtime on Node 20/22. TwoFactorService is never exercised by
-// the boot tests, so a stub keeps the real module graph importable.
-jest.mock('otplib', () => ({
-  generateSecret: jest.fn(),
-  generateURI: jest.fn(),
-  verifySync: jest.fn(),
-}));
-
 export interface BootOptions {
   escalated?: EscalatedModuleOptions;
   database?: DataSourceOptions;
