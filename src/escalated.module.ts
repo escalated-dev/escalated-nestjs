@@ -1,6 +1,6 @@
 import { DynamicModule, MiddlewareConsumer, Module, NestModule, Provider } from '@nestjs/common';
 import { TypeOrmModule, getDataSourceToken } from '@nestjs/typeorm';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import {
   TicketAccess,
@@ -65,6 +65,7 @@ import {
   ChatRoutingRule,
   Contact,
   GuestVerification,
+  TwoFactor,
   Workflow,
   WorkflowLog,
   InboundEmail,
@@ -160,7 +161,8 @@ import { AdminWorkflowController } from './controllers/admin/workflow.controller
 import { GuestController } from './controllers/guest.controller';
 import { AdminSkillController } from './controllers/admin/skill.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
-import { AdminTwoFactorController } from './controllers/admin/two-factor.controller';
+import { TwoFactorController } from './controllers/two-factor.controller';
+import { TwoFactorGate, TwoFactorRedirectFilter } from './access/two-factor-gate';
 import { AdminAutomationController } from './controllers/admin/automation.controller';
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
 import { CustomerKnowledgeBaseController } from './controllers/customer/knowledge-base.controller';
@@ -271,6 +273,7 @@ const entities = [
   ChatRoutingRule,
   Contact,
   GuestVerification,
+  TwoFactor,
   Workflow,
   WorkflowLog,
   InboundEmail,
@@ -354,7 +357,7 @@ const controllers = [
   AdminMacroController,
   AdminSkillController,
   AdminKnowledgeBaseController,
-  AdminTwoFactorController,
+  TwoFactorController,
   AdminAutomationController,
   AdminWorkflowController,
   AdminReportExportController,
@@ -499,6 +502,10 @@ export class EscalatedModule implements NestModule {
         ApiTokenGuard,
         PermissionsGuard,
         AccessFeatureGuard,
+        TwoFactorGate,
+        // Sends a staff user who must pass two-factor to the challenge. Catches
+        // only its own exception, so the host's errors are untouched.
+        { provide: APP_FILTER, useClass: TwoFactorRedirectFilter },
         GuestAccessGuard,
         PublicSubmitThrottleGuard,
         GuestThrottleGuard,

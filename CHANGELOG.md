@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- **Two-factor authentication is now an install-level switch, off by default**
+  (`access.twoFactor`, env `ESCALATED_TWO_FACTOR`; ADR
+  2026-10-29-configurable-access-features). Nothing ever asked for the code, so
+  off is how every install already behaved. While it is off the enrolment and
+  challenge routes answer 404.
+  - The JSON routes `/escalated/admin/2fa/{generate,enable,verify,disable}` are
+    replaced by `/escalated/admin/settings/two-factor` (`GET`, and `POST`
+    `setup`, `confirm`, `disable`), open to agents as well as admins, which
+    answer JSON to API clients and the shared `Admin/Settings/TwoFactor` screen
+    to browsers.
+  - `TwoFactorService` is rewritten: `generateSecret(userId)`, `enable`,
+    `verify` are gone (use `setup`, `confirm`, `confirmedFor`,
+    `verifyAndConsume`, `useRecoveryCode`, `disable`, `reset`).
+  - `otplib` and `qrcode` are no longer dependencies. TOTP now uses `otpauth`,
+    which also loads on Node 20 (otplib 13's ESM-only dependency did not).
+  To turn it on: run the new `TwoFactor1793491200000` migration, make sure the
+  host gives requests a session (`req.session`, e.g. express-session) that is
+  regenerated on login, set a stable `twoFactor.secret` /
+  `ESCALATED_TWO_FACTOR_SECRET`, then set `ESCALATED_TWO_FACTOR=true`. Users
+  who enrolled on their agent profile are challenged from their next visit.
+  Set `ESCALATED_TWO_FACTOR_REQUIRED=true` (or the setting) only after telling
+  staff. See `docs/access-control.md`.
 - **Roles & permissions is now an install-level switch, off by default**
   (`access.rolesPermissions` in `EscalatedModule.forRoot()`, env
   `ESCALATED_ROLES_PERMISSIONS`; ADR 2026-10-29-configurable-access-features).
@@ -43,6 +65,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Admin > Plugins list.
 
 ### Added
+- **Two-factor authentication is enforced when switched on.** A staff user
+  with a confirmed TOTP enrolment must pass `Auth/TwoFactorChallenge` (TOTP
+  code or single-use recovery code; replayed codes refused; 5 attempts per
+  minute) in their session before any admin or agent route; API clients get
+  `403 {two_factor_required: true}`. Secrets and recovery codes are sealed
+  (AES-256-GCM) in `escalated_two_factor`. Admins can require enrolment
+  (`twoFactor.required` or the `two_factor_required` setting), and
+  `TwoFactorService.reset(userId)` clears a lost device. Pages get
+  `escalated.two_factor_required`.
 - **Roles & permissions are enforced when switched on.** Every admin and agent
   route (JSON and screens, and API token requests, which act as the token's
   owner) needs its permission from the user's Escalated role as well as the

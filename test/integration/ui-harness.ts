@@ -45,6 +45,8 @@ export interface UiApp {
 export async function bootUi(
   escalated: EscalatedModuleOptions = {},
   host?: BootOptions['host'],
+  /** Host middleware to install before the app listens (a session, say). */
+  prepare?: (app: INestApplication) => void,
 ): Promise<UiApp> {
   const moduleRef = await bootEscalatedModule({
     host,
@@ -60,6 +62,7 @@ export async function bootUi(
   await source.initialize();
   await source.synchronize();
   const app = moduleRef.createNestApplication({ logger: false });
+  prepare?.(app);
   await app.listen(0, '127.0.0.1');
   const base = (await app.getUrl()).replace('[::1]', '127.0.0.1');
   return { app, source, base };

@@ -73,9 +73,7 @@ function explain(missing: string[], rendered: Map<string, Set<string>>): string 
 const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/Settings/Sandbox',
   'Escalated/Admin/Settings/SsoSettings',
-  'Escalated/Admin/Settings/TwoFactor',
   'Escalated/Admin/Workflows/Builder',
-  'Escalated/Auth/TwoFactorChallenge',
   'Escalated/Error',
 ];
 

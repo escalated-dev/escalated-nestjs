@@ -36,7 +36,7 @@ import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
 import { roleInput } from '../../ui/admin-people';
 import {
-  SUPPORTED_SETTINGS,
+  supportedSettings,
   departmentInput,
   tagInput,
 } from '../../ui/controllers/admin-ui.controller';
@@ -70,12 +70,13 @@ export class AdminSettingsController {
   async listSettings(@Query('group') group?: string, @Req() req?: any): Promise<any> {
     if (this.screen(req)) {
       const settings: Record<string, unknown> = {};
-      for (const [key, { fallback }] of Object.entries(SUPPORTED_SETTINGS)) {
+      const supported = supportedSettings(this.options);
+      for (const [key, { fallback }] of Object.entries(supported)) {
         settings[key] = await this.settingsService.getTyped(key, fallback);
       }
       return inertia('Escalated/Admin/Settings', {
         settings,
-        supported_settings: Object.keys(SUPPORTED_SETTINGS),
+        supported_settings: Object.keys(supported),
         departments: await this.ui!.departmentOptions(),
         update_url: routeUrl('escalated.admin.settings.update'),
       });

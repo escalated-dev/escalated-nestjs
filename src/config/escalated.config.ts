@@ -102,7 +102,7 @@ export interface EscalatedModuleOptions {
   /** Enable CSAT surveys (default: true) */
   enableCsat?: boolean;
 
-  /** Enable 2FA for agents (default: false) */
+  /** @deprecated Unused. Two-factor is `access.twoFactor` (docs/access-control.md). */
   enable2fa?: boolean;
 
   /** Email sender address (legacy — prefer `mail.from`). */
@@ -265,6 +265,34 @@ export interface EscalatedModuleOptions {
      * `src/access/route-permissions.ts`) from the user's Escalated role.
      */
     rolesPermissions?: boolean;
+    /**
+     * Staff with a confirmed TOTP enrolment must pass the two-factor challenge
+     * (`/escalated/two-factor/challenge`) in their session before any admin or
+     * agent route. Needs a session middleware (`req.session`, e.g.
+     * express-session) and a sealing key (`twoFactor.secret`).
+     */
+    twoFactor?: boolean;
+  };
+
+  /**
+   * Two-factor settings, used while `access.twoFactor` is on.
+   */
+  twoFactor?: {
+    /**
+     * Every staff user must enrol before using anything else. Default
+     * `ESCALATED_TWO_FACTOR_REQUIRED`, else false. The `two_factor_required`
+     * admin setting wins once saved.
+     */
+    required?: boolean;
+    /** The issuer authenticator apps show. Default `ESCALATED_TWO_FACTOR_ISSUER`, else `appName`. */
+    issuer?: string;
+    /**
+     * Key that seals TOTP secrets and recovery codes at rest. Default
+     * `ESCALATED_TWO_FACTOR_SECRET`, else `guestAccess.secret`, else
+     * `ESCALATED_GUEST_ACCESS_SECRET`, else `inbound.replySecret`. Keep it
+     * stable: enrolments sealed with another key cannot be read.
+     */
+    secret?: string;
   };
 
   /**
