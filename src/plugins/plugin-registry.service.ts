@@ -15,6 +15,7 @@ import type {
 import { pageRoute, registerPlugin } from './plugin-definition';
 import { PluginStoreService } from './plugin-store.service';
 import { PluginDomainService } from './plugin-domain.service';
+import { EscalatedGateway } from '../gateway/escalated.gateway';
 
 /** The lifecycle actions, fired to every active plugin. */
 export const PLUGIN_LIFECYCLE_ACTIONS = [
@@ -95,6 +96,7 @@ export class PluginRegistry {
     private readonly store: PluginStoreService,
     private readonly domain: PluginDomainService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
+    @Optional() private readonly gateway?: EscalatedGateway,
   ) {}
 
   all(): RegisteredPlugin[] {
@@ -357,6 +359,17 @@ export class PluginRegistry {
         logger[level](`[${name}] ${message}${data === undefined ? '' : ` ${safeJson(data)}`}`);
       };
     const domain = this.domain;
+    const gateway = this.gateway;
+    const broadcast = async (
+      to: { channel: string } | { userId: any } | { ticketId: number },
+      event: unknown,
+      data: unknown,
+    ): Promise<void> => {
+      if (typeof event !== 'string' || !event) throw new Error('ctx.broadcast requires event');
+      // Without the gateway (`enableWebsockets` off) there is nobody to tell.
+      if (!gateway) return;
+      await gateway.pluginBroadcast(to, event, data);
+    };
     const actor = () => {
       const user = request ? (this.options.userResolver?.(request) ?? request.user) : null;
       return user?.id ?? request?.apiUserId ?? null;
@@ -378,11 +391,25 @@ export class PluginRegistry {
       },
       http: httpClient(),
       broadcast: {
-        // This host's gateway authorises each room per connection; plugins
-        // cannot broadcast through it yet.
-        toChannel: async () => log('debug')('ctx.broadcast is a no-op on this host'),
-        toUser: async () => log('debug')('ctx.broadcast is a no-op on this host'),
-        toTicket: async () => log('debug')('ctx.broadcast is a no-op on this host'),
+        toChannel: async (channel, event, data) => {
+          if (typeof channel !== 'string' || !channel) {
+            throw new Error('ctx.broadcast.toChannel requires channel');
+          }
+          await broadcast({ channel }, event, data);
+        },
+        toUser: async (userId, event, data) => {
+          if (userId === undefined || userId === null || userId === '') {
+            throw new Error('ctx.broadcast.toUser requires userId');
+          }
+          await broadcast({ userId }, event, data);
+        },
+        toTicket: async (ticketId, event, data) => {
+          const id = Number(ticketId);
+          if (!Number.isInteger(id) || id <= 0) {
+            throw new Error('ctx.broadcast.toTicket requires ticketId');
+          }
+          await broadcast({ ticketId: id }, event, data);
+        },
       },
       log: {
         info: log('log'),

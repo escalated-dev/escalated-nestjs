@@ -116,6 +116,60 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
     client.join(`agent:${data.agentId}`);
   }
 
+  /** A plugin channel (`ctx.broadcast.toChannel`); open to any connection, as Laravel's are. */
+  @SubscribeMessage('join:plugin')
+  handleJoinPlugin(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { channel: string },
+  ): void {
+    if (typeof data?.channel !== 'string' || !data.channel) return;
+    client.join(`plugin.${data.channel}`);
+  }
+
+  @SubscribeMessage('leave:plugin')
+  handleLeavePlugin(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { channel: string },
+  ): void {
+    if (typeof data?.channel !== 'string' || !data.channel) return;
+    client.leave(`plugin.${data.channel}`);
+  }
+
+  /**
+   * Delivers a plugin's `ctx.broadcast` call, with the audiences of Laravel's
+   * channels: `channel` goes to the sockets that joined `plugin.{channel}`,
+   * `user` to that user's own sockets, `ticket` to sockets in the ticket's
+   * room that may see it. Access tokens are stripped from the payload.
+   */
+  async pluginBroadcast(
+    to: { channel: string } | { userId: UserId } | { ticketId: number },
+    event: string,
+    data: unknown,
+  ): Promise<void> {
+    if (!this.server) return;
+    const sockets = await this.server.fetchSockets();
+    const safe = stripSecrets(data ?? {});
+    if ('channel' in to) {
+      for (const client of sockets) {
+        if (client.rooms.has(`plugin.${to.channel}`)) client.emit(event, safe);
+      }
+      return;
+    }
+    if ('userId' in to) {
+      for (const client of sockets) {
+        const id = client.data?.escalatedUserId;
+        if (id != null && String(id) === String(to.userId)) client.emit(event, safe);
+      }
+      return;
+    }
+    const ticket = await this.findTicket(to.ticketId);
+    if (!ticket) return;
+    for (const client of sockets) {
+      if (!client.rooms.has(`ticket:${ticket.id}`)) continue;
+      if (await this.socketCanSee(client, ticket)) client.emit(event, safe);
+    }
+  }
+
   @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
   handleTicketCreated(event: any): void {
     this.emitScoped(undefined, 'ticket:created', { ticket: event.ticket }, { staffOnly: true });
