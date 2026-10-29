@@ -62,6 +62,7 @@ export { CustomFieldsAndObjects1792972800000 } from './migrations/1792972800000-
 export { ImportJobs1793059200000 } from './migrations/1793059200000-ImportJobs';
 export { HashApiTokens1793145600000 } from './migrations/1793145600000-HashApiTokens';
 export { ChatVisitorTokenExpiry1793232000000 } from './migrations/1793232000000-ChatVisitorTokenExpiry';
+export { Plugins1793318400000 } from './migrations/1793318400000-Plugins';
 export * from './events/event-names';
 
 // Widget embedding
@@ -82,3 +83,12 @@ export { InertiaPage, InertiaRedirect, inertia, redirect, back } from './ui/iner
 export { EscalatedUi, InertiaInterceptor, InertiaReplyFilter } from './ui/inertia.interceptor';
 export { defaultRootView, ROUTE_HELPER } from './ui/root-view';
 export { escalatedRoutes } from './ui/routes';
+
+// Plugins
+export * from './plugins/plugin-definition';
+export {
+  PluginRegistry,
+  PluginListing,
+  PLUGIN_LIFECYCLE_ACTIONS,
+} from './plugins/plugin-registry.service';
+export { PluginStoreService } from './plugins/plugin-store.service';

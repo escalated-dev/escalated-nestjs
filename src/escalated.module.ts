@@ -71,6 +71,8 @@ import {
   Automation,
   ImportJob,
   ImportSourceMap,
+  EscalatedPlugin,
+  PluginStoreRecord,
 } from './entities';
 
 // Services
@@ -186,6 +188,19 @@ import {
   CustomerKnowledgeBaseUiController,
 } from './ui/controllers/knowledge-base-ui.controller';
 import { GuestUiController } from './ui/controllers/guest-ui.controller';
+import { AdminPluginsUiController } from './ui/controllers/admin-plugins-ui.controller';
+import {
+  PluginHttpController,
+  PluginEndpointCsrfGuard,
+} from './controllers/plugin-http.controller';
+
+// Plugins
+import {
+  PLUGIN_REGISTRY_PLUGINS,
+  PluginRegistry,
+  registerPlugins,
+} from './plugins/plugin-registry.service';
+import { PluginStoreService } from './plugins/plugin-store.service';
 
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
@@ -257,6 +272,8 @@ const entities = [
   Automation,
   ImportJob,
   ImportSourceMap,
+  EscalatedPlugin,
+  PluginStoreRecord,
 ];
 
 const services = [
@@ -308,6 +325,8 @@ const services = [
   InboundRouterService,
   AutomationService,
   WidgetOriginsService,
+  PluginStoreService,
+  PluginRegistry,
 ];
 
 const controllers = [
@@ -343,6 +362,7 @@ const controllers = [
   InboundEmailController,
   ApiAuthController,
   MobileGuestController,
+  PluginHttpController,
 ];
 
 @Module({})
@@ -370,6 +390,13 @@ export class EscalatedModule implements NestModule {
 
     // Build the ticket action registry from config at bootstrap, mirroring the
     // singleton registration used by the other host frameworks.
+    // Plugins are validated at boot: a malformed one, or two sharing a slug,
+    // fails here rather than on first use.
+    const pluginsProvider: Provider = {
+      provide: PLUGIN_REGISTRY_PLUGINS,
+      useValue: registerPlugins(mergedOptions.plugins ?? []),
+    };
+
     const ticketActionRegistryProvider: Provider = {
       provide: TicketActionRegistry,
       useFactory: (opts: EscalatedModuleOptions) => {
@@ -405,6 +432,7 @@ export class EscalatedModule implements NestModule {
         AdminKnowledgeBaseUiController,
         CustomerKnowledgeBaseUiController,
         GuestUiController,
+        AdminPluginsUiController,
       );
     }
 
@@ -451,6 +479,8 @@ export class EscalatedModule implements NestModule {
           inject: [TicketAccess],
         },
         ticketActionRegistryProvider,
+        pluginsProvider,
+        PluginEndpointCsrfGuard,
         // Aliases the default repository tokens onto the named DataSource, so
         // the package's 164 `@InjectRepository(X)` sites need no change. Empty
         // when no connection is configured.

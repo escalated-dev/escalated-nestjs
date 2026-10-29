@@ -493,6 +493,17 @@ const routes: Record<string, NamedRoute> = {
     uri: 'escalated/agent/tickets/{ticket}/actions/{action}',
     methods: POST,
   },
+  // Admin > Plugins. No upload route: plugins are registered in code here.
+  'escalated.admin.plugins.index': { uri: 'escalated/admin/plugins', methods: GET },
+  'escalated.admin.plugins.activate': {
+    uri: 'escalated/admin/plugins/{slug}/activate',
+    methods: POST,
+  },
+  'escalated.admin.plugins.deactivate': {
+    uri: 'escalated/admin/plugins/{slug}/deactivate',
+    methods: POST,
+  },
+  'escalated.admin.plugins.destroy': { uri: 'escalated/admin/plugins/{slug}', methods: DELETE },
   // Live chat transfer from Agent/TicketShow's action bar. The name is
   // escalated-laravel's; the endpoint here is the agent chat console's.
   'escalated.admin.chat.transfer': {

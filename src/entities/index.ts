@@ -46,3 +46,5 @@ export { GuestVerification } from './guest-verification.entity';
 export { InboundEmail } from './inbound-email.entity';
 export { ImportJob, IMPORT_TRANSITIONS } from './import-job.entity';
 export { ImportSourceMap } from './import-source-map.entity';
+export { EscalatedPlugin } from './plugin.entity';
+export { PluginStoreRecord } from './plugin-store-record.entity';

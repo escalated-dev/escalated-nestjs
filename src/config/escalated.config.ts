@@ -7,6 +7,7 @@ import type { AccountIdentity, AccountReference, TicketActor } from './ticket-ac
 import type { EscalatedUiOptions } from '../ui/ui-options';
 import type { ImportAdapter } from '../services/import-adapter';
 import type { AttachmentStorage } from '../services/email/attachment-downloader.service';
+import type { EscalatedPluginDefinition } from '../plugins/plugin-definition';
 
 export interface EscalatedModuleOptions {
   visibility?: 'all' | 'department';
@@ -375,6 +376,15 @@ export interface EscalatedModuleOptions {
 
   /** Caps one imported attachment, in KB. Default: Laravel's live-upload limit, 10240. */
   importAttachmentMaxKb?: number;
+
+  /**
+   * Plugins built with `@escalated-dev/plugin-sdk`: pass the `definePlugin()`
+   * objects. They run in this process, are listed in Admin > Plugins, and do
+   * nothing until an admin activates them there. Installing one is a
+   * deployment (add the package, list it here); there is no upload. Two
+   * plugins whose names give one slug fail at boot.
+   */
+  plugins?: EscalatedPluginDefinition[];
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';

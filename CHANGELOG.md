@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrading
+- Run the new `Plugins1793318400000` migration (exported from the package). It
+  creates `escalated_plugins` and `escalated_plugin_store`. Nothing else changes
+  for a host that registers no plugins.
+- New routes under `/escalated`: `admin/plugins` (the screens, with
+  `ui.enabled`), `api/plugins/*` (behind `adminGuard`) and `webhooks/plugins/*`
+  (public). With no plugins registered they answer 404, apart from the empty
+  Admin > Plugins list.
+
+### Added
+- **Plugins**, per the shared
+  [plugin contract](https://github.com/escalated-dev/escalated-developer-context/blob/main/domain-model/plugin-contract.md)
+  and escalated-laravel. Pass `@escalated-dev/plugin-sdk` `definePlugin()`
+  objects as `EscalatedModule.forRoot({ plugins })`; they run in this process.
+  Admin > Plugins (`Escalated/Admin/Plugins/Index`) lists them and activates,
+  deactivates or uninstalls them (`onActivate`, `onDeactivate`, and the
+  `plugin.activated` / `plugin.deactivated` / `plugin.uninstalling` actions);
+  there is no upload. An active plugin's pages render `Escalated/Plugin/Page`
+  with the props of its `GET /{component}` endpoint; its endpoints are served
+  at `/escalated/api/plugins/{slug}/...` to admins (plus any declared
+  capability) and its webhooks at `/escalated/webhooks/plugins/{slug}/...`.
+  `ctx.config`, `ctx.store`, `ctx.http`, `ctx.log`, `ctx.emit` and
+  `ctx.currentUser` work. A malformed plugin, or two with one slug, stop the
+  module at boot. See `docs/plugins.md`.
+
 ## [1.2.8] - 2026-10-28
 
 ### Upgrading
