@@ -49,6 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Active plugins' menu items, page components and dashboard widgets are shared
   with every screen as `escalated.plugins`, filtered by capability; admin menu
   items go to admins only.
+- Plugin `cron` schedules run: every minute the package's scheduler runs the
+  active plugins' five-field (UTC) schedules that are due, as no user, within
+  30 s each. Dashboard widgets with a `badge` function carry its answer as
+  `badge`, asked as the viewer within 5 s (`null` when it fails). Nothing
+  changes for hosts without plugins.
 
 ## [1.2.8] - 2026-10-28
 

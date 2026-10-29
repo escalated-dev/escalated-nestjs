@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { Department, Tag, Ticket, TicketStatus } from '../../src/entities';
 import type { EscalatedPluginDefinition, PluginContext } from '../../src/plugins/plugin-definition';
 import { PluginRegistry } from '../../src/plugins/plugin-registry.service';
+import { EscalatedSchedulerService } from '../../src/scheduling/escalated-scheduler.service';
 import { CANONICAL_EVENTS, LEGACY_EVENT_NAMES } from '../../src/events/event-names';
 import { apiFetch, bootUi, inertiaFetch, page } from './ui-harness';
 
@@ -37,6 +38,7 @@ describe('plugin hooks and context', () => {
   let resolved: TicketStatus;
 
   const received: Array<{ plugin: string; hook: string; event: any }> = [];
+  const cronRuns: Array<{ schedule: string; user: unknown }> = [];
   let ctxOf: PluginContext;
 
   const recorder = (plugin: string) =>
@@ -83,7 +85,35 @@ describe('plugin hooks and context', () => {
         order: 5,
       },
     ],
-    widgets: [{ component: 'CrmWidget', label: 'Pipeline', size: 'full', order: 3 }],
+    widgets: [
+      { component: 'CrmWidget', label: 'Pipeline', size: 'full', order: 3 },
+      {
+        component: 'CrmInbox',
+        label: 'Inbox',
+        order: 4,
+        // Asked as the viewer.
+        badge: async (ctx) => `for ${(await ctx.currentUser())?.id}`,
+      },
+      {
+        component: 'CrmBroken',
+        label: 'Broken',
+        order: 5,
+        badge: async () => {
+          throw new Error('badge failed');
+        },
+      },
+    ],
+    cron: {
+      '* * * * *': async (ctx) => {
+        cronRuns.push({ schedule: 'every minute', user: await ctx.currentUser() });
+      },
+      '0 9 * * *': async () => {
+        cronRuns.push({ schedule: 'nine', user: null });
+      },
+      'not a schedule': async () => {
+        cronRuns.push({ schedule: 'broken', user: null });
+      },
+    },
     onActivate: async (ctx) => {
       ctxOf = ctx;
     },
@@ -93,6 +123,11 @@ describe('plugin hooks and context', () => {
     name: 'quiet',
     version: '1.0.0',
     actions: recorder('quiet'),
+    cron: {
+      '* * * * *': async () => {
+        cronRuns.push({ schedule: 'quiet', user: null });
+      },
+    },
     filters: {
       // A broken filter is skipped; the value carries on.
       'ticket.subject': () => {
@@ -316,6 +351,37 @@ describe('plugin hooks and context', () => {
     });
   });
 
+  describe('cron', () => {
+    beforeEach(() => {
+      cronRuns.length = 0;
+    });
+
+    it('runs the schedules of active plugins that are due this minute, as no user', async () => {
+      await app.get(EscalatedSchedulerService).runPluginCron(new Date('2026-10-29T09:00:20Z'));
+      expect(cronRuns).toEqual(
+        expect.arrayContaining([
+          { schedule: 'every minute', user: null },
+          { schedule: 'nine', user: null },
+        ]),
+      );
+      // `quiet` is active by now; its every-minute schedule runs too.
+      expect(cronRuns).toContainEqual({ schedule: 'quiet', user: null });
+      expect(cronRuns).toHaveLength(3);
+    });
+
+    it('skips schedules that are not due, and inactive plugins', async () => {
+      await inertiaFetch(base, '/escalated/admin/plugins/quiet/deactivate', {
+        as: 'admin',
+        method: 'POST',
+        body: {},
+      });
+      await registry.runDueCron(new Date('2026-10-29T09:01:00Z'));
+      // `quiet` is inactive: its every-minute schedule does not run.
+      expect(cronRuns).toEqual([{ schedule: 'every minute', user: null }]);
+      await activate('quiet');
+    });
+  });
+
   describe('escalated.plugins', () => {
     it('shares active plugins’ menu items, page components and widgets', async () => {
       const shown = await page(base, '/escalated/admin/plugins', { as: 'admin' });
@@ -346,6 +412,24 @@ describe('plugin hooks and context', () => {
           plugin: 'acme--crm',
           position: 3,
           width: 'full',
+        },
+        {
+          id: 'acme--crm.CrmInbox',
+          title: 'Inbox',
+          component: 'CrmInbox',
+          plugin: 'acme--crm',
+          position: 4,
+          width: 'half',
+          badge: 'for 1',
+        },
+        {
+          id: 'acme--crm.CrmBroken',
+          title: 'Broken',
+          component: 'CrmBroken',
+          plugin: 'acme--crm',
+          position: 5,
+          width: 'half',
+          badge: null,
         },
       ]);
     });
