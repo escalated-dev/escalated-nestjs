@@ -125,8 +125,14 @@ Everything in `ctx` is scoped to the plugin's name.
 - `ctx.contacts` are Escalated's contacts (found or created by email), not
   your users. `ctx.agents` reads agent profiles: `id` is the user id, `name`
   the display name, and `email` is null because the package does not hold it.
-- `ctx.broadcast` does nothing yet: the WebSocket gateway authorises each room
-  per connection, and plugins cannot broadcast through it.
+- `ctx.broadcast` goes through the Socket.IO gateway (`enableWebsockets`), as
+  event `event` with payload `data`, guest tokens stripped, with the audiences
+  of escalated-laravel's channels: `toChannel(channel, ...)` reaches sockets
+  that sent `join:plugin` with `{ channel }` (open to any connection, like
+  Laravel's public `plugin.{channel}`), `toUser(userId, ...)` that user's own
+  sockets, `toTicket(ticketId, ...)` sockets in the ticket's room that may see
+  it. Without the gateway it does nothing. A missing channel, user, ticket or
+  event is an error.
 
 ## Trust
 

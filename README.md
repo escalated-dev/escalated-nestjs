@@ -623,6 +623,12 @@ handshake request by your socket middleware is used. New tickets, queue, SLA and
 assignment events go to agents only, internal notes never reach guest or
 customer sockets, and guest tokens are never broadcast.
 
+Plugins broadcast through the same gateway with `ctx.broadcast`: `toUser`
+reaches that user's sockets, `toTicket` the sockets in the ticket's room that
+may see it, and `toChannel(name, ...)` the sockets that sent
+`join:plugin` with `{ channel: name }` (any connection may join; `leave:plugin`
+leaves).
+
 Client-side (Socket.IO):
 
 ```javascript

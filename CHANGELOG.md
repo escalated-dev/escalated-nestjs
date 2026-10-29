@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Admin > Plugins list.
 
 ### Added
+- `ctx.broadcast` reaches the Socket.IO gateway (it was a no-op): `toUser`
+  goes to that user's sockets, `toTicket` to sockets in the ticket's room that
+  may see it, and `toChannel` to sockets that joined the plugin channel with the
+  new `join:plugin` message, as escalated-laravel's `plugin.{channel}`,
+  `private-user.{id}` and `private-ticket.{id}` channels. Without
+  `enableWebsockets` it still does nothing.
 - **Plugins**, per the shared
   [plugin contract](https://github.com/escalated-dev/escalated-developer-context/blob/main/domain-model/plugin-contract.md)
   and escalated-laravel. Pass `@escalated-dev/plugin-sdk` `definePlugin()`
