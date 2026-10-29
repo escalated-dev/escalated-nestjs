@@ -45,6 +45,7 @@ Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA managem
 - **Widget API** -- Public endpoints for embeddable support widget with rate limiting
 - **Public Ticket System** -- Unauthenticated submission via widget form or inbound email, Contact-based identity with email dedupe, configurable guest policy, signed Reply-To for threaded email conversations
 - **Workflow Engine** -- Admin-configured rules fire on ticket/reply events (conditions + actions: assign, tag, set priority/status/department, insert canned reply, etc.); evaluation logs per execution
+- **Plugins** -- `@escalated-dev/plugin-sdk` plugins registered in the module run in-process, with Admin > Plugins, plugin pages, endpoints and webhooks (see [docs/plugins.md](docs/plugins.md))
 - **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
 - **Capacity Management** -- Per-agent ticket limits with real-time tracking
 - **Skill-based Routing** -- Assign tickets based on agent skills and availability

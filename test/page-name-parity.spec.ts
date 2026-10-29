@@ -71,14 +71,12 @@ function explain(missing: string[], rendered: Map<string, Set<string>>): string 
  * serves it, so the list is always the exact remaining work.
  */
 const NOT_YET_RENDERED: string[] = [
-  'Escalated/Admin/Plugins/Index',
   'Escalated/Admin/Settings/Sandbox',
   'Escalated/Admin/Settings/SsoSettings',
   'Escalated/Admin/Settings/TwoFactor',
   'Escalated/Admin/Workflows/Builder',
   'Escalated/Auth/TwoFactorChallenge',
   'Escalated/Error',
-  'Escalated/Plugin/Page',
 ];
 
 /** Screen tests: HTTP tests that assert a page's component name and props. */
