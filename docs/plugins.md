@@ -52,6 +52,8 @@ Run the `Plugins1793318400000` migration first. It creates
 | `actions` | The canonical events, `plugin.activated`, `plugin.deactivated`, `plugin.uninstalling`, and whatever active plugins `ctx.emit` | |
 | `filters` | `PluginRegistry.applyFilters(hook, value)`, for host code that wants a filter point | |
 | `pages[].menu`, `components`, `widgets` | Shared with every screen as `escalated.plugins` (`menuItems`, `pageComponents`, `dashboardWidgets`) | Viewers who hold the item's `capability`; admin menu items for admins only |
+| `widgets[].badge` | Asked while `dashboardWidgets` is built, as the viewer, within 5 s; the answer is the item's `badge` (`null` when it throws or is slow) | The viewer |
+| `cron` | Each key is a five-field cron expression in UTC (or `@hourly`, `@daily`, ...). The package's scheduler checks every minute and runs the due ones, as no user, within 30 s. An unreadable key is logged and skipped. | |
 
 Only active plugins answer; anything else is a 404.
 

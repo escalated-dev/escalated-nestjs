@@ -15,6 +15,7 @@ import type {
 import { pageRoute, registerPlugin } from './plugin-definition';
 import { PluginStoreService } from './plugin-store.service';
 import { PluginDomainService } from './plugin-domain.service';
+import { cronDue } from './cron-schedule';
 
 /** The lifecycle actions, fired to every active plugin. */
 export const PLUGIN_LIFECYCLE_ACTIONS = [
@@ -264,6 +265,44 @@ export class PluginRegistry {
     return current as T;
   }
 
+  // Cron
+
+  /**
+   * Runs, side by side, every schedule of every active plugin that is due in
+   * the minute of `now` (UTC), each as no user under the action timeout. A
+   * failing, slow or unreadable schedule is logged and never stops the others.
+   */
+  async runDueCron(now: Date = new Date()): Promise<void> {
+    const due: Array<{
+      plugin: RegisteredPlugin;
+      schedule: string;
+      run: (ctx: PluginContext) => unknown;
+    }> = [];
+    for (const plugin of await this.activePlugins()) {
+      for (const [schedule, run] of Object.entries(plugin.definition.cron ?? {})) {
+        if (typeof run !== 'function') continue;
+        try {
+          if (cronDue(schedule, now)) due.push({ plugin, schedule, run });
+        } catch (error) {
+          this.logger.warn(
+            `Plugin ${plugin.name} cron "${schedule}" skipped: ${(error as Error)?.message}`,
+          );
+        }
+      }
+    }
+    await Promise.all(
+      due.map(async ({ plugin, schedule, run }) => {
+        try {
+          await withTimeout(() => run(this.context(plugin)), PLUGIN_TIMEOUTS.action);
+        } catch (error) {
+          this.logger.error(
+            `Plugin ${plugin.name} cron "${schedule}" failed: ${(error as Error)?.message}`,
+          );
+        }
+      }),
+    );
+  }
+
   // UI extensions
 
   /**
@@ -310,17 +349,39 @@ export class PluginRegistry {
       for (const widget of plugin.definition.widgets ?? []) {
         if (!widget?.component) continue;
         if (!(await this.allows(request, widget.capability))) continue;
-        dashboardWidgets.push({
+        const item: Record<string, unknown> = {
           id: `${slug}.${widget.component}`,
           title: widget.label,
           component: widget.component,
           plugin: slug,
           position: widget.order ?? 100,
           width: widget.size ?? 'half',
-        });
+        };
+        if (typeof widget.badge === 'function') {
+          item.badge = await this.badge(plugin, widget.badge, request);
+        }
+        dashboardWidgets.push(item);
       }
     }
     return { menuItems, pageComponents, dashboardWidgets };
+  }
+
+  /** A widget's badge, asked as the viewer; `null` when it fails or is slow. */
+  private async badge(
+    plugin: RegisteredPlugin,
+    badge: (ctx: PluginContext) => Promise<number | string | null>,
+    request: any,
+  ): Promise<number | string | null> {
+    try {
+      const answer = await withTimeout(
+        () => badge(this.context(plugin, request)),
+        PLUGIN_TIMEOUTS.filter,
+      );
+      return typeof answer === 'number' || typeof answer === 'string' ? answer : null;
+    } catch (error) {
+      this.logger.error(`Plugin ${plugin.name} badge failed: ${(error as Error)?.message}`);
+      return null;
+    }
   }
 
   // Access
