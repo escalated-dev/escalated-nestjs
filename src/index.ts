@@ -65,6 +65,7 @@ export { ChatVisitorTokenExpiry1793232000000 } from './migrations/1793232000000-
 export { Plugins1793318400000 } from './migrations/1793318400000-Plugins';
 export { RolesAndPermissions1793404800000 } from './migrations/1793404800000-RolesAndPermissions';
 export { TwoFactor1793491200000 } from './migrations/1793491200000-TwoFactor';
+export { SsoMessageIds1793577600000 } from './migrations/1793577600000-SsoMessageIds';
 export * from './access';
 export * from './events/event-names';
 

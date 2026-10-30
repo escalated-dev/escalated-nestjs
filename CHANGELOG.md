@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Upgrading
+- **Single sign-on is a new install-level switch, off by default** (`access.sso`,
+  env `ESCALATED_SSO`; ADR 2026-10-29-configurable-access-features). While it
+  is off every `/escalated/sso/*` route and Admin > Settings > SSO answer 404,
+  so nothing changes for existing installs. To turn it on: run the new
+  `SsoMessageIds1793577600000` migration, provide the `sso.findUserByEmail`
+  and `sso.signIn` hooks (and `sso.createUser` with `sso.createUsers`), set
+  `appUrl`, give the IdP the endpoints from the SSO page, make sure a SAML
+  install has the IdP certificate, then set `ESCALATED_SSO=true`. See
+  `docs/access-control.md`.
 - **Two-factor authentication is now an install-level switch, off by default**
   (`access.twoFactor`, env `ESCALATED_TWO_FACTOR`; ADR
   2026-10-29-configurable-access-features). Nothing ever asked for the code, so
@@ -65,6 +74,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Admin > Plugins list.
 
 ### Added
+- **Single sign-on through SAML, OAuth 2 / OIDC or JWT** when switched on, with
+  the provider chosen in Admin > Settings > SSO (`Admin/Settings/SsoSettings`,
+  secrets masked, endpoints listed). SAML checks the assertion signature
+  against the configured certificate, Issuer, Audience,
+  Destination/Recipient, validity windows, InResponseTo against requests
+  issued in the last 10 minutes, and replay; OAuth uses a session-bound state
+  and PKCE; JWT pins the algorithm and requires `exp`, `aud` and a single-use
+  `jti`. Users are matched by email through host hooks, created only with
+  `sso.createUsers`, and given the asserted role only with roles on and
+  `sso.syncRoles`. New dependencies: `xml-crypto`, `@xmldom/xmldom`,
+  `simple-oauth2`, `jsonwebtoken`.
 - **Two-factor authentication is enforced when switched on.** A staff user
   with a confirmed TOTP enrolment must pass `Auth/TwoFactorChallenge` (TOTP
   code or single-use recovery code; replayed codes refused; 5 attempts per

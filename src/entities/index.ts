@@ -44,6 +44,7 @@ export { Automation } from './automation.entity';
 export { Contact } from './contact.entity';
 export { GuestVerification } from './guest-verification.entity';
 export { TwoFactor } from './two-factor.entity';
+export { SsoMessageId } from './sso-message-id.entity';
 export { InboundEmail } from './inbound-email.entity';
 export { ImportJob, IMPORT_TRANSITIONS } from './import-job.entity';
 export { ImportSourceMap } from './import-source-map.entity';

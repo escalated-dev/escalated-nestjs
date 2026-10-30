@@ -66,6 +66,7 @@ import {
   Contact,
   GuestVerification,
   TwoFactor,
+  SsoMessageId,
   Workflow,
   WorkflowLog,
   InboundEmail,
@@ -162,6 +163,10 @@ import { GuestController } from './controllers/guest.controller';
 import { AdminSkillController } from './controllers/admin/skill.controller';
 import { AdminKnowledgeBaseController } from './controllers/admin/knowledge-base.controller';
 import { TwoFactorController } from './controllers/two-factor.controller';
+import { SsoController } from './controllers/sso.controller';
+import { SsoSettingsController } from './controllers/admin/sso-settings.controller';
+import { SsoService } from './services/sso.service';
+import { SsoMessageIdsService } from './services/sso-message-ids.service';
 import { TwoFactorGate, TwoFactorRedirectFilter } from './access/two-factor-gate';
 import { AdminAutomationController } from './controllers/admin/automation.controller';
 import { CustomerTicketController } from './controllers/customer/ticket.controller';
@@ -274,6 +279,7 @@ const entities = [
   Contact,
   GuestVerification,
   TwoFactor,
+  SsoMessageId,
   Workflow,
   WorkflowLog,
   InboundEmail,
@@ -286,6 +292,8 @@ const entities = [
 
 const services = [
   AccessControlService,
+  SsoService,
+  SsoMessageIdsService,
   TicketService,
   ReplyService,
   SlaService,
@@ -358,6 +366,8 @@ const controllers = [
   AdminSkillController,
   AdminKnowledgeBaseController,
   TwoFactorController,
+  SsoController,
+  SsoSettingsController,
   AdminAutomationController,
   AdminWorkflowController,
   AdminReportExportController,

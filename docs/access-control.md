@@ -14,6 +14,7 @@ screen or stored setting changes them.
 |---|---|---|
 | Roles & permissions | `access.rolesPermissions` | `ESCALATED_ROLES_PERMISSIONS` |
 | Two-factor authentication | `access.twoFactor` | `ESCALATED_TWO_FACTOR` |
+| Single sign-on | `access.sso` | `ESCALATED_SSO` |
 
 ```ts
 EscalatedModule.forRoot({
@@ -149,3 +150,84 @@ enrolment is sent to enrol and can use nothing else until they do. Pages get
 
 The enrolment and challenge routes answer 404 and nobody is challenged.
 Enrolments are kept.
+
+## Single sign-on
+
+### Before turning it on
+
+Escalated owns no users or sessions, so SSO signs people in through hooks:
+
+```ts
+EscalatedModule.forRoot({
+  access: { sso: true },
+  appUrl: 'https://help.example.com', // the base of the SSO endpoints
+  sso: {
+    findUserByEmail: (email) => users.findByEmailIgnoringCase(email),
+    signIn: (req, user) => new Promise((ok, fail) => req.login(user, (e) => (e ? fail(e) : ok()))),
+    createUser: ({ email, name }) => users.create({ email, name }), // only with createUsers
+  },
+});
+```
+
+Then run the `SsoMessageIds1793577600000` migration (`escalated_sso_message_ids`),
+choose the provider in **Admin > Settings > SSO**
+(`/escalated/admin/settings/sso`), and give the identity provider the
+endpoints that page lists.
+
+| Option | Env var | Default |
+|---|---|---|
+| `sso.spEntityId` | `ESCALATED_SSO_SP_ENTITY_ID` | the SP metadata URL |
+| `sso.allowIdpInitiated` | `ESCALATED_SSO_ALLOW_IDP_INITIATED` | false |
+| `sso.jwtAudience` | `ESCALATED_SSO_JWT_AUDIENCE` | `appUrl` |
+| `sso.clockSkew` | `ESCALATED_SSO_CLOCK_SKEW` | 120 (max 300) |
+| `sso.createUsers` | `ESCALATED_SSO_CREATE_USERS` | false |
+| `sso.syncRoles` | `ESCALATED_SSO_SYNC_ROLES` | false |
+| `sso.redirectTo` | `ESCALATED_SSO_REDIRECT_TO` | `/escalated/agent` |
+
+### Routes
+
+| Route | Use |
+|---|---|
+| `GET /escalated/sso/login` | Start sign-in with the configured provider (404 while it is `none`) |
+| `GET /escalated/sso/saml/metadata` | SP metadata; its URL is the default SP entity ID |
+| `POST /escalated/sso/saml/acs` | SAML assertion consumer (HTTP-POST binding) |
+| `GET /escalated/sso/oauth/callback` | OAuth 2 / OIDC redirect URI |
+| `GET\|POST /escalated/sso/jwt/callback` | JWT hand-off (`jwt` parameter) |
+
+Every route answers 404 while `access.sso` is off or serves a provider other
+than the chosen one. Every refusal answers a generic 403 and logs the reason.
+
+### What is checked
+
+- **SAML** (signatures through `xml-crypto`, as escalated-adonis): the IdP
+  certificate must be configured; the single assertion must carry a signature
+  by it (a signed Response alone is not enough, keys in `KeyInfo` are never
+  trusted, and the user is read from the signed XML); `EncryptedAssertion` is
+  refused; `Issuer` equals the IdP entity ID; `Audience` names the SP entity
+  ID; the Response `Destination` and the bearer `Recipient` equal the ACS URL;
+  validity windows hold within the clock skew; `InResponseTo` names an
+  AuthnRequest issued in the last 10 minutes, consumed on use (stored in the
+  database, not the session), unless IdP-initiated sign-in is allowed; and the
+  assertion ID is used once.
+- **OAuth 2 / OIDC** (`simple-oauth2`): authorization code with a single-use
+  `state` kept in the session and PKCE (`S256`); the code is exchanged server
+  to server and the profile read from the userinfo URL. A missing or
+  mismatched `state`, an IdP `error`, or `email_verified: false` is refused.
+- **JWT** (`jsonwebtoken`): `alg` must be the configured algorithm (HS* with
+  the secret, RS* with the public key), so `none` and algorithm switching are
+  refused; `exp` is required; `nbf` holds within the skew; `aud` must name
+  this install; `jti` is required and used once.
+
+### Users and roles
+
+The email comes from the configured attribute or claim (SAML falls back to an
+email-shaped NameID) and is matched with `sso.findUserByEmail`. An unknown
+email is refused unless `sso.createUsers` is on and `sso.createUser` is given.
+With roles & permissions on and `sso.syncRoles`, an asserted role naming an
+existing Escalated role slug becomes the user's role; an unknown one changes
+nothing. SSO never grants the host's admin or agent guard.
+
+On success `sso.signIn` runs, the session id is regenerated, the two-factor
+mark is cleared (signing in through SSO does not skip the challenge), and the
+user goes to the page they asked for, else `sso.redirectTo`. Escalated does
+not turn off the host's own password login.

@@ -272,6 +272,46 @@ export interface EscalatedModuleOptions {
      * express-session) and a sealing key (`twoFactor.secret`).
      */
     twoFactor?: boolean;
+    /**
+     * Sign-in through the provider chosen in Admin > Settings > SSO (SAML,
+     * OAuth 2 / OIDC or JWT) at `/escalated/sso/*`. Needs the `sso` hooks
+     * below, since Escalated owns no users or sessions.
+     */
+    sso?: boolean;
+  };
+
+  /**
+   * Single sign-on, used while `access.sso` is on. The provider and its
+   * fields are chosen in Admin > Settings > SSO; these are the install-level
+   * rules around it, and the hooks into the host's users and login.
+   */
+  sso?: {
+    /** The host user with this email (match case-insensitively), or null. */
+    findUserByEmail?: (email: string) => Promise<SsoHostUser | null> | SsoHostUser | null;
+    /**
+     * Creates a host user for an unknown email when `createUsers` is on, with
+     * an unusable random password. Without it unknown emails are refused.
+     */
+    createUser?: (identity: { email: string; name: string }) => Promise<SsoHostUser> | SsoHostUser;
+    /** Signs the user in on the host (e.g. passport's `req.login`). Required. */
+    signIn?: (request: any, user: SsoHostUser) => Promise<void> | void;
+    /** SAML SP entity ID. Default `ESCALATED_SSO_SP_ENTITY_ID`, else the SP metadata URL. */
+    spEntityId?: string;
+    /** Accept SAML responses that answer no request. Default `ESCALATED_SSO_ALLOW_IDP_INITIATED`, else false. */
+    allowIdpInitiated?: boolean;
+    /** The `aud` a JWT must carry. Default `ESCALATED_SSO_JWT_AUDIENCE`, else `appUrl`. */
+    jwtAudience?: string;
+    /** Seconds of clock skew for SAML and JWT times (max 300). Default `ESCALATED_SSO_CLOCK_SKEW`, else 120. */
+    clockSkew?: number;
+    /** Create a host user for an unknown email. Default `ESCALATED_SSO_CREATE_USERS`, else false. */
+    createUsers?: boolean;
+    /**
+     * With roles & permissions on, give the user the Escalated role the IdP
+     * asserts (by slug). Default `ESCALATED_SSO_SYNC_ROLES`, else false.
+     */
+    syncRoles?: boolean;
+    /** Where to land after sign-in. Default `ESCALATED_SSO_REDIRECT_TO`, else the agent dashboard. */
+    redirectTo?: string;
   };
 
   /**
@@ -431,6 +471,13 @@ export interface EscalatedModuleOptions {
    * plugins whose names give one slug fail at boot.
    */
   plugins?: EscalatedPluginDefinition[];
+}
+
+/** A host user as single sign-on sees it. */
+export interface SsoHostUser {
+  id: UserId;
+  email?: string | null;
+  name?: string | null;
 }
 
 export const ESCALATED_OPTIONS = 'ESCALATED_OPTIONS';
