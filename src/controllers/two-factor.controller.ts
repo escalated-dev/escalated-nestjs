@@ -161,7 +161,7 @@ export class TwoFactorController {
     if (!enrolment) return this.leave(req);
     if (!hasSession(req)) {
       throw new ForbiddenException(
-        'Two-factor authentication needs a session: add a session middleware (req.session, e.g. express-session) to the host.',
+        'Two-factor authentication needs a session: mount a session middleware on the host (req.session), or install express-session and set a key (session.secret, ESCALATED_SESSION_SECRET or twoFactor.secret) so Escalated mounts its own.',
       );
     }
 

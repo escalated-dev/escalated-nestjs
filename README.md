@@ -163,6 +163,8 @@ to span them.
 | `agentGuard`          | `class`    | --            | Guard for `/escalated/agent/*`. Unset refuses every agent route |
 | `customerGuard`       | `class`    | --            | Guard for `/escalated/customer/tickets/*`. Unset refuses every customer ticket route |
 | `userResolver`        | `function` | --            | Extract user from request               |
+| `userEntity`          | `class \| string` | --      | Your user entity (or table); SSO finds users in it by email when `sso.findUserByEmail` is unset |
+| `session`             | `object \| false` | --      | Escalated's own session for its routes when the host mounts none (two-factor and SSO; needs `express-session`) |
 | `mail`                | `object`   | --            | Outbound email config (see below)       |
 | `inbound`             | `object`   | --            | Inbound email config (see below)        |
 | `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |

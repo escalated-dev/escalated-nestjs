@@ -11,13 +11,16 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { HttpAdapterHost } from '@nestjs/core';
+import { HttpAdapterHost, ModuleRef } from '@nestjs/core';
+import { getDataSourceToken } from '@nestjs/typeorm';
+import type { DataSource } from 'typeorm';
 import { RequiresAccessFeature } from '../access/access-feature.guard';
 import { accessFeatureEnabled } from '../access/access-features';
 import {
   forgetTwoFactorSession,
   hasSession,
   regenerateSession,
+  rememberSsoSessionUser,
   takeIntendedUrl,
 } from '../access/two-factor-session';
 import {
@@ -53,9 +56,10 @@ function truthy(value: unknown): boolean {
  * `access.sso` is on and the provider it serves is the chosen one. The
  * routes are for guests: the host's own login stays as it is.
  *
- * Escalated owns no users or sessions, so the host provides
- * `sso.findUserByEmail`, `sso.signIn` and, to create users,
- * `sso.createUser`. Every refusal answers a generic 403 and logs the reason.
+ * Users are found by `sso.findUserByEmail`, else in `userEntity` by email;
+ * created only by `sso.createUser`; signed in by `sso.signIn`, else passport's
+ * `req.login`, else in the session. Every refusal answers a generic 403 and
+ * logs the reason.
  */
 @Controller('escalated/sso')
 export class SsoController {
@@ -66,6 +70,7 @@ export class SsoController {
     private readonly adapterHost: HttpAdapterHost,
     @Optional() private readonly roles?: RoleService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
+    @Optional() private readonly moduleRef?: ModuleRef,
   ) {}
 
   @Get('login')
@@ -150,10 +155,8 @@ export class SsoController {
     let user: SsoHostUser;
     try {
       user = await this.resolve(await identify());
-      const signIn = this.options?.sso?.signIn;
-      if (!signIn) throw new SsoException('SSO refused: the host has not provided sso.signIn.');
       const intended = takeIntendedUrl(req);
-      await signIn(req, user);
+      await this.signInOnHost(req, user);
       await regenerateSession(req);
       // A new sign-in passes the two-factor challenge again, SSO or not.
       forgetTwoFactorSession(req);
@@ -171,11 +174,10 @@ export class SsoController {
    * SSO never grants the host's admin or agent guard.
    */
   private async resolve(identity: SsoIdentity): Promise<SsoHostUser> {
-    const hooks = this.options?.sso;
-    if (!hooks?.findUserByEmail) {
-      throw new SsoException('SSO refused: the host has not provided sso.findUserByEmail.');
-    }
-    let user = await hooks.findUserByEmail(identity.email);
+    const hooks = this.options?.sso ?? {};
+    let user = hooks.findUserByEmail
+      ? await hooks.findUserByEmail(identity.email)
+      : await this.findInUserEntity(identity.email);
     if (!user) {
       const create = truthy(hooks.createUsers ?? process.env.ESCALATED_SSO_CREATE_USERS);
       if (!create || !hooks.createUser) {
@@ -203,6 +205,81 @@ export class SsoController {
       }
     }
     return user;
+  }
+
+  /**
+   * Signs the user in: the host's `sso.signIn`, else passport's `req.login`,
+   * else the session (the host's or Escalated's own), else refused.
+   */
+  private async signInOnHost(req: any, user: SsoHostUser): Promise<void> {
+    const hook = this.options?.sso?.signIn;
+    if (hook) {
+      await hook(req, user);
+      return;
+    }
+    if (typeof req?.login === 'function') {
+      await new Promise<void>((resolve, reject) =>
+        req.login(user, (error: unknown) => (error ? reject(error) : resolve())),
+      );
+      return;
+    }
+    if (hasSession(req)) {
+      rememberSsoSessionUser(req, user);
+      return;
+    }
+    throw new SsoException(
+      'SSO refused: nothing to sign the user in with. Set sso.signIn, use passport (req.login), or give requests a session (mount a session middleware, or install express-session and set session.secret / ESCALATED_SESSION_SECRET / twoFactor.secret).',
+    );
+  }
+
+  /** The `userEntity` row whose email column matches, case-insensitively. */
+  private async findInUserEntity(email: string): Promise<SsoHostUser | null> {
+    const entity = this.options?.userEntity;
+    if (!entity) {
+      throw new SsoException(
+        'SSO refused: no sso.findUserByEmail hook and no userEntity to find users in.',
+      );
+    }
+    const column = this.options?.sso?.userEmailColumn || 'email';
+    const source = this.userSource(entity);
+    if (source.hasMetadata(entity)) {
+      const metadata = source.getMetadata(entity);
+      const found =
+        metadata.findColumnWithPropertyName(column) ?? metadata.findColumnWithDatabaseName(column);
+      if (!found) {
+        throw new SsoException(`SSO refused: ${metadata.name} has no ${column} column.`);
+      }
+      return (await source
+        .getRepository(entity)
+        .createQueryBuilder('u')
+        .where(`LOWER(u.${found.propertyPath}) = LOWER(:email)`, { email })
+        .getOne()) as SsoHostUser | null;
+    }
+    // A table no entity describes: the raw row.
+    const row = await source
+      .createQueryBuilder()
+      .select('*')
+      .from(String(entity), 'u')
+      .where(`LOWER(u.${source.driver.escape(column)}) = LOWER(:email)`, { email })
+      .limit(1)
+      .getRawOne();
+    return row ?? null;
+  }
+
+  /** The host's default DataSource, or Escalated's own if only that one knows the entity. */
+  private userSource(entity: unknown): DataSource {
+    const sources: DataSource[] = [];
+    for (const token of [getDataSourceToken(), getDataSourceToken(this.options?.connection)]) {
+      try {
+        const source = this.moduleRef?.get<DataSource>(token as any, { strict: false });
+        if (source && !sources.includes(source)) sources.push(source);
+      } catch {
+        // Not registered.
+      }
+    }
+    const source = sources.find((s) => s.hasMetadata(entity as any)) ?? sources[0];
+    if (!source) throw new SsoException('SSO refused: no TypeORM DataSource for userEntity.');
+    return source;
   }
 
   private home(): string {

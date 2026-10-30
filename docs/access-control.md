@@ -113,10 +113,23 @@ off, `[]` for everyone else.
 
 ### Before turning it on
 
-- **A session.** Escalated owns no session, so the challenge is remembered in
-  the host's: any middleware that gives requests a `req.session` object
-  (express-session, cookie-session, ...). While two-factor is on, an enrolled
-  user on a host without one is refused (403) rather than let through.
+- **A session.** The challenge is remembered in a session:
+  - the host's, when it gives requests a `req.session` object
+    (express-session, cookie-session, passport's, ...);
+  - otherwise Escalated's own, mounted on its `/escalated/*` routes only, when
+    the `express-session` package is installed (an optional peer dependency),
+    the `session` option is not `false`, and a key is configured:
+    `session.secret`, else `ESCALATED_SESSION_SECRET`, else one derived from
+    the two-factor sealing key below. Its cookie is `escalated.sid`
+    (HttpOnly, SameSite=Lax, written only once something is stored). Without
+    `session.store` it uses express-session's MemoryStore, which holds one
+    process's sessions and loses them on restart: pass a store
+    (`session: { store: new RedisStore(...) }`) for more than one instance.
+    Express adapter only.
+
+  With neither (no `req.session`, and express-session not installed, or
+  `session: false`, or no key), an enrolled user is refused (403, "needs a
+  session") rather than let through.
 - **A new session on every login.** passport (0.6+) and most login handlers
   regenerate the session when someone signs in, so every login is challenged.
   If yours does not, call `forgetTwoFactorSession(req)` (exported) when a user
@@ -175,19 +188,38 @@ Enrolments are kept.
 
 ### Before turning it on
 
-Escalated owns no users or sessions, so SSO signs people in through hooks:
+On a NestJS + TypeORM host SSO needs no hooks: it finds users in the module's
+`userEntity` and signs them in with passport or the session.
 
 ```ts
 EscalatedModule.forRoot({
   access: { sso: true },
   appUrl: 'https://help.example.com', // the base of the SSO endpoints
-  sso: {
-    findUserByEmail: (email) => users.findByEmailIgnoringCase(email),
-    signIn: (req, user) => new Promise((ok, fail) => req.login(user, (e) => (e ? fail(e) : ok()))),
-    createUser: ({ email, name }) => users.create({ email, name }), // only with createUsers
-  },
+  userEntity: User, // or its table name, e.g. 'users'
 });
 ```
+
+| Step | Host hook (always wins) | Default | Without it |
+|---|---|---|---|
+| Find by email | `sso.findUserByEmail(email)` | the `userEntity` row whose `sso.userEmailColumn` (default `email`) matches, case-insensitively, on the host's default DataSource (else Escalated's, if only that one has the entity). Its primary key must be `id`. | refused (no `userEntity`) |
+| Create (only with `sso.createUsers`) | `sso.createUser({ email, name })` | none: Escalated cannot know which columns your user table requires | unknown emails are refused |
+| Sign in | `sso.signIn(req, user)` | passport's `req.login(user)` when the request has it (your `serializeUser` gets the `userEntity` row); else the user (`id`, `email`, `name`) is kept in the session (the host's, or Escalated's own; see two-factor's "A session") and becomes `req.user` on Escalated's routes when nothing else set one. Read it on your own routes with `ssoSessionUser(req)`; sign out with `forgetSsoSessionUser(req)` or by destroying the session. | refused: no hook, no `req.login` and no session |
+
+Your admin and agent guards still decide who gets in. With the session
+default they see the signed-in user as `req.user`.
+
+To use your own user service, login or user creation, set the hooks:
+
+```ts
+sso: {
+  findUserByEmail: (email) => users.findByEmailIgnoringCase(email),
+  signIn: (req, user) => new Promise((ok, fail) => req.login(user, (e) => (e ? fail(e) : ok()))),
+  createUser: ({ email, name }) => users.create({ email, name }), // only with createUsers
+},
+```
+
+OAuth 2 / OIDC keeps its `state` and PKCE verifier in the same session, so it
+also needs one of the two sessions.
 
 Then run the `SsoMessageIds1793577600000` migration (`escalated_sso_message_ids`),
 choose the provider in **Admin > Settings > SSO**
@@ -241,13 +273,14 @@ than the chosen one. Every refusal answers a generic 403 and logs the reason.
 ### Users and roles
 
 The email comes from the configured attribute or claim (SAML falls back to an
-email-shaped NameID) and is matched with `sso.findUserByEmail`. An unknown
-email is refused unless `sso.createUsers` is on and `sso.createUser` is given.
+email-shaped NameID) and is matched with `sso.findUserByEmail`, else in
+`userEntity`. An unknown email is refused unless `sso.createUsers` is on and
+`sso.createUser` is given.
 With roles & permissions on and `sso.syncRoles`, an asserted role naming an
 existing Escalated role slug becomes the user's role; an unknown one changes
 nothing. SSO never grants the host's admin or agent guard.
 
-On success `sso.signIn` runs, the session id is regenerated, the two-factor
+On success the user is signed in (above), the session id is regenerated, the two-factor
 mark is cleared (signing in through SSO does not skip the challenge), and the
 user goes to the page they asked for, else `sso.redirectTo`. Escalated does
 not turn off the host's own password login.

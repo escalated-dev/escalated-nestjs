@@ -33,8 +33,32 @@ export interface EscalatedModuleOptions {
   /** Route prefix for all Escalated endpoints (default: 'escalated') */
   routePrefix?: string;
 
-  /** User entity class or table name for joins */
+  /**
+   * The host's user entity class (or its table name), on the host's default
+   * TypeORM DataSource. Single sign-on finds users in it by email (column
+   * `sso.userEmailColumn`, default `email`, case-insensitive) when
+   * `sso.findUserByEmail` is not set. Its primary key must be `id`.
+   */
   userEntity?: any;
+
+  /**
+   * Escalated's own session for its routes, used only when the host mounts no
+   * session middleware (`req.session` absent) and two-factor or SSO is on.
+   * Needs `express-session` installed. `false` turns it off. The key is
+   * `secret`, else `ESCALATED_SESSION_SECRET`, else derived from
+   * `twoFactor.secret` (and the keys it falls back to). The cookie is
+   * `escalated.sid` (HttpOnly, SameSite=Lax). Without a `store`, sessions live
+   * in express-session's MemoryStore: one process only, lost on restart; pass a
+   * store (connect-redis, connect-pg-simple, ...) for anything else.
+   */
+  session?:
+    | false
+    | {
+        secret?: string;
+        store?: unknown;
+        name?: string;
+        cookie?: Record<string, unknown>;
+      };
 
   /**
    * The TypeORM DataSource that Escalated's own tables live on, named as you
@@ -278,14 +302,16 @@ export interface EscalatedModuleOptions {
     /**
      * Staff with a confirmed TOTP enrolment must pass the two-factor challenge
      * (`/escalated/two-factor/challenge`) in their session before any admin or
-     * agent route. Needs a session middleware (`req.session`, e.g.
-     * express-session) and a sealing key (`twoFactor.secret`).
+     * agent route. Needs a sealing key (`twoFactor.secret`) and a session: the
+     * host's (`req.session`), else Escalated's own when express-session is
+     * installed (see `session`).
      */
     twoFactor?: boolean;
     /**
      * Sign-in through the provider chosen in Admin > Settings > SSO (SAML,
-     * OAuth 2 / OIDC or JWT) at `/escalated/sso/*`. Needs the `sso` hooks
-     * below, since Escalated owns no users or sessions.
+     * OAuth 2 / OIDC or JWT) at `/escalated/sso/*`. Finds users through
+     * `userEntity` and signs them in with passport or the session unless the
+     * `sso` hooks below say otherwise.
      */
     sso?: boolean;
   };
@@ -296,14 +322,25 @@ export interface EscalatedModuleOptions {
    * rules around it, and the hooks into the host's users and login.
    */
   sso?: {
-    /** The host user with this email (match case-insensitively), or null. */
+    /**
+     * The host user with this email (match case-insensitively), or null.
+     * Default: the `userEntity` row whose `userEmailColumn` matches.
+     */
     findUserByEmail?: (email: string) => Promise<SsoHostUser | null> | SsoHostUser | null;
+    /** The email column of `userEntity` for the default lookup. Default `email`. */
+    userEmailColumn?: string;
     /**
      * Creates a host user for an unknown email when `createUsers` is on, with
-     * an unusable random password. Without it unknown emails are refused.
+     * an unusable random password. There is no default: without it unknown
+     * emails are refused even with `createUsers` on.
      */
     createUser?: (identity: { email: string; name: string }) => Promise<SsoHostUser> | SsoHostUser;
-    /** Signs the user in on the host (e.g. passport's `req.login`). Required. */
+    /**
+     * Signs the user in on the host. Default: passport's `req.login(user)` when
+     * the request has one; else the user is kept in the session (the host's or
+     * Escalated's own) and becomes `req.user` on Escalated's routes (read it on
+     * your own routes with `ssoSessionUser(req)`); else sign-in is refused.
+     */
     signIn?: (request: any, user: SsoHostUser) => Promise<void> | void;
     /** SAML SP entity ID. Default `ESCALATED_SSO_SP_ENTITY_ID`, else the SP metadata URL. */
     spEntityId?: string;
