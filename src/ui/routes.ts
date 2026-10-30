@@ -475,6 +475,15 @@ const routes: Record<string, NamedRoute> = {
   'escalated.two-factor.challenge': { uri: 'escalated/two-factor/challenge', methods: GET },
   'escalated.two-factor.verify': { uri: 'escalated/two-factor/challenge', methods: POST },
 
+  // Single sign-on (ADR 2026-10-29): the admin page and the sign-in routes.
+  'escalated.admin.settings.sso': { uri: 'escalated/admin/settings/sso', methods: GET },
+  'escalated.admin.settings.sso.update': { uri: 'escalated/admin/settings/sso', methods: POST },
+  'escalated.sso.login': { uri: 'escalated/sso/login', methods: GET },
+  'escalated.sso.saml.metadata': { uri: 'escalated/sso/saml/metadata', methods: GET },
+  'escalated.sso.saml.acs': { uri: 'escalated/sso/saml/acs', methods: POST },
+  'escalated.sso.oauth.callback': { uri: 'escalated/sso/oauth/callback', methods: GET },
+  'escalated.sso.jwt.callback': { uri: 'escalated/sso/jwt/callback', methods: [...GET, ...POST] },
+
   // Customer
   'escalated.customer.kb.index': { uri: 'escalated/kb', methods: GET },
   'escalated.customer.kb.show': { uri: 'escalated/kb/{slug}', methods: GET },

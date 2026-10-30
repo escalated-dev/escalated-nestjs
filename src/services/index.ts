@@ -58,3 +58,5 @@ export { PostmarkInboundParser } from './email/postmark-parser.service';
 export { MailgunInboundParser } from './email/mailgun-parser.service';
 export { SESInboundParser, SESSubscriptionConfirmationError } from './email/ses-parser.service';
 export { InboundRouterService } from './email/inbound-router.service';
+export { SsoService, SsoException, SSO_SETTING_DEFAULTS, type SsoIdentity } from './sso.service';
+export { SsoMessageIdsService } from './sso-message-ids.service';
