@@ -702,6 +702,8 @@
             "props": [
                 "currentUserId",
                 "filters",
+                "notice",
+                "roles",
                 "users"
             ],
             "required": []

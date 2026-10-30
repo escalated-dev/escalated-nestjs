@@ -137,6 +137,7 @@ export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   // ---- Users ---------------------------------------------------------------
   ['GET', `${A}/users`, ['user.view']],
   ['*', `${A}/users/*/role`, ['user.manage']],
+  ['PUT', `${A}/users/*/roles`, ['role.manage']],
   ['GET', `${A}/{audit-log,audit-logs}`, ['audit.view']],
 
   // ---- Roles (the roles screens; GET permissions feeds the role form) -------

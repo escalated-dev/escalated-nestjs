@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
-import type { UserId } from '../config/user-id-column';
+import { userIdColumnType, type UserId } from '../config/user-id-column';
 import { AgentProfile } from '../entities/agent-profile.entity';
 import { Contact } from '../entities/contact.entity';
 import { Department } from '../entities/department.entity';
@@ -664,6 +664,90 @@ export class UiDataService {
     const rows = (result?.data ?? []).slice(0, perPage).map(serializeHostUser);
     const total = Math.max(Number(result?.total) || 0, rows.length);
     return { users: paginate(rows, total, current, perPage, path, query), notice: null };
+  }
+
+  /** Every role as the users screen's picker reads it (`{id, name, slug}`), by name. */
+  async roleOptions() {
+    const roles = await this.roleRows.find({ order: { name: 'ASC', id: 'ASC' } });
+    return roles.map((role) => ({ id: role.id, name: role.name, slug: role.slug }));
+  }
+
+  /**
+   * Adds each row's Escalated role slugs (`roles`), as Laravel's screen does
+   * while roles & permissions is on. A user's role is their agent profile's.
+   */
+  async withRoleSlugs<T extends { id: unknown }>(
+    rows: T[],
+  ): Promise<Array<T & { roles: string[] }>> {
+    const ids = rows.map((row) => row.id).filter((id) => id != null && id !== '') as UserId[];
+    const profiles = ids.length
+      ? await this.profiles.find({
+          where: { userId: In(ids) },
+          select: { userId: true, roleId: true },
+        })
+      : [];
+    const roleIds = [...new Set(profiles.map((p) => p.roleId).filter((id) => id != null))];
+    const slugs = new Map(
+      (roleIds.length ? await this.roleRows.find({ where: { id: In(roleIds) } }) : []).map((r) => [
+        r.id,
+        r.slug,
+      ]),
+    );
+    const byUser = new Map(profiles.map((p) => [String(p.userId), p.roleId]));
+    return rows.map((row) => {
+      const slug = slugs.get(byUser.get(String(row.id)) as number);
+      return { ...row, roles: slug ? [slug] : [] };
+    });
+  }
+
+  /**
+   * Whether the user can be found: through the host's `ui.resolveUsers` when
+   * it is configured, else by an existing agent profile, else assumed (the
+   * screen lists the host's users).
+   */
+  async userExists(userId: string): Promise<boolean> {
+    const resolveUsers = this.options?.ui?.resolveUsers;
+    if (resolveUsers) {
+      return ((await resolveUsers([userId])) ?? []).some(
+        (u) => u?.id != null && String(u.id) === userId,
+      );
+    }
+    return true;
+  }
+
+  /** The role on the user's agent profile, or null. */
+  async profileRoleId(userId: string): Promise<number | null> {
+    const profile = await this.profiles.findOne({ where: { userId: userId as UserId } });
+    return profile?.roleId ?? null;
+  }
+
+  /** The ids among `ids` that are no role. */
+  async missingRoleIds(ids: number[]): Promise<number[]> {
+    if (!ids.length) return [];
+    const found = new Set((await this.roleRows.find({ where: { id: In(ids) } })).map((r) => r.id));
+    return ids.filter((id) => !found.has(id));
+  }
+
+  /** Whether the role holds `role.manage`. */
+  async roleManagesRoles(roleId: number | null): Promise<boolean> {
+    if (roleId == null) return false;
+    const role = await this.roleRows.findOne({
+      where: { id: roleId },
+      relations: { permissions: true },
+    });
+    return (role?.permissions ?? []).some((permission) => permission.slug === 'role.manage');
+  }
+
+  /** Sets (or clears) the role on the user's agent profile, creating the profile to set one. */
+  async setProfileRole(userId: string, roleId: number | null): Promise<void> {
+    const key: UserId =
+      userIdColumnType() === 'int' && /^\d+$/.test(userId) ? Number(userId) : userId;
+    const profile = await this.profiles.findOne({ where: { userId: key } });
+    if (profile) {
+      await this.profiles.update(profile.id, { roleId: roleId as number });
+    } else if (roleId != null) {
+      await this.profiles.save(this.profiles.create({ userId: key, roleId }));
+    }
   }
 
   /** Whether the host lets the screen change a user's access (`ui.updateUserRoles`). */

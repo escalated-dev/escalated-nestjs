@@ -13,6 +13,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -27,7 +28,7 @@ import { DepartmentService } from '../../services/department.service';
 import { SettingsService } from '../../services/settings.service';
 import { invalidOriginEntries } from '../../services/widget-origins.service';
 import { scheduleOptions, scheduleReference } from '../admin-config';
-import { userRoleInput } from '../admin-people';
+import { singleRoleFrom, userRoleIdsInput, userRoleInput } from '../admin-people';
 import { back, inertia } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
 import { routeUrl } from '../routes';
@@ -226,12 +227,51 @@ export class AdminUiController {
       page,
       routeUrl('escalated.admin.users.index'),
     );
+    // Escalated roles, only while roles & permissions is on: each user's role
+    // slugs and the roles an admin can give them. Null otherwise (the screen
+    // then shows no roles column, as when Laravel leaves the prop out).
+    const rolesOn = accessFeatureEnabled(this.options, 'roles_permissions');
+    if (rolesOn) users.data = await this.data.withRoleSlugs(users.data);
     return inertia('Escalated/Admin/Users/Index', {
       users,
       filters: { search: term },
       currentUserId: req.user?.id ?? null,
       notice,
+      roles: rolesOn ? await this.data.roleOptions() : null,
     });
+  }
+
+  /**
+   * The users screen's roles picker: replaces the user's Escalated roles with
+   * `role_ids`, as Laravel's UserController::updateRoles. Only while roles &
+   * permissions is on (404 otherwise); the route needs `role.manage`
+   * (route-permissions.ts). A user here has one role, the one on their agent
+   * profile, so the set maps to one role (`singleRoleFrom`); [] clears it.
+   */
+  @RequiresAccessFeature('roles_permissions')
+  @Put('users/:user/roles')
+  async updateUserRoles(@Param('user') user: string, @Body() body: any, @Req() req: any) {
+    const ids = userRoleIdsInput(body);
+    const missing = await this.data.missingRoleIds(ids);
+    if (missing.length) {
+      const index = ids.indexOf(missing[0]);
+      throw new UiValidationException({
+        [`role_ids.${index}`]: `The selected role_ids.${index} is invalid.`,
+      });
+    }
+    if (!(await this.data.userExists(user))) throw new NotFoundException('User not found');
+
+    const roleId = singleRoleFrom(ids, await this.data.profileRoleId(user));
+    const index = routeUrl('escalated.admin.users.index');
+
+    // Taking away your own role management would leave nobody able to undo it.
+    const self = req.user?.id != null && String(req.user.id) === String(user);
+    if (self && !(await this.data.roleManagesRoles(roleId))) {
+      return back(index, { error: 'You cannot remove your own role management.' });
+    }
+
+    await this.data.setProfileRole(user, roleId);
+    return back(index, { success: 'User updated.' });
   }
 
   /**
