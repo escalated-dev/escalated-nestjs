@@ -369,14 +369,21 @@ describe('mobile guest API', () => {
     const { ticket, email } = await createTicket();
     const token = ticket.guest_access_token;
     const replies = app.get(ReplyService);
+    // A staff id no timestamp or generated id can contain, so the leak check
+    // below cannot match a created_at like "12:42:07" (it used to, at :42).
+    const staffId = 987654321;
 
     expect(
       (await post(`${mobile}/tickets/${token}/replies`, { email, body: 'First from guest' }))
         .status,
     ).toBe(201);
-    await replies.create(ticket.id, { body: 'Secret note', isInternal: true, type: 'note' }, 42);
+    await replies.create(
+      ticket.id,
+      { body: 'Secret note', isInternal: true, type: 'note' },
+      staffId,
+    );
     await new Promise((resolve) => setTimeout(resolve, 1100));
-    await replies.create(ticket.id, { body: 'Agent answer', type: 'reply' }, 42);
+    await replies.create(ticket.id, { body: 'Agent answer', type: 'reply' }, staffId);
 
     const res = await fetch(`${mobile}/tickets/${token}`);
     expect(res.status).toBe(200);
