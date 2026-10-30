@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.10] - 2026-10-30
+
 ### Upgrading
 - **An Inertia visit to an Escalated screen that ends in 403, 404, 419, 429,
   500 or 503 now gets the shared `Escalated/Error` page** (props `status` and
