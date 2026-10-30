@@ -18,6 +18,7 @@ import { HttpAdapterHost, ModuleRef } from '@nestjs/core';
 import { Observable, catchError, mergeMap } from 'rxjs';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 import { InertiaBack, InertiaPage, InertiaRedirect } from './inertia';
+import { InertiaErrorFilter, writeInertiaReply } from './inertia-error-page';
 import { InertiaReply, InertiaResponder } from './inertia-responder';
 import { acceptsHtml, isInertiaRequest, isScriptedRequest, sameOriginReferer } from './request';
 import { uiEnabled } from './ui-options';
@@ -121,15 +122,7 @@ export class InertiaReplyFilter implements ExceptionFilter {
   constructor(private readonly adapterHost: HttpAdapterHost) {}
 
   catch(exception: InertiaReplyException, host: ArgumentsHost): void {
-    const adapter = this.adapterHost.httpAdapter;
-    const response = host.switchToHttp().getResponse();
-    const { status, headers, body } = exception.reply;
-    for (const [name, value] of Object.entries(headers)) {
-      // A cookie the handler set (the import wizard's) stays beside the flash one.
-      if (name.toLowerCase() === 'set-cookie') adapter.appendHeader(response, name, value);
-      else adapter.setHeader(response, name, value);
-    }
-    adapter.reply(response, body ?? '', status);
+    writeInertiaReply(this.adapterHost, host.switchToHttp().getResponse(), exception.reply);
   }
 }
 
@@ -175,11 +168,14 @@ export class BrowserFormGuard {
 
 /**
  * Marks a controller whose handlers may return `inertia(...)` / `redirect(...)`
- * values. Inert unless `ui.enabled`.
+ * values, and whose errors an Inertia visit sees as `Escalated/Error`. Inert
+ * unless `ui.enabled`.
  */
 export function EscalatedUi(): ClassDecorator & MethodDecorator {
   return applyDecorators(
     UseInterceptors(InertiaInterceptor),
-    UseFilters(InertiaReplyFilter),
+    // Nest tries the last-listed filter first: a finished reply is written
+    // before the error page is considered.
+    UseFilters(InertiaErrorFilter, InertiaReplyFilter),
   ) as ClassDecorator & MethodDecorator;
 }

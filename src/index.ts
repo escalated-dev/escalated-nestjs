@@ -85,6 +85,7 @@ export {
 } from './ui/ui-options';
 export { InertiaPage, InertiaRedirect, inertia, redirect, back } from './ui/inertia';
 export { EscalatedUi, InertiaInterceptor, InertiaReplyFilter } from './ui/inertia.interceptor';
+export { InertiaErrorFilter, ERROR_PAGE_MESSAGES } from './ui/inertia-error-page';
 export { defaultRootView, ROUTE_HELPER } from './ui/root-view';
 export { escalatedRoutes } from './ui/routes';
 

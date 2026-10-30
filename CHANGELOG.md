@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrading
+- **An Inertia visit to an Escalated screen that ends in 403, 404, 419, 429,
+  500 or 503 now gets the shared `Escalated/Error` page** (props `status` and
+  `message`, as escalated-rails and escalated-laravel send them) instead of
+  Nest's JSON error body, which the Inertia client could only show in a modal.
+  The message is generic per status; an exception's own message never reaches
+  the page. It applies only with `ui.enabled`, only to `X-Inertia` requests and
+  only on the controllers marked `@EscalatedUi()`. Full page loads, API
+  clients, the host's own routes and other statuses are untouched: they still
+  reach the app's global filters (`useGlobalFilters` / `APP_FILTER`), then
+  Nest's default handling, as before. A global filter written for a specific
+  exception type (`@Catch(SomeException)`) keeps answering that exception on
+  Inertia visits too. New export: `InertiaErrorFilter`, `ERROR_PAGE_MESSAGES`.
+
 ## [1.2.9] - 2026-10-30
 
 ### Upgrading
