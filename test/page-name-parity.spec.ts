@@ -73,7 +73,6 @@ function explain(missing: string[], rendered: Map<string, Set<string>>): string 
 const NOT_YET_RENDERED: string[] = [
   'Escalated/Admin/Settings/Sandbox',
   'Escalated/Admin/Workflows/Builder',
-  'Escalated/Error',
 ];
 
 /** Screen tests: HTTP tests that assert a page's component name and props. */
