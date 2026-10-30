@@ -49,6 +49,50 @@ export function roleChange(role: 'admin' | 'agent', value: boolean): EscalatedUi
   return value ? { isAgent: true } : { isAgent: false, isAdmin: false };
 }
 
+/**
+ * `PUT users/:user/roles`' body, validated as Laravel's (`role_ids` present
+ * and an array of integers). Whether each role exists is checked against the
+ * table afterwards.
+ */
+export function userRoleIdsInput(body: any): number[] {
+  const raw = body?.role_ids;
+  if (raw === undefined) {
+    throw new UiValidationException({ role_ids: 'The role ids field must be present.' });
+  }
+  if (!Array.isArray(raw)) {
+    throw new UiValidationException({ role_ids: 'The role ids field must be an array.' });
+  }
+  const ids: number[] = [];
+  raw.forEach((value, index) => {
+    const id =
+      typeof value === 'number' ? value : /^-?\d+$/.test(String(value)) ? Number(value) : NaN;
+    if (!Number.isInteger(id)) {
+      throw new UiValidationException({
+        [`role_ids.${index}`]: `The role_ids.${index} field must be an integer.`,
+      });
+    }
+    if (!ids.includes(id)) ids.push(id);
+  });
+  return ids;
+}
+
+/**
+ * The one role an agent profile holds, from the picker's set. The shared
+ * screen sends the user's whole set with one role ticked or unticked, so the
+ * set holds at most the current role plus the newly ticked one: that new one
+ * wins. Null clears the role. Two new roles at once cannot be held.
+ */
+export function singleRoleFrom(ids: number[], current: number | null): number | null {
+  if (!ids.length) return null;
+  const added = ids.filter((id) => id !== current);
+  if (added.length > 1) {
+    throw new UiValidationException({
+      role_ids: 'A user has one Escalated role here; choose one role.',
+    });
+  }
+  return added[0] ?? current;
+}
+
 export function serializePermission(permission: Permission) {
   return {
     id: permission.id,

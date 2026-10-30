@@ -74,6 +74,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Admin > Plugins list.
 
 ### Added
+- **Admin > Users roles picker.** While roles & permissions is on, the users
+  screen sends `roles` (`{id, name, slug}`, by name) and each user's role slugs,
+  and `PUT /escalated/admin/users/:user/roles` (`escalated.admin.users.roles`,
+  `{role_ids: [...]}`, needs `role.manage`) changes a user's role, as
+  escalated-laravel. A user has one role here, so the set maps to one role;
+  see docs/access-control.md. While the switch is off the route answers 404 and
+  `roles` is null.
 - **Single sign-on through SAML, OAuth 2 / OIDC or JWT** when switched on, with
   the provider chosen in Admin > Settings > SSO (`Admin/Settings/SsoSettings`,
   secrets masked, endpoints listed). SAML checks the assertion signature

@@ -77,6 +77,26 @@ Custom roles are made in **Admin > Roles**, which exists while the switch is on.
 user's agent profile, creating one if needed. Use it to give yourself the
 `admin` role before switching roles on.
 
+While the switch is on, **Admin > Users** also shows a roles column, and an
+admin with `role.manage` can change a user's role there
+(`PUT /escalated/admin/users/:user/roles`, route name
+`escalated.admin.users.roles`, body `{ "role_ids": [...] }`, as
+escalated-laravel). The ids must be existing roles (422 otherwise).
+
+A user holds **one** Escalated role in this package (the role on their agent
+profile), where Laravel keeps a set. The screen sends the user's whole set with
+one role ticked or unticked, so:
+
+- `[]` clears the role;
+- one id sets that role (creating the agent profile if needed);
+- the current role plus one other sets the other one (ticking a new role
+  replaces the old one);
+- two roles that are both new are refused with a 422 on `role_ids`.
+
+You cannot leave yourself without `role.manage`: that change is refused with
+the error "You cannot remove your own role management." When the host provides
+`ui.resolveUsers`, a user it does not return is a 404.
+
 ### Turning it on
 
 1. Run the `RolesAndPermissions1793404800000` migration.
