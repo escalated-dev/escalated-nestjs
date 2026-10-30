@@ -1,4 +1,11 @@
-import { DynamicModule, MiddlewareConsumer, Module, NestModule, Provider } from '@nestjs/common';
+import {
+  DynamicModule,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  Provider,
+  RequestMethod,
+} from '@nestjs/common';
 import { TypeOrmModule, getDataSourceToken } from '@nestjs/typeorm';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { DataSource } from 'typeorm';
@@ -215,6 +222,7 @@ import { PluginEventsListener } from './plugins/plugin-events.listener';
 // Middleware
 import { WidgetCorsMiddleware, routesOf } from './middleware/widget-cors.middleware';
 import { GuestPrivacyHeadersMiddleware } from './middleware/guest-privacy-headers.middleware';
+import { EscalatedSessionMiddleware } from './access/escalated-session.middleware';
 
 // Guards
 import { ApiTokenGuard } from './guards/api-token.guard';
@@ -397,6 +405,12 @@ export class EscalatedModule implements NestModule {
       .forRoutes(...routesOf(WidgetController, WidgetChatController));
     // Guest privacy headers on every mobile guest answer, guard refusals too.
     consumer.apply(GuestPrivacyHeadersMiddleware).forRoutes(...routesOf(MobileGuestController));
+    // A session for two-factor and SSO when the host mounts none, and the SSO
+    // session user as req.user (see EscalatedSessionMiddleware). It acts on
+    // Escalated's paths only, and is inert while both are off or the host has
+    // its own session. Mounted once (the "all" wildcard) rather than per
+    // route, so it adds no route of its own.
+    consumer.apply(EscalatedSessionMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 
   static forRoot(options: EscalatedModuleOptions = {}): DynamicModule {

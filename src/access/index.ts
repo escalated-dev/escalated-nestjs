@@ -11,4 +11,11 @@ export {
 } from './route-permissions';
 export { PERMISSIONS, SYSTEM_ROLES, seedRolesAndPermissions } from './permission-seed';
 export { TwoFactorGate, TwoFactorRoute, TwoFactorRedirectException } from './two-factor-gate';
-export { forgetTwoFactorSession, markTwoFactorPassed, twoFactorPassed } from './two-factor-session';
+export {
+  forgetSsoSessionUser,
+  forgetTwoFactorSession,
+  markTwoFactorPassed,
+  ssoSessionUser,
+  twoFactorPassed,
+} from './two-factor-session';
+export { EscalatedSessionMiddleware, escalatedSessionSecret } from './escalated-session.middleware';

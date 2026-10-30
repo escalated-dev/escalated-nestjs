@@ -45,6 +45,45 @@ export async function regenerateSession(request: any): Promise<void> {
   Object.assign(request.session, kept);
 }
 
+const SSO_USER = 'escalatedSsoUser';
+
+/**
+ * SSO's default sign-in when the host has no passport and no `sso.signIn`:
+ * the user is kept in the session, and becomes `req.user` on Escalated's
+ * routes (see `ssoSessionUser`).
+ */
+export function rememberSsoSessionUser(
+  request: any,
+  user: { id: unknown; email?: unknown; name?: unknown },
+): void {
+  if (!hasSession(request)) return;
+  request.session[SSO_USER] = {
+    id: user.id,
+    email: typeof user.email === 'string' ? user.email : null,
+    name: typeof user.name === 'string' ? user.name : null,
+  };
+}
+
+/** The user SSO signed in to this session (no passport), or null. Hosts can read it on their own routes. */
+export function ssoSessionUser(
+  request: any,
+): { id: string | number; email: string | null; name: string | null } | null {
+  const user = hasSession(request) ? request.session[SSO_USER] : null;
+  return user && user.id !== undefined && user.id !== null ? user : null;
+}
+
+/** Signs the SSO session user out (call it from the host's logout, or destroy the session). */
+export function forgetSsoSessionUser(request: any): void {
+  if (hasSession(request)) delete request.session[SSO_USER];
+}
+
+/** `req.user` from the SSO session user, when nothing else (passport, the host) set one. */
+export function restoreSsoSessionUser(request: any): void {
+  if (request?.user) return;
+  const user = ssoSessionUser(request);
+  if (user) request.user = { ...user };
+}
+
 export function rememberIntendedUrl(request: any, url: string): void {
   if (hasSession(request)) request.session[INTENDED] = url;
 }

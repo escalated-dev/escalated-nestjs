@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **SSO works without host hooks on a NestJS + TypeORM host.** With
+  `access.sso` on and no `sso.findUserByEmail`, users are found in the
+  module's `userEntity` (class or table name) by `sso.userEmailColumn`
+  (default `email`), case-insensitively. With no `sso.signIn`, they are signed
+  in with passport's `req.login` when present, else kept in the session and
+  restored as `req.user` on Escalated's routes (`ssoSessionUser(req)` and
+  `forgetSsoSessionUser(req)` are exported for the host's own routes). The
+  hooks still win. Creating users still needs `sso.createUser`.
+- **Escalated's own session when the host has none.** While two-factor or SSO
+  is on and a request to `/escalated/*` has no `req.session`, Escalated mounts
+  `express-session` (now an optional peer dependency) with cookie
+  `escalated.sid`, keyed by the new `session.secret` /
+  `ESCALATED_SESSION_SECRET` or derived from the two-factor sealing key. The
+  two-factor challenge and OAuth state work out of the box. `session: false`
+  turns it off; `session.store` replaces the single-process MemoryStore. See
+  [docs/access-control.md](docs/access-control.md).
+
+### Upgrading
+- Hosts that had two-factor or SSO on without a session middleware, with
+  `express-session` installed and a two-factor key set, used to get a 403
+  ("needs a session"); they now get Escalated's session. Set `session: false`
+  to keep the old behaviour. Hosts that mount their own session see no change.
+- SSO no longer refuses for a missing `sso.findUserByEmail` or `sso.signIn`
+  when `userEntity` and passport or a session are there.
+
 ## [1.2.11] - 2026-10-30
 
 ### Added
