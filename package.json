@@ -88,7 +88,7 @@
     "@types/simple-oauth2": "^5.0.7",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
     "@typescript-eslint/parser": "^8.69.0",
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.3",
     "eslint": "^10.10.0",
     "express-session": "^1.19.0",
     "jest": "^30.5.1",
