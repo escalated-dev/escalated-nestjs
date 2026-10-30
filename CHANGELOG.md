@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.9] - 2026-10-30
+
 ### Upgrading
 - **Single sign-on is a new install-level switch, off by default** (`access.sso`,
   env `ESCALATED_SSO`; ADR 2026-10-29-configurable-access-features). While it
