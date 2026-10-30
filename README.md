@@ -123,6 +123,7 @@ export class AppModule {}
 | `enable2fa`           | `boolean`  | `false`       | Deprecated and unused; two-factor is `access.twoFactor` |
 | `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
 | `appUrl`              | `string`   | --            | Base URL for links                      |
+| `debug`               | `boolean`  | `false`       | A 500 on an Inertia visit to a screen reaches your filters and Nest's handling instead of the generic Error page (see [docs/ui.md](docs/ui.md#errors)). Development only |
 
 ### Database connection
 
