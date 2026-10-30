@@ -224,6 +224,16 @@ export interface EscalatedModuleOptions {
    */
   ui?: EscalatedUiOptions;
 
+  /**
+   * Debug mode (default: false). While on, an Inertia visit to an Escalated
+   * screen that fails with a 500 is not answered with the generic
+   * `Escalated/Error` page: the exception goes on to the app's global filters
+   * and Nest's own handling (which logs the stack), as escalated-laravel leaves
+   * it to the framework's debug page under `APP_DEBUG`. Other statuses still get
+   * the page. Never turn it on in production.
+   */
+  debug?: boolean;
+
   /** App name for branding */
   appName?: string;
 

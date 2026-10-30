@@ -63,6 +63,10 @@ export function writeInertiaReply(
  * `useGlobalFilters` / `APP_FILTER`), then Nest's default handling. A
  * controller-bound filter that catches everything would otherwise take those
  * exceptions away from the host.
+ *
+ * With the module's `debug` option on, a 500 is passed on the same way, so
+ * the developer sees the failure as Nest reports it (escalated-laravel leaves
+ * it to the framework's debug page under `APP_DEBUG`).
  */
 @Catch()
 @Injectable()
@@ -95,6 +99,8 @@ export class InertiaErrorFilter implements ExceptionFilter {
     if (host.getType() !== 'http' || !uiEnabled(this.options)) return null;
     if (!isInertiaRequest(host.switchToHttp().getRequest())) return null;
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    // In debug mode a 500 is the developer's to read, as Nest would show it.
+    if (status === 500 && this.options?.debug === true) return null;
     return status in ERROR_PAGE_MESSAGES ? status : null;
   }
 

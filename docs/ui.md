@@ -62,6 +62,20 @@ Routes that are both a JSON API route and a screen (`GET
 screen only for an Inertia visit or a browser navigation. API clients, which
 ask for JSON or anything, get the JSON they always got.
 
+## Errors
+
+An Inertia visit to a screen that ends in 403, 404, 419, 429, 500 or 503 gets
+the shared `Escalated/Error` page, props `status` and a generic `message`. An
+exception's own message never reaches the page. Full page loads, API clients,
+your own routes and other statuses reach your global filters, then Nest's
+default handling.
+
+While developing, set the module option `debug: true` (default `false`): a
+500 on an Inertia visit then skips the page and goes on to your filters and
+Nest's handling, which logs the stack, the way escalated-laravel leaves a 500
+to the framework's debug page under `APP_DEBUG`. The other statuses still get
+the page. Leave it off in production.
+
 ## Shared props
 
 Every page gets, like Laravel's `HandleInertiaRequests` plus

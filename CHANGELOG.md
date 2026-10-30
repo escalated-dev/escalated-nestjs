@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`debug` module option** (default `false`). While it is on, an Inertia
+  visit to an Escalated screen that fails with a 500 is no longer answered with
+  the generic `Escalated/Error` page: the exception goes on to the app's global
+  filters and Nest's default handling (which logs the stack), the way
+  escalated-laravel leaves a 500 to the framework's debug page under
+  `APP_DEBUG`. Other statuses still get the page. Off, nothing changes. Use it
+  only in development.
+
 ## [1.2.10] - 2026-10-30
 
 ### Upgrading

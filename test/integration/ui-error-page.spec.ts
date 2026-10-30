@@ -191,3 +191,82 @@ describe('Escalated/Error (ui.enabled)', () => {
     expect(res.headers.get('location')).toBe('/escalated/agent');
   });
 });
+
+/**
+ * With `debug` on, a 500 is the developer's to read: it goes on to the host's
+ * filters and Nest's own handling (which logs the stack) as it would without
+ * Escalated, the way escalated-laravel leaves it to the framework's debug page
+ * under APP_DEBUG. Every other status still gets the page.
+ */
+describe('Escalated/Error with debug on', () => {
+  let app: INestApplication;
+  let base: string;
+
+  beforeAll(async () => {
+    ({ app, base } = await bootUi({ debug: true }, { controllers: [HostController] }, (nest) =>
+      nest.useGlobalFilters(new HostFilter()),
+    ));
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const failDashboardWith = (error: Error) =>
+    jest.spyOn(app.get(UiDataService), 'agentDashboard').mockRejectedValueOnce(error);
+
+  it('leaves an unexpected failure to the host and Nest', async () => {
+    failDashboardWith(new Error('SQLITE_ERROR: secret table missing'));
+
+    const res = await inertiaFetch(base, '/escalated/agent');
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ handledBy: 'host', status: 500 });
+  });
+
+  it('leaves a 500 HttpException to the host and Nest', async () => {
+    failDashboardWith(new HttpException('internal detail', 500));
+
+    const res = await inertiaFetch(base, '/escalated/agent');
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ handledBy: 'host', status: 500 });
+  });
+
+  it('still renders the Error page for the other statuses', async () => {
+    const res = await inertiaFetch(base, '/escalated/admin/settings', { as: 'agent' });
+
+    expect(res.status).toBe(403);
+    expect((await res.json()).component).toBe('Escalated/Error');
+  });
+});
+
+describe('Escalated/Error with debug off explicitly', () => {
+  let app: INestApplication;
+  let base: string;
+
+  beforeAll(async () => {
+    ({ app, base } = await bootUi({ debug: false }, { controllers: [HostController] }, (nest) =>
+      nest.useGlobalFilters(new HostFilter()),
+    ));
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  it('renders the Error page for an unexpected failure, and never its message', async () => {
+    jest
+      .spyOn(app.get(UiDataService), 'agentDashboard')
+      .mockRejectedValueOnce(new Error('SQLITE_ERROR: secret table missing'));
+
+    const res = await inertiaFetch(base, '/escalated/agent');
+
+    expect(res.status).toBe(500);
+    const text = await res.text();
+    expect(JSON.parse(text).component).toBe('Escalated/Error');
+    expect(text).not.toContain('SQLITE_ERROR');
+  });
+});
