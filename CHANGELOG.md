@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.12] - 2026-10-30
+
 ### Added
 - **SSO works without host hooks on a NestJS + TypeORM host.** With
   `access.sso` on and no `sso.findUserByEmail`, users are found in the
