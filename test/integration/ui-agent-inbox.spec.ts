@@ -234,14 +234,12 @@ describe('agent inbox props (ui.enabled)', () => {
   it.each(['id', 'filters'])(
     'selects a saved view as the queue, by %s, and filters the list with it',
     async (by) => {
-      const view = await source
-        .getRepository(SavedView)
-        .save({
-          userId: AGENT,
-          name: 'High priority',
-          filters: { priority: 'high' },
-          sortOrder: 1,
-        });
+      const view = await source.getRepository(SavedView).save({
+        userId: AGENT,
+        name: 'High priority',
+        filters: { priority: 'high' },
+        sortOrder: 1,
+      });
       const high = await make({ priority: 'high' });
       await make({ priority: 'low' });
 
