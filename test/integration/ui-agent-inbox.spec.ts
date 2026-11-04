@@ -10,7 +10,7 @@ import {
 } from '../../src/entities';
 import { AgentInboxService } from '../../src/ui/agent-inbox.service';
 import manifest from '../fixtures/escalated-pages.json';
-import { AGENT, bootUi, cookieFrom, CUSTOMER, inertiaFetch, page } from './ui-harness';
+import { AGENT, bootUi, cookieFrom, CUSTOMER, headersFor, inertiaFetch, page } from './ui-harness';
 
 jest.setTimeout(60000);
 
@@ -379,11 +379,31 @@ describe('agent inbox props (ui.enabled)', () => {
     [{ updated_within_hours: '0' }],
     [{ updated_within_hours: 'a day' }],
     [{ updated_within_hours: '9000' }],
-  ])('rejects malformed values for the new filters: %j', async (query) => {
-    const res = await inertiaFetch(base, `${INDEX}?${new URLSearchParams(query)}`, v1);
+  ])('sends malformed values for the new filters back with errors: %j', async (query) => {
+    // As escalated-laravel's $request->validate() on a page visit: a redirect
+    // back with the errors for the next page's `errors` prop, never a raw 422
+    // (which Inertia shows as an error modal).
+    const from = `${INDEX}?assigned=me`;
+    const res = await inertiaFetch(base, `${INDEX}?${new URLSearchParams(query)}`, {
+      headers: { ...v1.headers, referer: `${base}${from}` },
+    });
 
-    expect(res.status).toBe(422);
-    expect(Object.keys((await res.json()).errors)).toEqual(Object.keys(query));
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe(from);
+    const cookie = cookieFrom(res);
+    expect(cookie).toMatch(/^escalated_flash=/);
+    const next = await page(base, from, { headers: { ...v1.headers, cookie } });
+    expect(Object.keys(next.props.errors)).toEqual(Object.keys(query));
+  });
+
+  it('sends a malformed filter on a browser visit with no referer back to the list', async () => {
+    const res = await fetch(`${base}${INDEX}?sla_at_risk=soon`, {
+      headers: { accept: 'text/html', ...headersFor(base, v1) },
+      redirect: 'manual',
+    });
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe(INDEX);
   });
 
   it('previews the latest customer-visible message, never an internal note', async () => {

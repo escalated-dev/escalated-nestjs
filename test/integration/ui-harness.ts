@@ -75,7 +75,7 @@ export interface Visit {
   method?: string;
 }
 
-function headersFor(base: string, visit: Visit): Record<string, string> {
+export function headersFor(base: string, visit: Visit): Record<string, string> {
   const who = ROLES[visit.as ?? 'agent'];
   return {
     'x-role': who.role,

@@ -48,7 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a first response still unsent or resolution due within 60 minutes),
   `resolved_today=1` (resolved since the start of today), `open=1` (not
   resolved or closed), `updated_within_hours=<1..8760>`, `assigned=me` and
-  `view=<id>`. Malformed values answer 422 with field errors.
+  `view=<id>`. A screen visit with a malformed value goes back (302 to the
+  referring page, else the list) with the field errors in the next page's
+  `errors` prop, as escalated-laravel's validation does; it is never a raw 422,
+  which the Inertia client shows as an error modal.
 
 ### Not sent
 - `is_unread` and `requester_online`: Escalated tracks no per-agent read state

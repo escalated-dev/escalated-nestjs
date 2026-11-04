@@ -16,7 +16,6 @@ import {
   UseGuards,
   Inject,
   Optional,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketService } from '../../services/ticket.service';
@@ -32,7 +31,7 @@ import { ESCALATED_EVENTS, TicketCustomActionTriggeredEvent } from '../../events
 import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 import { requireUserId } from '../../config/request-user';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
-import { back, inertia } from '../../ui/inertia';
+import { back, inertia, InertiaBack } from '../../ui/inertia';
 import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
@@ -83,7 +82,11 @@ export class AgentTicketController {
       const query = { ...(req.query ?? {}) };
       const errors = listFilterErrors(query);
       if (errors) {
-        throw new UnprocessableEntityException({ message: 'The given data was invalid.', errors });
+        // escalated-laravel's $request->validate(): a page visit goes back with
+        // the errors (the next page's `errors` prop), not a 422 the Inertia
+        // client would show as an error modal. JSON clients take the API
+        // branch below, which these filters are not part of.
+        return new InertiaBack(routeUrl('escalated.agent.tickets.index'), {}, errors);
       }
       const agent = requireUserId(req);
       const selected = this.inbox.normaliseFilters(query, agent);
