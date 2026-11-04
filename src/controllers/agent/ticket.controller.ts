@@ -32,7 +32,7 @@ import { EscalatedAgentGuard } from '../../guards/escalated-route.guard';
 import { requireUserId } from '../../config/request-user';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/escalated.config';
 import { back, inertia, InertiaBack } from '../../ui/inertia';
-import { EscalatedUi } from '../../ui/inertia.interceptor';
+import { EscalatedUi, UiValidationException } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
@@ -229,8 +229,11 @@ export class AgentTicketController {
   private async page(ticket: any, req: any) {
     const agent = requireUserId(req);
     const queue = await this.inbox!.recalled(req, agent);
+    const screen = await this.ui!.ticketScreen(ticket, agent);
     return inertia('Escalated/Agent/TicketShow', {
-      ...(await this.ui!.ticketScreen(ticket, agent)),
+      ...screen,
+      ticket: { ...screen.ticket, requester_tickets: await this.ui!.requesterTickets(ticket) },
+      agents: await this.ui!.assignableAgents(ticket),
       customActions: this.customActionsForTicket(ticket, req?.user ?? null),
       queue: this.inbox!.queueProp(queue),
       inbox: await this.inbox!.summary(agent, queue),
@@ -257,20 +260,50 @@ export class AgentTicketController {
     return this.ticketService.split(id, replyIds || [], userId);
   }
 
+  /**
+   * Snoozes the ticket until `snoozed_until`, a date in the future, as
+   * escalated-laravel's `escalated.agent.tickets.snooze`; the screen gets a
+   * redirect back with a flash message. API clients may still send
+   * `snoozedUntil`, which keeps its old checks and answer.
+   */
   @Post(':id/snooze')
-  async snooze(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('snoozedUntil') snoozedUntil: string,
-    @Req() req: any,
-  ) {
+  async snooze(@Param('id') idOrReference: string, @Body() body: any, @Req() req: any) {
     const userId = requireUserId(req);
-    return this.ticketService.update(id, { snoozedUntil }, userId);
+    const ticket = await this.findTicket(idOrReference);
+    const page = wantsPage(this.options, req);
+    if (!page && body?.snoozed_until === undefined && body?.snoozedUntil !== undefined) {
+      return this.ticketService.update(ticket.id, { snoozedUntil: body.snoozedUntil }, userId);
+    }
+    const until = new Date(String(body?.snoozed_until ?? ''));
+    if (!body?.snoozed_until || Number.isNaN(until.getTime()) || until <= new Date()) {
+      throw new UiValidationException({
+        snoozed_until: 'The snoozed until must be a date in the future.',
+      });
+    }
+    const updated = await this.ticketService.update(
+      ticket.id,
+      { snoozedUntil: until.toISOString() },
+      userId,
+    );
+    if (page) {
+      return back(routeUrl('escalated.agent.tickets.show', { ticket: ticket.referenceNumber }), {
+        success: `Ticket snoozed until ${until.toISOString()}.`,
+      });
+    }
+    return updated;
   }
 
+  /** Clears the ticket's snooze (`escalated.agent.tickets.unsnooze`). */
   @Post(':id/unsnooze')
-  async unsnooze(@Param('id', ParseIntPipe) id: number) {
-    await this.ticketService.unsnooze(id);
-    return this.ticketService.findById(id);
+  async unsnooze(@Param('id') idOrReference: string, @Req() req: any) {
+    const ticket = await this.findTicket(idOrReference);
+    await this.ticketService.unsnooze(ticket.id);
+    if (wantsPage(this.options, req)) {
+      return back(routeUrl('escalated.agent.tickets.show', { ticket: ticket.referenceNumber }), {
+        success: 'Ticket unsnoozed.',
+      });
+    }
+    return this.ticketService.findById(ticket.id);
   }
 
   @Get(':id/activities')
