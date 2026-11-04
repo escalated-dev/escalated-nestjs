@@ -369,8 +369,11 @@ describe('mobile guest API', () => {
     const { ticket, email } = await createTicket();
     const token = ticket.guest_access_token;
     const replies = app.get(ReplyService);
-    // A staff id no timestamp or generated id can contain, so the leak check
-    // below cannot match a created_at like "12:42:07" (it used to, at :42).
+    // The leak check looks for this id as a JSON value (`:987654321` or
+    // `"987654321"`), which no timestamp, reference or token can produce:
+    // timestamps only hold two-digit fields after a colon, and references and
+    // tokens are never preceded by one. It used to also look for `:42`, which
+    // every created_at at 42 seconds or minutes past the hour matched.
     const staffId = 987654321;
 
     expect(
@@ -410,7 +413,11 @@ describe('mobile guest API', () => {
     ]);
     const text = JSON.stringify(data);
     expect(text).not.toContain('Secret note');
-    expect(text).not.toMatch(/guestAccessHash|guestVerifiedEmail|contactId|requesterId|"42"|:42\b/);
+    expect(text).not.toMatch(/guestAccessHash|guestVerifiedEmail|contactId|requesterId/);
+    expect(text).not.toMatch(new RegExp(`:${staffId}\\b|"${staffId}"`));
+    for (const reply of data.replies) {
+      expect(reply.author.id).not.toBe(staffId);
+    }
   });
 });
 
