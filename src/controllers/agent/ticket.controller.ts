@@ -16,6 +16,7 @@ import {
   UseGuards,
   Inject,
   Optional,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketService } from '../../services/ticket.service';
@@ -36,6 +37,7 @@ import { EscalatedUi } from '../../ui/inertia.interceptor';
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
+import { AgentInboxService, listFilterErrors } from '../../ui/agent-inbox.service';
 
 /**
  * The agent ticket JSON API. With `ui.enabled`, the index and show routes also
@@ -54,6 +56,7 @@ export class AgentTicketController {
     private readonly eventEmitter: EventEmitter2,
     @Optional() private readonly ui?: UiDataService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
+    @Optional() private readonly inbox?: AgentInboxService,
   ) {}
 
   /** A ticket by numeric id or, as the screens link to it, by reference. */
@@ -76,17 +79,27 @@ export class AgentTicketController {
 
   @Get()
   async index(@Query() filters: TicketFilterDto, @Req() req?: any): Promise<any> {
-    if (this.ui && wantsPage(this.options, req)) {
+    if (this.ui && this.inbox && wantsPage(this.options, req)) {
       const query = { ...(req.query ?? {}) };
+      const errors = listFilterErrors(query);
+      if (errors) {
+        throw new UnprocessableEntityException({ message: 'The given data was invalid.', errors });
+      }
+      const agent = requireUserId(req);
+      const selected = this.inbox.normaliseFilters(query, agent);
+      const queue = await this.inbox.queueFor(selected, agent);
+      this.inbox.remember(req, queue);
       return inertia('Escalated/Agent/TicketIndex', {
         tickets: await this.ui.ticketList(
-          query,
-          requireUserId(req),
+          this.inbox.listFilters(selected, queue),
+          agent,
           routeUrl('escalated.agent.tickets.index'),
         ),
         filters: query,
         departments: await this.ui.departmentOptions(),
         tags: await this.ui.tagOptions(),
+        queue: this.inbox.queueProp(queue),
+        inbox: await this.inbox.summary(agent, queue),
       });
     }
     return this.ticketService.findAll(filters);
@@ -96,7 +109,7 @@ export class AgentTicketController {
   async show(@Param('id') idOrReference: string | number, @Req() req?: any): Promise<any> {
     const ticket = await this.findTicket(idOrReference);
     const id = ticket.id;
-    if (this.ui && wantsPage(this.options, req)) return this.page(ticket, req);
+    if (this.ui && this.inbox && wantsPage(this.options, req)) return this.page(ticket, req);
     const [replies, activities, chatContext, requesterTicketCount, relatedTickets, subjects] =
       await Promise.all([
         this.replyService.findByTicketId(id, true),
@@ -211,9 +224,13 @@ export class AgentTicketController {
 
   /** `Escalated/Agent/TicketShow`, with the props escalated-laravel's Agent TicketController@show sends. */
   private async page(ticket: any, req: any) {
+    const agent = requireUserId(req);
+    const queue = await this.inbox!.recalled(req, agent);
     return inertia('Escalated/Agent/TicketShow', {
-      ...(await this.ui!.ticketScreen(ticket, requireUserId(req))),
+      ...(await this.ui!.ticketScreen(ticket, agent)),
       customActions: this.customActionsForTicket(ticket, req?.user ?? null),
+      queue: this.inbox!.queueProp(queue),
+      inbox: await this.inbox!.summary(agent, queue),
     });
   }
 

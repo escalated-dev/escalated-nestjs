@@ -121,6 +121,14 @@ export interface EscalatedUiOptions {
     userId: string,
     change: EscalatedUiRoleChange,
   ) => boolean | void | Promise<boolean | void>;
+
+  /**
+   * The agent panel's rail counts, views and stat strip (the `inbox` prop on
+   * `Agent/TicketIndex` and `Agent/TicketShow`) are count queries per agent
+   * and queue. They are cached in memory, per process, for `cacheSeconds`
+   * (default 10); 0 recomputes them on every request.
+   */
+  agentInbox?: { cacheSeconds?: number };
 }
 
 export function uiEnabled(options: { ui?: EscalatedUiOptions } | undefined | null): boolean {
