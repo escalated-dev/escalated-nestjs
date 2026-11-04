@@ -76,6 +76,14 @@ function positiveInt(value: unknown, fallback: number, max = Number.MAX_SAFE_INT
   return Number.isInteger(number) && number > 0 ? Math.min(number, max) : fallback;
 }
 
+/** How close a due SLA target has to be for the ticket to be "at risk". */
+export const SLA_AT_RISK_MINUTES = 60;
+
+/** `1`, `true`, `on` or `yes`, as escalated-laravel's boolean list filters read. */
+export function flag(value: unknown): boolean {
+  return value === true || value === 1 || ['1', 'true', 'on', 'yes'].includes(String(value));
+}
+
 function truthy(value: unknown): boolean {
   return value === true || value === 'true' || value === '1' || value === 1 || value === '';
 }
@@ -270,8 +278,9 @@ export class UiDataService {
   /**
    * A ticket list with escalated-laravel's filter names: `status` (slug),
    * `priority`, `ticket_type`, `department_id`, `assigned_to`, `unassigned`,
-   * `search`, `sla_breached`, `tag_ids`, `following`, `requester_id`,
-   * `sort_by`, `sort_dir`, `per_page`, `page`.
+   * `search`, `sla_breached`, `sla_at_risk`, `open`, `resolved_today`,
+   * `updated_within_hours`, `tag_ids`, `following`, `snoozed`,
+   * `include_snoozed`, `requester_id`, `sort_by`, `sort_dir`, `per_page`, `page`.
    */
   async ticketList(
     filters: Record<string, any>,
@@ -280,12 +289,49 @@ export class UiDataService {
     scope: { requesterId?: UserId } = {},
   ) {
     const query = this.base();
+    await this.applyListFilters(query, filters, userId, scope);
+
+    const sort = SORTABLE[String(filters.sort_by ?? '')] ?? 'createdAt';
+    const direction = String(filters.sort_dir ?? 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const perPage = positiveInt(filters.per_page, 25, 100);
+    const page = positiveInt(filters.page, 1);
+    query
+      .orderBy(`ticket.${sort}`, direction)
+      .addOrderBy('ticket.id', direction)
+      .skip((page - 1) * perPage)
+      .take(perPage);
+
+    const [rows, total] = await query.getManyAndCount();
+    return paginate(await this.serializeTickets(rows), total, page, perPage, path, filters);
+  }
+
+  /**
+   * Counts the tickets the list shows for these filters. The agent inbox
+   * counts go through here, so a count and the list it labels agree.
+   */
+  async ticketCount(filters: Record<string, any>, userId: UserId | null): Promise<number> {
+    const query = this.tickets
+      .createQueryBuilder('ticket')
+      .leftJoin('ticket.status', 'status')
+      .where('ticket.isMerged = :merged', { merged: false });
+    await this.applyListFilters(query, filters, userId);
+    return query.getCount();
+  }
+
+  /** The ticket list's filters, applied to a query that joins the status as `status`. */
+  async applyListFilters(
+    query: SelectQueryBuilder<Ticket>,
+    filters: Record<string, any>,
+    userId: UserId | null,
+    scope: { requesterId?: UserId } = {},
+  ): Promise<SelectQueryBuilder<Ticket>> {
     if (scope.requesterId != null) {
       query.andWhere('ticket.requesterId = :requester', { requester: scope.requesterId });
     }
     if (typeof filters.status === 'string' && filters.status) {
       query.andWhere('status.slug = :status', { status: filters.status });
     }
+    if (flag(filters.open)) this.open(query);
     if (typeof filters.priority === 'string' && filters.priority) {
       query.andWhere('ticket.priority = :priority', { priority: filters.priority });
     }
@@ -304,6 +350,16 @@ export class UiDataService {
       query.andWhere('ticket.assigneeId IS NULL');
     }
     if (filters.sla_breached != null && truthy(filters.sla_breached)) this.breached(query);
+    if (flag(filters.sla_at_risk)) this.slaAtRisk(query);
+    if (flag(filters.resolved_today)) {
+      query.andWhere('ticket.resolvedAt >= :resolvedSince', { resolvedSince: startOfToday() });
+    }
+    const hours = Number(filters.updated_within_hours);
+    if (filters.updated_within_hours != null && Number.isInteger(hours) && hours > 0) {
+      query.andWhere('ticket.updatedAt >= :updatedSince', {
+        updatedSince: new Date(Date.now() - hours * 3600 * 1000),
+      });
+    }
     if (typeof filters.search === 'string' && filters.search.trim()) {
       // Matched as the JSON API's ticket search matches.
       const search = `%${filters.search.trim()}%`;
@@ -328,19 +384,47 @@ export class UiDataService {
         followed: followed.length ? followed.map((f) => f.ticketId) : [0],
       });
     }
+    // Staff lists leave snoozed tickets out unless asked, as escalated-laravel's
+    // list does. A customer's own list shows every ticket they filed.
+    if (scope.requesterId == null) {
+      if (flag(filters.snoozed)) {
+        query.andWhere('ticket.snoozedUntil > :snoozeNow', { snoozeNow: new Date() });
+      } else if (!flag(filters.include_snoozed)) {
+        query.andWhere(
+          new Brackets((q) =>
+            q
+              .where('ticket.snoozedUntil IS NULL')
+              .orWhere('ticket.snoozedUntil <= :snoozeNow', { snoozeNow: new Date() }),
+          ),
+        );
+      }
+    }
+    return query;
+  }
 
-    const sort = SORTABLE[String(filters.sort_by ?? '')] ?? 'createdAt';
-    const direction = String(filters.sort_dir ?? 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-    const perPage = positiveInt(filters.per_page, 25, 100);
-    const page = positiveInt(filters.page, 1);
-    query
-      .orderBy(`ticket.${sort}`, direction)
-      .addOrderBy('ticket.id', direction)
-      .skip((page - 1) * perPage)
-      .take(perPage);
-
-    const [rows, total] = await query.getManyAndCount();
-    return paginate(await this.serializeTickets(rows), total, page, perPage, path, filters);
+  /**
+   * Unresolved tickets whose SLA is already breached, or whose first
+   * response (still unsent) or resolution falls due within the hour.
+   */
+  private slaAtRisk(query: SelectQueryBuilder<Ticket>): SelectQueryBuilder<Ticket> {
+    const soon = new Date(Date.now() + SLA_AT_RISK_MINUTES * 60 * 1000);
+    this.open(query);
+    return query.andWhere(
+      new Brackets((q) =>
+        q
+          .where('ticket.slaBreached = :atRiskYes', { atRiskYes: true })
+          .orWhere('ticket.slaFirstResponseBreached = :atRiskYes', { atRiskYes: true })
+          .orWhere('ticket.slaResolutionBreached = :atRiskYes', { atRiskYes: true })
+          .orWhere(
+            new Brackets((r) =>
+              r
+                .where('ticket.firstRespondedAt IS NULL')
+                .andWhere('ticket.firstResponseDueAt <= :atRiskSoon', { atRiskSoon: soon }),
+            ),
+          )
+          .orWhere('ticket.resolutionDueAt <= :atRiskSoon', { atRiskSoon: soon }),
+      ),
+    );
   }
 
   /**

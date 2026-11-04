@@ -187,6 +187,7 @@ import { WidgetScriptController } from './controllers/widget/widget-script.contr
 // Screens (ui.enabled)
 import { uiEnabled } from './ui/ui-options';
 import { UiDataService } from './ui/ui-data.service';
+import { AgentInboxService } from './ui/agent-inbox.service';
 import { AgentUiController } from './ui/controllers/agent-ui.controller';
 import { CustomerUiController } from './ui/controllers/customer-ui.controller';
 import { AdminUiController } from './ui/controllers/admin-ui.controller';
@@ -522,6 +523,7 @@ export class EscalatedModule implements NestModule {
         ...escalatedRepositoryProviders(entities, mergedOptions.connection),
         ...services,
         UiDataService,
+        AgentInboxService,
         ...conditionalProviders,
         ApiTokenGuard,
         PermissionsGuard,

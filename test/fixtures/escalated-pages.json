@@ -771,6 +771,8 @@
             "props": [
                 "departments",
                 "filters",
+                "inbox",
+                "queue",
                 "tags",
                 "tickets"
             ],
@@ -782,8 +784,10 @@
                 "customActions",
                 "departments",
                 "followers_count",
+                "inbox",
                 "is_following",
                 "macros",
+                "queue",
                 "tags",
                 "ticket"
             ],
