@@ -45,6 +45,14 @@ const routes: Record<string, NamedRoute> = {
     methods: POST,
   },
   'escalated.agent.tickets.macro': { uri: 'escalated/agent/tickets/{ticket}/macro', methods: POST },
+  'escalated.agent.tickets.snooze': {
+    uri: 'escalated/agent/tickets/{ticket}/snooze',
+    methods: POST,
+  },
+  'escalated.agent.tickets.unsnooze': {
+    uri: 'escalated/agent/tickets/{ticket}/unsnooze',
+    methods: POST,
+  },
   'escalated.agent.tickets.follow': {
     uri: 'escalated/agent/tickets/{ticket}/follow',
     methods: POST,

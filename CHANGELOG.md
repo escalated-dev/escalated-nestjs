@@ -18,8 +18,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   leave snoozed tickets out**, as escalated-laravel's list does, so a list and
   the count that labels it agree. `snoozed=1` lists only snoozed tickets and
   `include_snoozed=1` lists both. The customer's own list is unchanged.
+- **`POST escalated/agent/tickets/:id/snooze` takes `snoozed_until`** (a
+  future date; anything else is a 422 with a `snoozed_until` field error) and
+  accepts a ticket reference as well as an id. API clients that send
+  `snoozedUntil` get the old checks and answer; a body with neither field is
+  now a 422 instead of a no-op.
 
 ### Added
+- **`agents` on `Escalated/Agent/TicketShow`:** `[{ id, name }]`, the active
+  agents the ticket can be assigned to, less anyone the ticket access scope
+  (department visibility, account scoping) keeps from seeing it, so the agent
+  panel can reassign a ticket and not only take it.
+- **`ticket.requester_tickets` on the agent ticket page:** the requester's five
+  most recent other tickets (`id`, `reference`, `subject`, `status`,
+  `created_at`, `updated_at`), newest first, matched by requester or, for a
+  guest, by contact (the guest email), through the ticket access scope.
+  `related_tickets` is unchanged and still means linked tickets.
+- **Agents can snooze and unsnooze from the agent panel:** the named routes
+  `escalated.agent.tickets.snooze` and `escalated.agent.tickets.unsnooze`
+  (`POST escalated/agent/tickets/{ticket}/snooze|unsnooze`) answer the screen
+  with a redirect back and a flash message. Both need `ticket.edit` when roles
+  and permissions are on, as the admin routes do.
 - **`inbox` on `Escalated/Agent/TicketIndex` and `Escalated/Agent/TicketShow`:**
   `{ counts: { mine, unassigned, all }, views: [{ id, name, count, filters }],
   stats: { open, urgent, sla_at_risk, resolved_today } }`. Every number is a

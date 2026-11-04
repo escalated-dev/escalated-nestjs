@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
 import { userIdColumnType, type UserId } from '../config/user-id-column';
+import { TicketAccess } from '../config/ticket-access';
 import { AgentProfile } from '../entities/agent-profile.entity';
 import { Contact } from '../entities/contact.entity';
 import { Department } from '../entities/department.entity';
@@ -44,6 +45,7 @@ import {
   serializeWebhook,
 } from './admin-config';
 import {
+  iso,
   paginate,
   serializeActivity,
   serializeReply,
@@ -118,6 +120,7 @@ export class UiDataService {
     private readonly macroService: MacroService,
     private readonly ticketSubjectService: TicketSubjectService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
+    @Optional() private readonly access?: TicketAccess,
   ) {}
 
   /** Names for host user ids: the host's `ui.resolveUsers`, then agent display names. */
@@ -514,6 +517,70 @@ export class UiDataService {
         email: user?.email ?? null,
       };
     });
+  }
+
+  /**
+   * `Agent/TicketShow`'s `agents`: the staff the ticket can be assigned to, as
+   * `{ id, name }` (escalated-laravel's `AssignableAgents`). The agent list
+   * the admin screens use, less anyone the ticket-access scope (department
+   * visibility, account scoping) keeps from seeing this ticket.
+   */
+  async assignableAgents(ticket: Ticket): Promise<Array<{ id: UserId; name: string }>> {
+    const agents = await this.agentOptions();
+    const out: Array<{ id: UserId; name: string }> = [];
+    for (const agent of agents) {
+      if (this.access?.enabled() && !(await this.access.allowsAgent(agent.id, ticket))) continue;
+      out.push({ id: agent.id, name: agent.name });
+    }
+    return out;
+  }
+
+  /**
+   * `ticket.requester_tickets` on the agent ticket page: the requester's five
+   * most recent other tickets, newest first, through the ticket-access scope.
+   * A registered requester is matched by requester id, a guest by their
+   * contact (contacts are unique by email, so this is the guest email); a
+   * ticket with neither gets none.
+   */
+  async requesterTickets(ticket: Ticket) {
+    const query = this.tickets
+      .createQueryBuilder('ticket')
+      .leftJoinAndSelect('ticket.status', 'status')
+      .where('ticket.id <> :current', { current: ticket.id });
+    if (!this.isGuestRequester(ticket)) {
+      query.andWhere('ticket.requesterId = :requesterId', {
+        requesterId: ticket.requesterId,
+      });
+    } else if (ticket.contactId != null) {
+      query.andWhere('ticket.contactId = :contactId', { contactId: ticket.contactId });
+    } else {
+      return [];
+    }
+    const rows = await query
+      .orderBy('ticket.createdAt', 'DESC')
+      .addOrderBy('ticket.id', 'DESC')
+      .take(5)
+      .getMany();
+    return rows.map((other) => ({
+      id: other.id,
+      reference: other.referenceNumber,
+      subject: other.subject,
+      status: other.status?.slug ?? null,
+      created_at: iso(other.createdAt),
+      updated_at: iso(other.updatedAt),
+    }));
+  }
+
+  /** Filed by a guest: no requester (`0`), or the shared `guest_user` account. */
+  private isGuestRequester(ticket: Ticket): boolean {
+    const id = ticket.requesterId;
+    if (id == null || String(id) === '' || String(id) === '0') return true;
+    const policy = this.options.guestPolicy;
+    return (
+      ticket.contactId != null &&
+      policy?.mode === 'guest_user' &&
+      String(policy.guestUserId) === String(id)
+    );
   }
 
   /** Canned responses the agent may use: shared ones and their own. */
