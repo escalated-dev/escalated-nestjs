@@ -167,6 +167,15 @@ export class Ticket {
   @Column({ type: Date, nullable: true })
   closedAt: Date;
 
+  /**
+   * The last customer-side activity: creation, or a public reply or chat
+   * message from the customer side (ADR 2026-11-05-agent-panel-data). Agents'
+   * own work never moves it, so it drives per-agent unread markers.
+   */
+  @Index()
+  @Column({ type: Date, nullable: true })
+  lastCustomerActivityAt: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -17,6 +17,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { ESCALATED_EVENTS } from '../events/escalated.events';
 import { UserId } from '../config/user-id-column';
+import type { AgentNotificationItem } from '../services/agent-notifications.service';
 
 /** Payload fields that grant access and must never be broadcast. */
 const SECRET_FIELDS = [
@@ -168,6 +169,26 @@ export class EscalatedGateway implements OnGatewayConnection, OnGatewayDisconnec
       if (!client.rooms.has(`ticket:${ticket.id}`)) continue;
       if (await this.socketCanSee(client, ticket)) client.emit(event, safe);
     }
+  }
+
+  /**
+   * A new in-app notification (ADR 2026-11-05-agent-panel-data, section 4),
+   * as `notification.created` to the agent's own sockets in their room
+   * (`agent:{id}`, joined with `join:agent`). The payload is the feed item,
+   * already redacted for the agent.
+   */
+  agentNotification(agentId: UserId, item: AgentNotificationItem): void {
+    if (!this.server) return;
+    this.server
+      .fetchSockets()
+      .then((sockets) => {
+        for (const client of sockets) {
+          if (!client.rooms.has(`agent:${agentId}`)) continue;
+          if (String(client.data?.escalatedUserId) !== String(agentId)) continue;
+          client.emit('notification.created', item);
+        }
+      })
+      .catch((error) => this.logger.warn(`Notification broadcast failed: ${error.message}`));
   }
 
   @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)

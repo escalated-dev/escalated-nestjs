@@ -33,6 +33,14 @@ export class AgentProfile {
   @Column({ default: false })
   isAvailable: boolean;
 
+  /**
+   * The agent's own Online / Away / Offline status (ADR
+   * 2026-11-05-agent-panel-data). `isAvailable`, which chat routing reads, is
+   * kept equal to `chatStatus === 'online'` by AgentStatusService.
+   */
+  @Column({ type: 'varchar', length: 16, default: 'offline' })
+  chatStatus: string;
+
   @Column({ type: 'int', nullable: true })
   roleId: number;
 

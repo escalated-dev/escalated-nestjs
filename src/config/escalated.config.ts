@@ -123,6 +123,19 @@ export interface EscalatedModuleOptions {
   /** Enable knowledge base feature (default: true) */
   enableKnowledgeBase?: boolean;
 
+  /**
+   * Customer online status on agent pages (ADR 2026-11-05-agent-panel-data):
+   * a customer is online when the portal or the widget saw them within
+   * `onlineWindowSeconds` (default 120).
+   */
+  presence?: { onlineWindowSeconds?: number };
+
+  /**
+   * The agents' in-app notifications feed and bell (default: true). `false`
+   * stores none, leaves the shared prop out, and the feed routes answer 404.
+   */
+  agentNotifications?: boolean;
+
   /** Enable CSAT surveys (default: true) */
   enableCsat?: boolean;
 

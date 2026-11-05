@@ -57,6 +57,24 @@ const canonical: Record<string, NamedRoute> = {
     uri: 'escalated/agent/tickets/{ticket}/follow',
     methods: POST,
   },
+  // The agent panel's data (ADR 2026-11-05-agent-panel-data).
+  'escalated.agent.tickets.bulk': { uri: 'escalated/agent/tickets/bulk', methods: POST },
+  'escalated.agent.tickets.read': { uri: 'escalated/agent/tickets/{ticket}/read', methods: POST },
+  'escalated.agent.tickets.unread': {
+    uri: 'escalated/agent/tickets/{ticket}/unread',
+    methods: POST,
+  },
+  'escalated.agent.status': { uri: 'escalated/agent/status', methods: ['PUT', 'POST'] },
+  'escalated.agent.kb.search': { uri: 'escalated/agent/kb/search', methods: GET },
+  'escalated.agent.notifications.index': { uri: 'escalated/agent/notifications', methods: GET },
+  'escalated.agent.notifications.read-all': {
+    uri: 'escalated/agent/notifications/read-all',
+    methods: POST,
+  },
+  'escalated.agent.notifications.read': {
+    uri: 'escalated/agent/notifications/{notification}/read',
+    methods: POST,
+  },
   // Admin
   'escalated.admin.tickets.index': { uri: 'escalated/admin/tickets', methods: GET },
   'escalated.admin.tickets.bulk': { uri: 'escalated/admin/tickets/bulk', methods: POST },

@@ -11,6 +11,7 @@ import { resolveFollowerUserIds } from './follower-recipients';
 import { CreateReplyDto } from '../dto/create-reply.dto';
 import { TicketAccess } from '../config/ticket-access';
 import { UserId } from '../config/user-id-column';
+import { isCustomerSideReply } from './ticket-reads.service';
 import {
   ESCALATED_EVENTS,
   TicketReplyCreatedEvent,
@@ -65,6 +66,12 @@ export class ReplyService {
     });
 
     const saved = await this.replyRepo.save(reply);
+
+    // A customer-side public reply or chat message is unread activity for
+    // agents (ADR 2026-11-05-agent-panel-data); agents' own work is not.
+    if (isCustomerSideReply(saved, ticket)) {
+      await this.ticketRepo.update(ticketId, { lastCustomerActivityAt: new Date() });
+    }
 
     // Track first response for SLA
     if (!ticket.firstRespondedAt && !dto.isInternal && ticket.requesterId !== userId) {

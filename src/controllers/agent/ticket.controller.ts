@@ -37,6 +37,10 @@ import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
 import { AgentInboxService, listFilterErrors } from '../../ui/agent-inbox.service';
+import { TicketReadsService } from '../../services/ticket-reads.service';
+import { CustomerPresenceService } from '../../services/customer-presence.service';
+import type { UserId } from '../../config/user-id-column';
+import type { Ticket } from '../../entities/ticket.entity';
 
 /**
  * The agent ticket JSON API. With `ui.enabled`, the index and show routes also
@@ -56,7 +60,26 @@ export class AgentTicketController {
     @Optional() private readonly ui?: UiDataService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
     @Optional() private readonly inbox?: AgentInboxService,
+    @Optional() private readonly reads?: TicketReadsService,
+    @Optional() private readonly presence?: CustomerPresenceService,
   ) {}
+
+  /**
+   * `is_unread`, `requester_online` and `requester_last_seen_at` on agent
+   * rows (ADR 2026-11-05-agent-panel-data), from one query each per page.
+   */
+  private async decorateRows(
+    agent: UserId,
+    rows: Array<Pick<Ticket, 'id' | 'lastCustomerActivityAt' | 'requesterId' | 'contactId'>>,
+    serialized: Array<Record<string, any>>,
+  ): Promise<void> {
+    const flags = this.reads ? await this.reads.flags(agent, rows) : null;
+    const seen = this.presence ? await this.presence.lookup(rows) : null;
+    rows.forEach((row, i) => {
+      if (flags) serialized[i].is_unread = flags.get(row.id) ?? false;
+      if (seen) Object.assign(serialized[i], seen.get(row.id));
+    });
+  }
 
   /** A ticket by numeric id or, as the screens link to it, by reference. */
   private async findTicket(id: string | number) {
@@ -97,6 +120,8 @@ export class AgentTicketController {
           this.inbox.listFilters(selected, queue),
           agent,
           routeUrl('escalated.agent.tickets.index'),
+          {},
+          (rows, serialized) => this.decorateRows(agent, rows, serialized),
         ),
         filters: query,
         departments: await this.ui.departmentOptions(),
@@ -228,11 +253,20 @@ export class AgentTicketController {
   /** `Escalated/Agent/TicketShow`, with the props escalated-laravel's Agent TicketController@show sends. */
   private async page(ticket: any, req: any) {
     const agent = requireUserId(req);
+    // Opening the ticket in the agent panel is reading it.
+    await this.reads?.markRead(agent, ticket.id);
     const queue = await this.inbox!.recalled(req, agent);
     const screen = await this.ui!.ticketScreen(ticket, agent);
+    const extra: Record<string, any> = {};
+    await this.decorateRows(agent, [ticket], [extra]);
+    if (this.reads) extra.is_unread = false;
     return inertia('Escalated/Agent/TicketShow', {
       ...screen,
-      ticket: { ...screen.ticket, requester_tickets: await this.ui!.requesterTickets(ticket) },
+      ticket: {
+        ...screen.ticket,
+        ...extra,
+        requester_tickets: await this.ui!.requesterTickets(ticket),
+      },
       agents: await this.ui!.assignableAgents(ticket),
       customActions: this.customActionsForTicket(ticket, req?.user ?? null),
       queue: this.inbox!.queueProp(queue),

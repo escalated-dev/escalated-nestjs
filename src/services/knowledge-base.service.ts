@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KbCategory } from '../entities/kb-category.entity';
 import { KbArticle } from '../entities/kb-article.entity';
+import { containsPattern, likeContains } from './like-pattern';
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -68,9 +69,10 @@ export class KnowledgeBaseService {
     }
 
     if (filters?.search) {
-      qb.andWhere('(article.title LIKE :search OR article.content LIKE :search)', {
-        search: `%${filters.search}%`,
-      });
+      qb.andWhere(
+        `(${likeContains('article.title', 'search')} OR ${likeContains('article.content', 'search')})`,
+        { search: containsPattern(filters.search) },
+      );
     }
 
     qb.orderBy('article.sortOrder', 'ASC');
@@ -143,11 +145,38 @@ export class KnowledgeBaseService {
     return this.articleRepo
       .createQueryBuilder('article')
       .where('article.status = :status', { status: 'published' })
-      .andWhere('(article.title LIKE :query OR article.content LIKE :query)', {
-        query: `%${query}%`,
-      })
+      .andWhere(
+        `(${likeContains('article.title', 'query')} OR ${likeContains('article.content', 'query')})`,
+        { query: containsPattern(query) },
+      )
       .orderBy('article.viewCount', 'DESC')
       .take(10)
       .getMany();
+  }
+
+  /**
+   * Knowledge-base search for agents (ADR 2026-11-05-agent-panel-data,
+   * section 5): published articles whose title or body contains the term
+   * (case-insensitive, `%` and `_` literal), title matches first, then the
+   * most recently updated.
+   */
+  async searchForAgents(term: string, limit: number): Promise<KbArticle[]> {
+    const pattern = containsPattern(term);
+    return (
+      this.articleRepo
+        .createQueryBuilder('article')
+        .leftJoinAndSelect('article.category', 'category')
+        .where('article.status = :status', { status: 'published' })
+        .andWhere(
+          `(${likeContains('article.title', 'kbTerm')} OR ${likeContains('article.content', 'kbTerm')})`,
+          { kbTerm: pattern },
+        )
+        .orderBy(`CASE WHEN ${likeContains('article.title', 'kbTerm')} THEN 0 ELSE 1 END`, 'ASC')
+        .addOrderBy('article.updatedAt', 'DESC')
+        .addOrderBy('article.id', 'DESC')
+        // A many-to-one join cannot multiply rows, so a plain LIMIT is exact.
+        .limit(limit)
+        .getMany()
+    );
   }
 }

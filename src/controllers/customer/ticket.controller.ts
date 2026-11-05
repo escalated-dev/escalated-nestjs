@@ -1,4 +1,6 @@
+import { RecordCustomerPresenceInterceptor } from '../../interceptors/record-customer-presence.interceptor';
 import {
+  UseInterceptors,
   Controller,
   Get,
   Post,
@@ -34,6 +36,7 @@ import { customerFilters } from '../../ui/controllers/customer-ui.controller';
 @UseGuards(EscalatedCustomerGuard)
 @Controller('escalated/customer/tickets')
 @EscalatedUi()
+@UseInterceptors(RecordCustomerPresenceInterceptor)
 export class CustomerTicketController {
   constructor(
     private readonly ticketService: TicketService,

@@ -7,7 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrading
+- **New migration `AgentPanelData1793664000000`** (exported): adds
+  `escalated_tickets.lastCustomerActivityAt`, `escalated_agent_profiles.chatStatus`
+  (set to `online` where `isAvailable` was true) and the
+  `escalated_ticket_reads`, `escalated_customer_presence` and
+  `escalated_notifications` tables. Register it and run it before upgrading.
+  Existing tickets get no activity, so none of them turn unread.
+- **Agents now get in-app notifications** (`agentNotifications: false` turns
+  them off). Assigning a ticket to yourself sends you none, and a reply
+  notifies the assignee and followers only when it comes from the customer
+  side; replies by other agents do not.
+- **The agent status drives chat availability.** Setting it writes
+  `isAvailable` (`true` only for `online`), which chat routing reads.
+
 ### Added
+- **Agent panel data** (ADR 2026-11-05-agent-panel-data, see docs/agent-panel.md):
+  - agents set their own Online / Away / Offline status with `PUT`/`POST
+    /escalated/agent/status` (`escalated.agent.status`); agents share
+    `escalated.agent_status` and `escalated.agent_statuses`;
+  - knowledge-base search for agents, `GET /escalated/agent/kb/search?q=`
+    (`escalated.agent.kb.search`, `kb.view`), published articles, title
+    matches first;
+  - per-agent unread markers: `is_unread` on agent list rows and the ticket
+    page, `inbox.unread`, `escalated.agent.tickets.read` / `.unread`, and the
+    bulk actions `mark_read` / `mark_unread` on the new agent bulk route
+    `escalated.agent.tickets.bulk` and the admin one; opening a ticket in the
+    agent panel marks it read;
+  - customer online status, `requester_online` and `requester_last_seen_at`
+    on agent pages only, recorded from the customer portal, widget chat and
+    the widget ticket lookup at most once per customer every 30 seconds
+    (`presence.onlineWindowSeconds`, default 120);
+  - the notifications feed: `ticket_assigned`, `ticket_reply`,
+    `sla_warning`, `sla_breached` and `chat_transferred` items, the routes
+    `escalated.agent.notifications.index` / `.read` / `.read-all`, the shared
+    `escalated.notifications.unread_count`, redaction of tickets the agent can
+    no longer see, and `notification.created` to the agent's sockets with
+    `enableWebsockets`.
+
 - **Optional: embed the admin in your own admin panel (off by default; no
   change unless configured).** `ui.embed` (or `embedAdmin({...})`, or
   `ESCALATED_EMBED`, `ESCALATED_EMBED_MODE`, `ESCALATED_EMBED_PREFIX`,
@@ -26,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   panel, customer, guest, widget, API, SSO, two-factor and newsletter routes
   do not move. A test compares the default route table with a snapshot taken
   before the change. See docs/embedding-admin.md.
+
+### Fixed
+- **Knowledge-base searches take `%` and `_` literally and ignore case on
+  PostgreSQL.** The widget article search and the knowledge-base screens
+  passed them to `LIKE`, so a search for `%` matched every article.
 
 ## [1.2.13] - 2026-11-04
 
