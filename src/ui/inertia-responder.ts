@@ -16,6 +16,8 @@ import { isInertiaRequest, requestUrl, sameOriginReferer } from './request';
 import { defaultRootView } from './root-view';
 import { escalatedRoutes, ESCALATED_UI_PREFIX } from './routes';
 import type { InertiaPageObject } from './ui-options';
+import { embedProp, isEmbeddedRequest, resolveEmbed } from './embed';
+import { adminNavigation } from './admin-navigation';
 
 /** A response the Inertia filter writes out as-is. */
 export interface InertiaReply {
@@ -112,9 +114,13 @@ export class InertiaResponder {
       };
     }
 
-    const html = this.ui.rootView
-      ? await this.ui.rootView(pageObject, request)
-      : defaultRootView(pageObject, this.ui, this.options.appName);
+    // A server-rendered host's admin template, on embedded admin pages only.
+    const embedRootView = isEmbeddedRequest(request) ? resolveEmbed(this.options)?.rootView : null;
+    const html = embedRootView
+      ? await embedRootView(pageObject, request)
+      : this.ui.rootView
+        ? await this.ui.rootView(pageObject, request)
+        : defaultRootView(pageObject, this.ui, this.options.appName);
     return {
       status: 200,
       headers: { ...headers, 'Content-Type': 'text/html; charset=utf-8' },
@@ -220,6 +226,20 @@ export class InertiaResponder {
       user,
       isAgent,
     );
+
+    // Embedding the admin in the host's admin panel (optional; ADR
+    // 2026-11-05). Neither key exists while it is off.
+    const embed = resolveEmbed(this.options);
+    if (embed) {
+      (shared.escalated as Record<string, unknown>).embed = embedProp(embed, request);
+      (shared.escalated as Record<string, unknown>).navigation = await adminNavigation({
+        options: this.options,
+        moduleRef: this.moduleRef,
+        user,
+        request,
+        isAdmin,
+      });
+    }
 
     const extra = this.ui.share ? await this.ui.share(request) : {};
     return { ...shared, ...(extra ?? {}) };

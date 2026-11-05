@@ -1,10 +1,13 @@
 import {
   DynamicModule,
+  Inject,
   MiddlewareConsumer,
   Module,
   NestModule,
+  Optional,
   Provider,
   RequestMethod,
+  Type,
 } from '@nestjs/common';
 import { TypeOrmModule, getDataSourceToken } from '@nestjs/typeorm';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -203,6 +206,10 @@ import {
   CustomerKnowledgeBaseUiController,
 } from './ui/controllers/knowledge-base-ui.controller';
 import { GuestUiController } from './ui/controllers/guest-ui.controller';
+import { resolveEmbed } from './ui/embed';
+import { mountControllers } from './ui/embed-routes';
+import { mountAdminRoutes } from './ui/routes';
+import { EscalatedAdminNavigation } from './ui/admin-navigation';
 import { AdminPluginsUiController } from './ui/controllers/admin-plugins-ui.controller';
 import {
   PluginHttpController,
@@ -394,8 +401,18 @@ const controllers = [
   PluginHttpController,
 ];
 
+/** The admin controllers mounted under the embed prefix (empty while embedding is off). */
+export const ESCALATED_EMBEDDED_CONTROLLERS = 'ESCALATED_EMBEDDED_CONTROLLERS';
+
 @Module({})
 export class EscalatedModule implements NestModule {
+  constructor(
+    @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
+    @Optional()
+    @Inject(ESCALATED_EMBEDDED_CONTROLLERS)
+    private readonly embeddedControllers: Type<unknown>[] = [],
+  ) {}
+
   /**
    * CORS for embedding the widget on other sites, on every widget and widget
    * chat route (not on `embed.js`, which is public to every origin).
@@ -412,6 +429,12 @@ export class EscalatedModule implements NestModule {
     // its own session. Mounted once (the "all" wildcard) rather than per
     // route, so it adds no route of its own.
     consumer.apply(EscalatedSessionMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+    // The host's middleware for the embedded admin (ui.embed.middleware), on
+    // those routes only. Nothing is applied while embedding is off.
+    const embed = resolveEmbed(this.options);
+    if (embed?.middleware.length && this.embeddedControllers?.length) {
+      consumer.apply(...embed.middleware).forRoutes(...this.embeddedControllers);
+    }
   }
 
   static forRoot(options: EscalatedModuleOptions = {}): DynamicModule {
@@ -471,6 +494,13 @@ export class EscalatedModule implements NestModule {
       );
     }
 
+    // Embedding the admin in the host's admin panel (optional; ADR
+    // 2026-11-05-embeddable-admin): the admin controllers move under the embed
+    // prefix and the named routes follow. Off by default, when this is a no-op.
+    const embed = resolveEmbed(mergedOptions);
+    mountAdminRoutes(embed?.prefix ?? null);
+    const mounted = mountControllers(conditionalControllers, embed);
+
     return {
       module: EscalatedModule,
       imports: [
@@ -500,9 +530,11 @@ export class EscalatedModule implements NestModule {
         // and services don't instantiate.
         ...(mergedOptions.enableNewsletters ? [NewsletterModule.forRoot(mergedOptions)] : []),
       ],
-      controllers: conditionalControllers,
+      controllers: mounted.controllers,
       providers: [
         optionsProvider,
+        { provide: ESCALATED_EMBEDDED_CONTROLLERS, useValue: mounted.embedded },
+        EscalatedAdminNavigation,
         {
           provide: TicketAccess,
           useFactory: (source: DataSource) => new TicketAccess(source, mergedOptions),
@@ -549,6 +581,7 @@ export class EscalatedModule implements NestModule {
         ...services,
         optionsProvider,
         ticketActionRegistryProvider,
+        EscalatedAdminNavigation,
         TypeOrmModule,
       ],
     };

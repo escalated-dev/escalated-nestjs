@@ -14,6 +14,7 @@ import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escala
 import { accessFeatureEnabled } from '../access/access-features';
 import { AccessControlService } from '../access/access-control.service';
 import { TwoFactorGate } from '../access/two-factor-gate';
+import { markEmbedded, resolveEmbed } from '../ui/embed';
 
 export type EscalatedRouteGroup = 'admin' | 'agent' | 'customer';
 
@@ -57,7 +58,7 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
   protected constructor(
     private readonly groups: EscalatedRouteGroup[],
     private readonly moduleRef: ModuleRef,
-    private readonly options?: EscalatedModuleOptions,
+    protected readonly options?: EscalatedModuleOptions,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -93,10 +94,7 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
             // Roles & permissions: the host guard decides who reaches the
             // area; the user's role must also grant the route's permission.
             // Two-factor: an enrolled user must have passed the challenge.
-            if (group !== 'customer') {
-              await this.enforceTwoFactor(context);
-              await this.enforcePermissions(context);
-            }
+            if (group !== 'customer') await this.enforceStaffChecks(context);
           }
           return true;
         }
@@ -109,6 +107,12 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
       throw refusal;
     }
     return false;
+  }
+
+  /** Two-factor and roles & permissions, which every staff area keeps. */
+  protected async enforceStaffChecks(context: ExecutionContext): Promise<void> {
+    await this.enforceTwoFactor(context);
+    await this.enforcePermissions(context);
   }
 
   private async enforceTwoFactor(context: ExecutionContext): Promise<void> {
@@ -133,7 +137,7 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
     await access.enforceRoute(context);
   }
 
-  private async runHostGuard(
+  protected async runHostGuard(
     hostGuard: EscalatedHostGuard,
     context: ExecutionContext,
   ): Promise<boolean> {
@@ -236,5 +240,45 @@ export class EscalatedStaffGuard extends EscalatedRouteGroupGuard {
     @Optional() @Inject(ESCALATED_OPTIONS) options?: EscalatedModuleOptions,
   ) {
     super(['admin', 'agent'], moduleRef, options);
+  }
+}
+
+/**
+ * Guards the admin routes while they are embedded in the host's admin panel
+ * (`ui.embed`, ADR 2026-11-05-embeddable-admin), in place of
+ * `EscalatedAdminGuard`. The host's `ui.embed.guards` run first; then
+ * Escalated's admin gate (`adminGuard`, two-factor, route permissions), or,
+ * with `replaceAdminGate`, two-factor and route permissions only. An admitted
+ * request is marked as embedded (and, in iframe mode, gets the framing
+ * headers).
+ */
+@Injectable()
+export class EmbeddedAdminGuard extends EscalatedRouteGroupGuard {
+  constructor(
+    moduleRef: ModuleRef,
+    @Optional() @Inject(ESCALATED_OPTIONS) options?: EscalatedModuleOptions,
+  ) {
+    super(['admin'], moduleRef, options);
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const embed = resolveEmbed(this.options);
+    // Mounted only while embedding is on; refuse rather than guess otherwise.
+    if (!embed || context.getType() !== 'http') throw new ForbiddenException();
+    const request = context.switchToHttp().getRequest();
+
+    for (const guard of embed.guards) {
+      request[ESCALATED_REQUESTED_GROUP] = 'admin';
+      if (!(await this.runHostGuard(guard, context))) return false;
+    }
+
+    if (embed.replaceAdminGate) {
+      await this.enforceStaffChecks(context);
+    } else if (!(await super.canActivate(context))) {
+      return false;
+    }
+
+    markEmbedded(request, context.switchToHttp().getResponse(), embed);
+    return true;
   }
 }

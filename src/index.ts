@@ -86,8 +86,28 @@ export {
 export { InertiaPage, InertiaRedirect, inertia, redirect, back } from './ui/inertia';
 export { EscalatedUi, InertiaInterceptor, InertiaReplyFilter } from './ui/inertia.interceptor';
 export { InertiaErrorFilter, ERROR_PAGE_MESSAGES } from './ui/inertia-error-page';
-export { defaultRootView, ROUTE_HELPER } from './ui/root-view';
+export { defaultRootView, escapeHtml, ROUTE_HELPER, scriptJson } from './ui/root-view';
 export { escalatedRoutes } from './ui/routes';
+
+// Embedding the admin in the host's own admin panel (optional; docs/embedding-admin.md)
+export {
+  embedAdmin,
+  embedFrameAncestors,
+  frameAncestorsDirective,
+  isEmbeddedRequest,
+  resolveEmbed,
+  type EscalatedEmbedGuard,
+  type EscalatedEmbedMiddleware,
+  type EscalatedEmbedMode,
+  type EscalatedEmbedOptions,
+  type ResolvedEmbed,
+} from './ui/embed';
+export {
+  adminNavigation,
+  EscalatedAdminNavigation,
+  ADMIN_NAVIGATION_ITEMS,
+  type EscalatedNavigationItem,
+} from './ui/admin-navigation';
 
 // Plugins
 export * from './plugins/plugin-definition';

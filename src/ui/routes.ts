@@ -19,7 +19,7 @@ const DELETE = ['DELETE'];
 
 export const ESCALATED_UI_PREFIX = 'escalated';
 
-const routes: Record<string, NamedRoute> = {
+const canonical: Record<string, NamedRoute> = {
   // Agent
   'escalated.agent.dashboard': { uri: 'escalated/agent', methods: GET },
   'escalated.agent.tickets.index': { uri: 'escalated/agent/tickets', methods: GET },
@@ -555,6 +555,50 @@ const routes: Record<string, NamedRoute> = {
   },
 };
 
+/** The standalone admin's URL prefix, as the admin controllers declare it. */
+export const STANDALONE_ADMIN_PREFIX = 'escalated/admin';
+
+/**
+ * Named routes that keep their URL while the admin is embedded: the
+ * two-factor enrolment page is every staff user's own (ADR 2026-11-05).
+ */
+const STAYS_PUT = /^escalated\.admin\.two-factor\./;
+
+let routes: Record<string, NamedRoute> = canonical;
+let adminPrefix = STANDALONE_ADMIN_PREFIX;
+
+/**
+ * Points the admin's named routes at `prefix` (the embedded admin, ADR
+ * 2026-11-05-embeddable-admin), or back at `escalated/admin` with `null`.
+ * Called by `EscalatedModule.forRoot()`; names and methods never change.
+ */
+export function mountAdminRoutes(prefix: string | null): void {
+  adminPrefix = prefix ?? STANDALONE_ADMIN_PREFIX;
+  if (prefix === null) {
+    routes = canonical;
+    return;
+  }
+  routes = {};
+  for (const [name, route] of Object.entries(canonical)) {
+    routes[name] =
+      name.startsWith('escalated.admin.') &&
+      !STAYS_PUT.test(name) &&
+      route.uri.startsWith(`${STANDALONE_ADMIN_PREFIX}/`)
+        ? { ...route, uri: prefix + route.uri.slice(STANDALONE_ADMIN_PREFIX.length) }
+        : route;
+  }
+}
+
+/** Where the admin lives now, as an absolute path: `/escalated/admin`, or the embed prefix. */
+export function adminBasePath(): string {
+  return '/' + adminPrefix;
+}
+
+/** A named route as the controllers declare it, wherever the admin is mounted. */
+export function canonicalRoute(name: string): NamedRoute | undefined {
+  return canonical[name];
+}
+
 /** Every named route the screens can call, keyed by name. */
 export function escalatedRoutes(): Record<string, NamedRoute> {
   return routes;
@@ -568,4 +612,28 @@ export function routeUrl(name: string, params: Record<string, string | number> =
     '/' +
     route.uri.replace(/\{(\w+)\??\}/g, (_, key: string) => encodeURIComponent(String(params[key])))
   );
+}
+
+/**
+ * The name of the route answering `method path` (path without query), or
+ * null. A route with fewer placeholders wins (`tickets/bulk` before
+ * `tickets/{ticket}`).
+ */
+export function routeNameFor(method: string, path: string): string | null {
+  const verb = method.toUpperCase();
+  const target = path.replace(/^\/+|\/+$/g, '');
+  let best: { name: string; params: number } | null = null;
+  for (const [name, route] of Object.entries(routes)) {
+    if (!route.methods.includes(verb)) continue;
+    const source = route.uri
+      .split('/')
+      .map((part) =>
+        /^\{\w+\??\}$/.test(part) ? '[^/]+' : part.replace(/[.*+?^$()|[\]\\]/g, '\\$&'),
+      )
+      .join('/');
+    if (!new RegExp(`^${source}$`).test(target)) continue;
+    const params = (route.uri.match(/\{/g) ?? []).length;
+    if (!best || params < best.params) best = { name, params };
+  }
+  return best?.name ?? null;
 }

@@ -1,3 +1,5 @@
+import { screenCookieSameSite } from './embed';
+
 /**
  * Flash data across the redirect after a form, in a short-lived cookie.
  *
@@ -46,8 +48,9 @@ export function readFlash(request: any): FlashState | null {
 }
 
 function attributes(request: any, maxAge: number): string {
-  const secure = request?.secure || request?.protocol === 'https' ? '; Secure' : '';
-  return `; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+  const https = Boolean(request?.secure || request?.protocol === 'https');
+  const sameSite = screenCookieSameSite(request, https);
+  return `; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=${sameSite}${https ? '; Secure' : ''}`;
 }
 
 export function flashCookie(request: any, state: FlashState): string {

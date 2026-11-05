@@ -18,7 +18,7 @@ import {
 } from '../../plugins/plugin-registry.service';
 import { inertia, redirect } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard } from '../inertia.interceptor';
-import { routeUrl } from '../routes';
+import { adminBasePath, routeUrl } from '../routes';
 
 /**
  * Admin > Plugins (`Escalated/Admin/Plugins/Index`) and the pages plugins
@@ -72,7 +72,9 @@ export class AdminPluginsUiController {
   async page(@Param('slug') slug: string, @Req() request: any) {
     const plugin = await this.registry.active(slug);
     const url = String(request?.originalUrl ?? request?.url ?? '').split('?')[0];
-    const marker = `/admin/plugins/${slug}/`;
+    // Below wherever the admin is mounted: `/escalated/admin`, or the embed prefix.
+    const marker = `${adminBasePath()}/plugins/${slug}/`;
+    if (!url.includes(marker)) throw new NotFoundException();
     let route = '';
     try {
       route = decodeURIComponent(url.slice(url.indexOf(marker) + marker.length)).replace(

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, NestMiddleware, Optional } from '@nestjs/common';
 import { createHmac } from 'crypto';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
+import { resolveEmbed } from '../ui/embed';
 import { accessFeatureEnabled } from './access-features';
 import { hasSession, restoreSsoSessionUser } from './two-factor-session';
 
@@ -27,10 +28,17 @@ export function escalatedSessionSecret(options: EscalatedModuleOptions): string 
   return key ? createHmac('sha256', key).update('escalated-session').digest('hex') : null;
 }
 
-/** Escalated's routes live under `/escalated/` (after any global prefix the host set). */
-function isEscalatedPath(req: any): boolean {
+/**
+ * Escalated's routes live under `/escalated/` (after any global prefix the
+ * host set), and the embedded admin under its prefix (ADR 2026-11-05).
+ */
+function isEscalatedPath(req: any, options: EscalatedModuleOptions): boolean {
   const url = String(req?.originalUrl ?? req?.url ?? '').split('?')[0];
-  return /(^|\/)escalated(\/|$)/.test(url);
+  if (/(^|\/)escalated(\/|$)/.test(url)) return true;
+  const embed = resolveEmbed(options);
+  if (!embed) return false;
+  const prefix = '/' + embed.prefix;
+  return url.endsWith(prefix) || url.includes(`${prefix}/`);
 }
 
 /**
@@ -57,7 +65,7 @@ export class EscalatedSessionMiddleware implements NestMiddleware {
   ) {}
 
   use(req: any, res: any, next: (error?: unknown) => void): void {
-    if (!isEscalatedPath(req)) return next();
+    if (!isEscalatedPath(req, this.options ?? {})) return next();
     const done = () => {
       restoreSsoSessionUser(req);
       next();

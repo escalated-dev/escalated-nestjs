@@ -1,4 +1,5 @@
 import type { UserId } from '../config/user-id-column';
+import type { EscalatedEmbedOptions } from './embed';
 
 /** The Inertia page object, as sent to the client. */
 export interface InertiaPageObject {
@@ -129,6 +130,13 @@ export interface EscalatedUiOptions {
    * (default 10); 0 recomputes them on every request.
    */
   agentInbox?: { cacheSeconds?: number };
+
+  /**
+   * Embed the admin in your own admin panel instead of the standalone admin
+   * at `/escalated/admin` (optional, off by default; ADR
+   * 2026-11-05-embeddable-admin, docs/embedding-admin.md). See `embedAdmin()`.
+   */
+  embed?: EscalatedEmbedOptions;
 }
 
 export function uiEnabled(options: { ui?: EscalatedUiOptions } | undefined | null): boolean {

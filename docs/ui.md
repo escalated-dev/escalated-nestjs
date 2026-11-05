@@ -391,3 +391,9 @@ of its category:
 - Agent and admin ticket JSON carries `status_category`, and `custom_status`
   (`{ id, label, slug, color, category }`) for a non-system status. Customer
   and guest views show the status slug as before, plus `status_category`.
+
+## Embedding the admin in your own admin panel
+
+Optional and off by default: `ui.embed` moves the admin screens under your
+own prefix, guards and layout, or into an iframe. See
+[embedding-admin.md](embedding-admin.md).
