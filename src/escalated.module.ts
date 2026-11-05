@@ -195,6 +195,7 @@ import {
   AgentNotificationsService,
 } from './services/agent-notifications.service';
 import { AgentNotificationsListener } from './listeners/agent-notifications.listener';
+import { MentionService } from './services/mention.service';
 import { AttachmentController } from './controllers/agent/attachment.controller';
 import { WidgetChatController } from './controllers/widget/chat.controller';
 import { WidgetScriptController } from './controllers/widget/widget-script.controller';
@@ -340,6 +341,7 @@ const services = [
   CustomerPresenceService,
   AgentStatusService,
   AgentNotificationsService,
+  MentionService,
   WebhookService,
   AgentService,
   RoleService,

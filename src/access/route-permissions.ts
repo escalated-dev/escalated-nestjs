@@ -96,6 +96,7 @@ export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   ['POST', `${G}/tickets/*/side-conversations/**`, ['reply.create']],
   ['GET', `${G}/macros`, ['macro.view']],
   ['POST', `${G}/macros/*/execute/*`, ['macro.view', 'ticket.edit']],
+  ['GET', `${A}/agents/search`, VIEW], // the @mention picker, as Laravel
   ['GET', `${G}/canned-responses`, VIEW],
   ['GET', `${G}/canned-responses/*`, VIEW],
   ['*', `${STAFF}/saved-views`, VIEW],

@@ -279,6 +279,7 @@ const canonical: Record<string, NamedRoute> = {
   'escalated.admin.roles.edit': { uri: 'escalated/admin/roles/{role}/edit', methods: GET },
   'escalated.admin.roles.update': { uri: 'escalated/admin/roles/{role}', methods: PUT },
   'escalated.admin.roles.destroy': { uri: 'escalated/admin/roles/{role}', methods: DELETE },
+  'escalated.admin.agents.search': { uri: 'escalated/admin/agents/search', methods: GET },
   'escalated.admin.users.index': { uri: 'escalated/admin/users', methods: GET },
   'escalated.admin.users.role': { uri: 'escalated/admin/users/{user}/role', methods: PATCH },
   'escalated.admin.users.roles': { uri: 'escalated/admin/users/{user}/roles', methods: PUT },
