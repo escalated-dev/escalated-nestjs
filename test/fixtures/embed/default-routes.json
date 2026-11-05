@@ -404,6 +404,17 @@
       },
       {
         "controller": "AdminAgentController",
+        "method": "GET",
+        "path": "/escalated/admin/agents/search",
+        "guards": [
+          "EscalatedAdminGuard"
+        ],
+        "interceptors": [
+          "AuditLogInterceptor"
+        ]
+      },
+      {
+        "controller": "AdminAgentController",
         "method": "DELETE",
         "path": "/escalated/admin/agents/skills/:id",
         "guards": [
@@ -5091,6 +5102,13 @@
           "DELETE"
         ]
       },
+      "escalated.admin.agents.search": {
+        "uri": "escalated/admin/agents/search",
+        "methods": [
+          "GET",
+          "HEAD"
+        ]
+      },
       "escalated.admin.users.index": {
         "uri": "escalated/admin/users",
         "methods": [
@@ -6041,6 +6059,17 @@
         "controller": "AdminAgentController",
         "method": "PUT",
         "path": "/escalated/admin/agents/:id/skills",
+        "guards": [
+          "EscalatedAdminGuard"
+        ],
+        "interceptors": [
+          "AuditLogInterceptor"
+        ]
+      },
+      {
+        "controller": "AdminAgentController",
+        "method": "GET",
+        "path": "/escalated/admin/agents/search",
         "guards": [
           "EscalatedAdminGuard"
         ],
@@ -9135,6 +9164,13 @@
         "uri": "escalated/admin/roles/{role}",
         "methods": [
           "DELETE"
+        ]
+      },
+      "escalated.admin.agents.search": {
+        "uri": "escalated/admin/agents/search",
+        "methods": [
+          "GET",
+          "HEAD"
         ]
       },
       "escalated.admin.users.index": {

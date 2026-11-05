@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `isAvailable` (`true` only for `online`), which chat routing reads.
 
 ### Added
+- **@mention notifications**, as escalated-laravel: an agent mentioned in an
+  agent's reply or internal note (`@{Full Name}` or `@name`, matched to active
+  agent profiles by name or email) gets a `mention` notification in the feed.
+  The composer's mention picker searches agents at
+  `GET /escalated/admin/agents/search?q=` (`escalated.admin.agents.search`,
+  admin routes, `ticket.view`). See docs/agent-panel.md.
 - **Agent panel data** (ADR 2026-11-05-agent-panel-data, see docs/agent-panel.md):
   - agents set their own Online / Away / Offline status with `PUT`/`POST
     /escalated/agent/status` (`escalated.agent.status`); agents share

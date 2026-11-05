@@ -10,6 +10,7 @@ import {
   TicketReplyCreatedEvent,
 } from '../events/escalated.events';
 import { AgentNotificationsService } from '../services/agent-notifications.service';
+import { MentionService } from '../services/mention.service';
 import { isCustomerSideReply } from '../services/ticket-reads.service';
 
 /**
@@ -21,7 +22,10 @@ import { isCustomerSideReply } from '../services/ticket-reads.service';
 export class AgentNotificationsListener {
   private readonly logger = new Logger(AgentNotificationsListener.name);
 
-  constructor(private readonly feed: AgentNotificationsService) {}
+  constructor(
+    private readonly feed: AgentNotificationsService,
+    private readonly mentions: MentionService,
+  ) {}
 
   @OnEvent(ESCALATED_EVENTS.TICKET_ASSIGNED)
   async assigned(event: TicketAssignedEvent): Promise<void> {
@@ -41,6 +45,29 @@ export class AgentNotificationsListener {
     await this.safely(async () => {
       for (const agent of recipients.values()) {
         await this.feed.notify(agent, 'ticket_reply', event.ticket, {}, event.userId);
+      }
+    });
+  }
+
+  /**
+   * @mentions of agents in an agent's reply or internal note, as
+   * escalated-laravel's MentionService. A customer's reply mentions nobody,
+   * and an agent who mentions themselves is not notified.
+   */
+  @OnEvent(ESCALATED_EVENTS.TICKET_REPLY_CREATED)
+  async mentioned(event: TicketReplyCreatedEvent): Promise<void> {
+    const reply = event.reply ?? {};
+    if (!reply.body || isCustomerSideReply(reply, event.ticket ?? {})) return;
+    await this.safely(async () => {
+      const agents = await this.mentions.mentionedAgentIds(String(reply.body));
+      for (const agent of agents) {
+        await this.feed.notify(
+          agent,
+          'mention',
+          event.ticket,
+          { reply_id: reply.id ?? null, mentioned_by: reply.authorName ?? 'Someone' },
+          event.userId,
+        );
       }
     });
   }

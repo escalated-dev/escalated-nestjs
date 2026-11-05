@@ -97,12 +97,19 @@ shared prop is left out).
 |---|---|---|
 | `ticket_assigned` | the new assignee | `ticket.assigned`, unless they assigned it themselves |
 | `ticket_reply` | the assignee and followers | a public reply from the customer side |
+| `mention` | the mentioned agent | an @mention in an agent's reply or internal note, unless they wrote it |
 | `sla_warning` | the assignee | `sla.warning` |
 | `sla_breached` | the assignee | `sla.breached` |
 | `chat_transferred` | the receiving agent | `chat.transferred`, unless they transferred it to themselves |
 
-There is no `mention` notification: this package does not resolve @mentions to
-agents.
+@mentions are escalated-laravel's two forms: `@{Full Name}` (what the
+composer's picker inserts) and `@name`. A name matches an active agent profile
+by its name (from `ui.resolveUsers` when given, else `displayName`) or email,
+ignoring case. A customer's reply mentions nobody. The picker searches agents
+at `GET /escalated/admin/agents/search?q=` (`escalated.admin.agents.search`,
+admin routes, `ticket.view`): up to 10 `{ id, name, email }` whose name or
+email contains `q`. There is no mentions table: the notification is the
+record.
 
 | Route | Name | Answer |
 |---|---|---|

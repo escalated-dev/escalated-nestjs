@@ -10,9 +10,11 @@ import {
   HttpCode,
   UseInterceptors,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AgentService } from '../../services/agent.service';
 import { SkillService } from '../../services/skill.service';
+import { MentionService } from '../../services/mention.service';
 import { AuditLogInterceptor, AuditAction } from '../../interceptors/audit-log.interceptor';
 import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 
@@ -23,11 +25,22 @@ export class AdminAgentController {
   constructor(
     private readonly agentService: AgentService,
     private readonly skillService: SkillService,
+    private readonly mentionService: MentionService,
   ) {}
 
   @Get()
   async list() {
     return this.agentService.findAll();
+  }
+
+  /**
+   * The composer's @mention picker (`escalated.admin.agents.search`, as
+   * escalated-laravel's AgentSearchController): up to 10 agents whose name or
+   * email contains `q`, as `[{ id, name, email }]`; `[]` without a query.
+   */
+  @Get('search')
+  async search(@Query('q') q: unknown) {
+    return this.mentionService.suggestions(typeof q === 'string' ? q : '');
   }
 
   @Get(':id')
