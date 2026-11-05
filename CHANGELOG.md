@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.13] - 2026-11-04
+
 ### Upgrading
 - **The agent ticket screens send the agent panel's optional `inbox` and
   `queue` props** (shared frontend `docs/agent-panel.md`). Each screen visit
@@ -76,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `is_unread` and `requester_online`: Escalated tracks no per-agent read state
   or customer presence, so the list rows carry neither. List rows'
   `latest_reply` already was the latest public reply, never an internal note.
+
+### Changed
+- The bundled widget is now `@escalated-dev/escalated` 0.12.8. The widget's source did not change in 0.12.8; the bundle is rebuilt with Vue 3.5.44, so it behaves as before.
 
 ## [1.2.12] - 2026-10-30
 
