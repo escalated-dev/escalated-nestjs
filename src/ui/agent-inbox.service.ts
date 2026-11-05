@@ -6,6 +6,7 @@ import type { UserId } from '../config/user-id-column';
 import { hasSession } from '../access/two-factor-session';
 import { SavedView } from '../entities/saved-view.entity';
 import { flag, UiDataService } from './ui-data.service';
+import { TicketReadsService } from '../services/ticket-reads.service';
 
 export type Filters = Record<string, any>;
 
@@ -24,6 +25,8 @@ export interface InboxQueue {
 
 export interface InboxSummary {
   counts: { mine: number; unassigned: number; all: number };
+  /** Open tickets in each queue that are unread for the agent (ADR 2026-11-05-agent-panel-data). */
+  unread?: { mine: number; unassigned: number; all: number };
   views: Array<{ id: number | string; name: string; count: number; filters: Filters }>;
   stats: { open: number; urgent: number; sla_at_risk: number; resolved_today: number };
 }
@@ -69,6 +72,7 @@ export class AgentInboxService {
     private readonly data: UiDataService,
     @InjectRepository(SavedView) private readonly savedViews: Repository<SavedView>,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options: EscalatedModuleOptions = {},
+    @Optional() private readonly reads?: TicketReadsService,
   ) {}
 
   /** Translate `assigned=me` and `assigned_to=me` into the agent's id. */
@@ -219,6 +223,16 @@ export class AgentInboxService {
         unassigned: await this.countOpen({ unassigned: 1 }, agent),
         all: await this.countOpen({}, agent),
       },
+      // Of the same open tickets, those unread for this agent.
+      ...(this.reads
+        ? {
+            unread: {
+              mine: await this.countOpen({ assigned_to: agent }, agent, true),
+              unassigned: await this.countOpen({ unassigned: 1 }, agent, true),
+              all: await this.countOpen({}, agent, true),
+            },
+          }
+        : {}),
       views: await Promise.all(
         views.map(async (view) => ({
           id: view.id,
@@ -241,8 +255,12 @@ export class AgentInboxService {
   }
 
   /** Unresolved tickets, unless the filters ask for a status themselves. */
-  private countOpen(filters: Filters, agent: UserId): Promise<number> {
-    return this.data.ticketCount(filters.status ? filters : { ...filters, open: 1 }, agent);
+  private countOpen(filters: Filters, agent: UserId, unread = false): Promise<number> {
+    return this.data.ticketCount(
+      filters.status ? filters : { ...filters, open: 1 },
+      agent,
+      unread && this.reads ? (query) => this.reads!.onlyUnread(query, agent) : undefined,
+    );
   }
 
   private viewQueue(view: InboxView): InboxQueue {

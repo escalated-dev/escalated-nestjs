@@ -85,6 +85,9 @@ import {
   ImportSourceMap,
   EscalatedPlugin,
   PluginStoreRecord,
+  TicketRead,
+  CustomerPresence,
+  AgentNotification,
 } from './entities';
 
 // Services
@@ -183,6 +186,15 @@ import { CustomerTicketController } from './controllers/customer/ticket.controll
 import { CustomerKnowledgeBaseController } from './controllers/customer/knowledge-base.controller';
 import { WidgetController } from './controllers/widget/widget.controller';
 import { AgentChatController } from './controllers/agent/chat.controller';
+import { AgentPanelController } from './controllers/agent/agent-panel.controller';
+import { TicketReadsService } from './services/ticket-reads.service';
+import { CustomerPresenceService } from './services/customer-presence.service';
+import { AgentStatusService } from './services/agent-status.service';
+import {
+  AGENT_NOTIFICATION_BROADCASTER,
+  AgentNotificationsService,
+} from './services/agent-notifications.service';
+import { AgentNotificationsListener } from './listeners/agent-notifications.listener';
 import { AttachmentController } from './controllers/agent/attachment.controller';
 import { WidgetChatController } from './controllers/widget/chat.controller';
 import { WidgetScriptController } from './controllers/widget/widget-script.controller';
@@ -304,6 +316,9 @@ const entities = [
   ImportSourceMap,
   EscalatedPlugin,
   PluginStoreRecord,
+  TicketRead,
+  CustomerPresence,
+  AgentNotification,
 ];
 
 const services = [
@@ -321,6 +336,10 @@ const services = [
   CustomFieldService,
   CustomObjectService,
   KnowledgeBaseService,
+  TicketReadsService,
+  CustomerPresenceService,
+  AgentStatusService,
+  AgentNotificationsService,
   WebhookService,
   AgentService,
   RoleService,
@@ -392,6 +411,7 @@ const controllers = [
   WidgetController,
   GuestController,
   AgentChatController,
+  AgentPanelController,
   WidgetChatController,
   WidgetScriptController,
   AttachmentController,
@@ -472,7 +492,10 @@ export class EscalatedModule implements NestModule {
 
     // WebSocket gateway (opt-in)
     if (mergedOptions.enableWebsockets) {
-      conditionalProviders.push(EscalatedGateway);
+      conditionalProviders.push(EscalatedGateway, {
+        provide: AGENT_NOTIFICATION_BROADCASTER,
+        useExisting: EscalatedGateway,
+      });
     }
 
     // The shared screens' own routes (headless when off, the default).
@@ -575,6 +598,7 @@ export class EscalatedModule implements NestModule {
         EmailListener,
         RecordCustomActionInternalNoteListener,
         PluginEventsListener,
+        AgentNotificationsListener,
       ],
       exports: [
         TicketAccess,

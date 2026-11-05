@@ -1,3 +1,4 @@
+import { containsPattern, likeContains } from '../../services/like-pattern';
 import {
   Body,
   Controller,
@@ -88,12 +89,12 @@ export function serializeCategory(category: KbCategory, articlesCount = 0) {
 
 function searchArticles(query: SelectQueryBuilder<KbArticle>, search: unknown) {
   if (typeof search === 'string' && search.trim()) {
-    const term = `%${search.trim()}%`;
+    const term = containsPattern(search.trim());
     query.andWhere(
       new Brackets((q) =>
-        q.where('article.title LIKE :term', { term }).orWhere('article.content LIKE :term', {
-          term,
-        }),
+        q
+          .where(likeContains('article.title', 'term'), { term })
+          .orWhere(likeContains('article.content', 'term'), { term }),
       ),
     );
   }

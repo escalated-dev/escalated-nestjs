@@ -1,6 +1,8 @@
 import { AccessControlService } from '../access/access-control.service';
 import { takeSessionFlash } from '../access/two-factor-session';
 import { TwoFactorService } from '../services/two-factor.service';
+import { AGENT_STATUSES, AgentStatusService } from '../services/agent-status.service';
+import { AgentNotificationsService } from '../services/agent-notifications.service';
 import { sharedAccessFeatures } from '../access/access-features';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
@@ -221,6 +223,9 @@ export class InertiaResponder {
       },
     };
 
+    // The agent panel's own data (ADR 2026-11-05-agent-panel-data), for agents only.
+    if (isAgent && user) Object.assign(shared.escalated as object, await this.agentPanel(user.id));
+
     (shared.escalated as Record<string, unknown>).plugins = await this.plugins(request, isAdmin);
     (shared.escalated as Record<string, unknown>).two_factor_required = await this.mustEnrol(
       user,
@@ -243,6 +248,26 @@ export class InertiaResponder {
 
     const extra = this.ui.share ? await this.ui.share(request) : {};
     return { ...shared, ...(extra ?? {}) };
+  }
+
+  /** `agent_status`, `agent_statuses` and, while the feed is on, `notifications`. */
+  private async agentPanel(userId: unknown): Promise<Record<string, unknown>> {
+    const data: Record<string, unknown> = {};
+    try {
+      const status = this.moduleRef.get(AgentStatusService, { strict: false });
+      data.agent_status = await status.get(userId as any);
+      data.agent_statuses = [...AGENT_STATUSES];
+    } catch {
+      // The agent profiles table may not be migrated yet.
+    }
+    try {
+      const feed = this.moduleRef.get(AgentNotificationsService, { strict: false });
+      if (feed.available())
+        data.notifications = { unread_count: await feed.unreadCount(userId as any) };
+    } catch {
+      // The notifications table may not be migrated yet.
+    }
+    return data;
   }
 
   private user(request: any): { id: unknown; name: string | null; email: string | null } | null {

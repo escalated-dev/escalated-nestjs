@@ -29,6 +29,9 @@ export const BULK_ACTIONS: Record<string, string[]> = {
   tags: ['ticket.edit'],
   department: ['ticket.edit'],
   delete: ['ticket.delete'],
+  // Personal read markers (ADR 2026-11-05-agent-panel-data): viewing is enough.
+  mark_read: [],
+  mark_unread: [],
 };
 
 const A = '/escalated/admin';
@@ -60,6 +63,10 @@ export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   ['*', `${A}/settings/two-factor`, []],
   ['*', `${A}/settings/two-factor/**`, []],
   ['*', '/escalated/two-factor/challenge', []],
+  // The agent panel's personal routes (ADR 2026-11-05-agent-panel-data).
+  ['*', `${G}/status`, []],
+  ['GET', `${G}/notifications`, []],
+  ['POST', `${G}/notifications/**`, []],
 
   // ---- Tickets (admin and agent panels) ----------------------------------
   ['GET', G, VIEW],
@@ -76,6 +83,7 @@ export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   ['POST', `${G}/tickets/*/actions/*`, EDIT],
   ['POST', `${STAFF}/tickets/*/assign`, ['ticket.assign']],
   ['POST', `${STAFF}/tickets/*/follow`, VIEW],
+  ['POST', `${G}/tickets/*/{read,unread}`, VIEW],
   ['POST', `${STAFF}/tickets/*/macro`, ['macro.view', 'ticket.edit']],
   ['POST', `${STAFF}/tickets/*/reply`, ['reply.create']],
   ['POST', `${STAFF}/tickets/*/note`, ['reply.create_internal']],
@@ -104,6 +112,7 @@ export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   ['GET', `${A}/reports/**`, ['report.view']],
 
   // ---- Knowledge base (screens and JSON) ---------------------------------
+  ['GET', `${G}/kb/search`, ['kb.view']],
   ['GET', `${A}/kb-articles/create`, ['kb.create']],
   ['GET', `${A}/kb-articles/*/edit`, ['kb.edit']],
   ['GET', `${A}/{kb-articles,kb-categories,kb/articles,kb/categories}`, ['kb.view']],

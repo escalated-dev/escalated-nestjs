@@ -119,7 +119,7 @@ describe('agent inbox props (ui.enabled)', () => {
     expect(result.component).toBe('Escalated/Agent/TicketIndex');
 
     const inbox = result.props.inbox;
-    expect(Object.keys(inbox)).toEqual(['counts', 'views', 'stats']);
+    expect(Object.keys(inbox)).toEqual(['counts', 'unread', 'views', 'stats']);
     // Unresolved, unsnoozed tickets in each queue.
     expect(inbox.counts).toEqual({ mine: 2, unassigned: 1, all: 4 });
     expect(inbox.views.map((v: any) => v.id)).toEqual(BUILT_IN_VIEW_IDS);
@@ -428,9 +428,9 @@ describe('agent inbox props (ui.enabled)', () => {
     const row = (await page(base, INDEX, v1)).props.tickets.data[0];
 
     expect(row.latest_reply.body).toBe('Customer-visible answer');
-    // Escalated tracks no per-agent read state or customer presence.
-    expect(row).not.toHaveProperty('is_unread');
-    expect(row).not.toHaveProperty('requester_online');
+    // Agent replies are not customer activity.
+    expect(row.is_unread).toBe(false);
+    expect(row.requester_online).toBe(false);
   });
 
   it('sends inbox and the queue the agent last opened on the ticket page', async () => {
@@ -442,7 +442,7 @@ describe('agent inbox props (ui.enabled)', () => {
     expect(result.component).toBe('Escalated/Agent/TicketShow');
     expect(result.props.queue).toEqual({ key: 'all', title: 'All tickets' });
     expect(result.props.inbox.counts).toEqual({ mine: 1, unassigned: 1, all: 2 });
-    expect(Object.keys(result.props.inbox)).toEqual(['counts', 'views', 'stats']);
+    expect(Object.keys(result.props.inbox)).toEqual(['counts', 'unread', 'views', 'stats']);
 
     const list = await inertiaFetch(base, `${INDEX}?assigned_to=${AGENT}`, v1);
     expect(list.status).toBe(200);

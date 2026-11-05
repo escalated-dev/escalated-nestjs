@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Optional,
   Param,
   Post,
   Query,
@@ -14,6 +15,10 @@ import { ChatSessionService } from '../../services/chat-session.service';
 import { DepartmentService } from '../../services/department.service';
 import { SatisfactionRatingService } from '../../services/satisfaction-rating.service';
 import { ChatSession } from '../../entities/chat-session.entity';
+import { Ticket } from '../../entities/ticket.entity';
+import { CustomerPresenceService } from '../../services/customer-presence.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { embedOrigin } from '../../services/widget-origins.service';
 import { sanitizeWidgetMetadata } from '../../services/widget-metadata';
 import { widgetDepartmentId, widgetValidationError } from './widget-input';
@@ -32,7 +37,24 @@ export class WidgetChatController {
     private readonly departmentService: DepartmentService,
     private readonly satisfactionService: SatisfactionRatingService,
     private readonly guestTickets: GuestTicketsService,
+    @Optional() private readonly presence?: CustomerPresenceService,
+    @Optional() @InjectRepository(Ticket) private readonly ticketRows?: Repository<Ticket>,
   ) {}
+
+  /** The visitor is on the site: agent pages show the chat's customer online. */
+  private async seen(session: ChatSession): Promise<void> {
+    const presence = this.presence;
+    const rows = this.ticketRows;
+    if (!presence || !rows || !session?.ticketId) return;
+    await presence.quietly(async () =>
+      presence.seeTicketCustomer(
+        await rows.findOne({
+          where: { id: session.ticketId },
+          select: { id: true, requesterId: true, contactId: true },
+        }),
+      ),
+    );
+  }
 
   @Get('availability')
   async availability(
@@ -86,6 +108,7 @@ export class WidgetChatController {
       metadata,
     );
     const { token, expiresAt } = await this.chatSessionService.issueVisitorToken(session);
+    await this.seen(session);
     const { messages, agent, ticketReference } = await this.chatSessionService.transcript(session);
 
     // The same answer as escalated-laravel: `id` and `session_id` are both the
@@ -108,6 +131,7 @@ export class WidgetChatController {
   @Get(':token/messages')
   async messages(@Param('token') token: string) {
     const session = await this.chatSessionService.findByVisitorToken(token);
+    await this.seen(session);
     const { messages, agent } = await this.chatSessionService.transcript(session);
     return {
       messages,
@@ -152,6 +176,7 @@ export class WidgetChatController {
   @HttpCode(200)
   async rate(@Param('token') token: string, @Body() body: { rating?: unknown; comment?: unknown }) {
     const session = await this.chatSessionService.findByVisitorToken(token);
+    await this.seen(session);
     if (session.status !== 'ended') {
       throw widgetValidationError('rating', 'Chat must be ended before rating.');
     }
@@ -185,6 +210,7 @@ export class WidgetChatController {
   private async openSession(token: string, endedMessage = 'Chat has ended.'): Promise<ChatSession> {
     const session = await this.chatSessionService.findByVisitorToken(token);
     if (session.status === 'ended') throw widgetValidationError('chat', endedMessage);
+    await this.seen(session);
     return session;
   }
 }

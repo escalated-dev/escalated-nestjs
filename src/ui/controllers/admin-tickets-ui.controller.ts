@@ -7,6 +7,7 @@ import {
   HttpCode,
   Inject,
   NotFoundException,
+  Optional,
   Param,
   ParseIntPipe,
   Post,
@@ -26,15 +27,13 @@ import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
 import { MacroService } from '../../services/macro.service';
 import { ReplyService } from '../../services/reply.service';
 import { TicketService } from '../../services/ticket.service';
-import { back, inertia } from '../inertia';
+import { TicketReadsService } from '../../services/ticket-reads.service';
+import { inertia } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
-import { wantsPage } from '../request';
 import { routeUrl } from '../routes';
 import { iso } from '../serializers';
 import { UiDataService } from '../ui-data.service';
-import { PRIORITIES, TicketScreenActions } from './ticket-screen-actions';
-
-const BULK_ACTIONS = ['status', 'priority', 'assign', 'tags', 'department', 'delete'];
+import { TicketScreenActions } from './ticket-screen-actions';
 
 function sameUser(a: UserId | null | undefined, b: UserId): boolean {
   return a != null && String(a) === String(b);
@@ -98,8 +97,10 @@ export class AdminTicketsUiController extends TicketScreenActions {
     @Inject(ESCALATED_OPTIONS) options: EscalatedModuleOptions,
     @InjectRepository(SavedView) private readonly views: Repository<SavedView>,
     @InjectRepository(Ticket) private readonly ticketRows: Repository<Ticket>,
+    @Optional() reads?: TicketReadsService,
   ) {
     super(data, tickets, replies, macros, statuses, options);
+    this.reads = reads;
   }
 
   private async savedViewsFor(userId: UserId) {
@@ -133,69 +134,9 @@ export class AdminTicketsUiController extends TicketScreenActions {
   @Post('tickets/bulk')
   @HttpCode(200)
   async bulk(@Body() body: any, @Req() req: any) {
-    const userId = requireUserId(req);
-    const ids = Array.isArray(body?.ticket_ids) ? body.ticket_ids.map(Number) : [];
-    if (!ids.length || ids.some((id: number) => !Number.isInteger(id) || id < 1)) {
-      throw new UiValidationException({ ticket_ids: 'The ticket ids field is required.' });
-    }
-    const action = body?.action;
-    if (!BULK_ACTIONS.includes(action)) {
-      throw new UiValidationException({ action: 'The selected action is invalid.' });
-    }
-    const value = body?.value;
-    if (action !== 'delete' && (value == null || value === '')) {
-      throw new UiValidationException({ value: 'The value field is required.' });
-    }
-
-    let change: (ticket: Ticket) => Promise<unknown>;
-    switch (action) {
-      case 'status': {
-        const status = await this.statusBySlug(String(value), 'value');
-        change = (t) => this.tickets.update(t.id, { statusId: status.id }, userId);
-        break;
-      }
-      case 'priority':
-        if (!PRIORITIES.includes(value)) {
-          throw new UiValidationException({ value: 'The selected priority is invalid.' });
-        }
-        change = (t) => this.tickets.update(t.id, { priority: value }, userId);
-        break;
-      case 'assign':
-        change = (t) => this.tickets.update(t.id, { assigneeId: value }, userId);
-        break;
-      case 'department':
-        change = (t) => this.tickets.update(t.id, { departmentId: Number(value) }, userId);
-        break;
-      case 'tags': {
-        // Adds the tags, as Laravel's bulk `tags` does; it never removes any.
-        const add = (Array.isArray(value) ? value : [value]).map(Number);
-        change = (t) =>
-          this.tickets.update(
-            t.id,
-            { tagIds: [...new Set([...(t.tags ?? []).map((tag) => tag.id), ...add])] },
-            userId,
-          );
-        break;
-      }
-      default:
-        change = (t) => this.tickets.delete(t.id);
-    }
-
-    const rows = await this.ticketRows.find({ where: { id: In(ids) }, relations: { tags: true } });
-    let count = 0;
-    for (const ticket of rows) {
-      try {
-        await change(ticket);
-        count += 1;
-      } catch {
-        // Skip tickets that fail, as Laravel's bulk action does.
-      }
-    }
-    const message = `${count} ticket(s) updated.`;
-    if (wantsPage(this.options, req)) {
-      return back(routeUrl('escalated.admin.tickets.index'), { success: message });
-    }
-    return { message, count };
+    return this.bulkAction(body, req, 'escalated.admin.tickets.index', (ids) =>
+      this.ticketRows.find({ where: { id: In(ids) }, relations: { tags: true } }),
+    );
   }
 
   @Get('tickets/:ticket')

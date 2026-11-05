@@ -1,4 +1,6 @@
+import { RecordCustomerPresenceInterceptor } from '../../interceptors/record-customer-presence.interceptor';
 import {
+  UseInterceptors,
   Body,
   Controller,
   ForbiddenException,
@@ -72,6 +74,7 @@ function requiredText(body: any, key: string, label: string, max = 65535): strin
  */
 @UseGuards(EscalatedCustomerGuard, ScriptedRequestGuard)
 @EscalatedUi()
+@UseInterceptors(RecordCustomerPresenceInterceptor)
 @Controller('escalated')
 export class CustomerUiController {
   constructor(

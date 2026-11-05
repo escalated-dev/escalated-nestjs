@@ -1,3 +1,4 @@
+import { CustomerPresenceService } from '../../services/customer-presence.service';
 import {
   BadRequestException,
   Body,
@@ -6,6 +7,7 @@ import {
   Inject,
   HttpCode,
   NotFoundException,
+  Optional,
   Param,
   Post,
   Query,
@@ -76,6 +78,7 @@ export class WidgetController {
     @Inject(ESCALATED_OPTIONS)
     private readonly options: EscalatedModuleOptions,
     private readonly guestTickets: GuestTicketsService,
+    @Optional() private readonly presence?: CustomerPresenceService,
   ) {}
 
   private async resolveGuestPolicy(): Promise<EscalatedModuleOptions['guestPolicy']> {
@@ -219,6 +222,11 @@ export class WidgetController {
   @UseGuards(GuestAccessGuard)
   async showTicket(@Req() req: any, @Res({ passthrough: true }) res: any) {
     privateGuestResponse(res);
+    // The customer is on the site (agent pages only ever show it).
+    if (this.presence) {
+      const presence = this.presence;
+      await presence.quietly(() => presence.seeTicketCustomer(req.guestTicket));
+    }
     return this.guestTickets.status(req.guestTicket);
   }
 

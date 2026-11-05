@@ -290,6 +290,8 @@ export class UiDataService {
     userId: UserId | null,
     path: string,
     scope: { requesterId?: UserId } = {},
+    /** Adds fields to the serialized rows (agent pages: unread, presence). */
+    decorate?: (rows: Ticket[], serialized: Array<Record<string, any>>) => Promise<void>,
   ) {
     const query = this.base();
     await this.applyListFilters(query, filters, userId, scope);
@@ -305,19 +307,27 @@ export class UiDataService {
       .take(perPage);
 
     const [rows, total] = await query.getManyAndCount();
-    return paginate(await this.serializeTickets(rows), total, page, perPage, path, filters);
+    const serialized = await this.serializeTickets(rows);
+    if (decorate) await decorate(rows, serialized);
+    return paginate(serialized, total, page, perPage, path, filters);
   }
 
   /**
    * Counts the tickets the list shows for these filters. The agent inbox
    * counts go through here, so a count and the list it labels agree.
    */
-  async ticketCount(filters: Record<string, any>, userId: UserId | null): Promise<number> {
+  async ticketCount(
+    filters: Record<string, any>,
+    userId: UserId | null,
+    /** Only the tickets unread for this agent (the inbox's `unread` counts). */
+    narrow?: (query: SelectQueryBuilder<Ticket>) => SelectQueryBuilder<Ticket>,
+  ): Promise<number> {
     const query = this.tickets
       .createQueryBuilder('ticket')
       .leftJoin('ticket.status', 'status')
       .where('ticket.isMerged = :merged', { merged: false });
     await this.applyListFilters(query, filters, userId);
+    narrow?.(query);
     return query.getCount();
   }
 

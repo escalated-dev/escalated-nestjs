@@ -60,3 +60,7 @@ export { SESInboundParser, SESSubscriptionConfirmationError } from './email/ses-
 export { InboundRouterService } from './email/inbound-router.service';
 export { SsoService, SsoException, SSO_SETTING_DEFAULTS, type SsoIdentity } from './sso.service';
 export { SsoMessageIdsService } from './sso-message-ids.service';
+export * from './ticket-reads.service';
+export * from './customer-presence.service';
+export * from './agent-status.service';
+export * from './agent-notifications.service';

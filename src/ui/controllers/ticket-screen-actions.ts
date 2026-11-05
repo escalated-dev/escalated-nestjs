@@ -2,7 +2,9 @@ import { Body, HttpCode, Param, Post, Req } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import type { EscalatedModuleOptions } from '../../config/escalated.config';
 import { requireUserId } from '../../config/request-user';
+import { Ticket } from '../../entities/ticket.entity';
 import { TicketStatus } from '../../entities/ticket-status.entity';
+import { TicketReadsService } from '../../services/ticket-reads.service';
 import { findStatusBySlugOrId } from '../../services/status-lookup';
 import { MacroService } from '../../services/macro.service';
 import { ReplyService } from '../../services/reply.service';
@@ -14,6 +16,17 @@ import { routeUrl } from '../routes';
 import { UiDataService } from '../ui-data.service';
 
 export const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+
+export const BULK_ACTIONS = [
+  'status',
+  'priority',
+  'assign',
+  'tags',
+  'department',
+  'delete',
+  'mark_read',
+  'mark_unread',
+];
 
 export function text(body: any, key: string, label: string, max = 65535): string {
   const value = body?.[key];
@@ -70,6 +83,98 @@ export abstract class TicketScreenActions {
       });
     }
     return { message, ...json };
+  }
+
+  /** Read markers, for the bulk `mark_read` / `mark_unread` actions. */
+  protected reads?: TicketReadsService;
+
+  /**
+   * Bulk actions from a ticket list (`<prefix>.tickets.bulk`), as
+   * escalated-laravel's BulkActionController: each ticket the agent can see
+   * (`load` runs in the request's ticket-access scope) is changed, and one
+   * that fails is skipped.
+   */
+  protected async bulkAction(
+    body: any,
+    req: any,
+    indexRoute: string,
+    load: (ids: number[]) => Promise<Ticket[]>,
+  ) {
+    const userId = requireUserId(req);
+    const ids = Array.isArray(body?.ticket_ids) ? body.ticket_ids.map(Number) : [];
+    if (!ids.length || ids.some((id: number) => !Number.isInteger(id) || id < 1)) {
+      throw new UiValidationException({ ticket_ids: 'The ticket ids field is required.' });
+    }
+    const action = body?.action;
+    if (!BULK_ACTIONS.includes(action)) {
+      throw new UiValidationException({ action: 'The selected action is invalid.' });
+    }
+    const value = body?.value;
+    if (
+      !['delete', 'mark_read', 'mark_unread'].includes(action) &&
+      (value == null || value === '')
+    ) {
+      throw new UiValidationException({ value: 'The value field is required.' });
+    }
+
+    let change: (ticket: Ticket) => Promise<unknown>;
+    switch (action) {
+      case 'status': {
+        const status = await this.statusBySlug(String(value), 'value');
+        change = (t) => this.tickets.update(t.id, { statusId: status.id }, userId);
+        break;
+      }
+      case 'priority':
+        if (!PRIORITIES.includes(value)) {
+          throw new UiValidationException({ value: 'The selected priority is invalid.' });
+        }
+        change = (t) => this.tickets.update(t.id, { priority: value }, userId);
+        break;
+      case 'assign':
+        change = (t) => this.tickets.update(t.id, { assigneeId: value }, userId);
+        break;
+      case 'department':
+        change = (t) => this.tickets.update(t.id, { departmentId: Number(value) }, userId);
+        break;
+      case 'tags': {
+        // Adds the tags, as Laravel's bulk `tags` does; it never removes any.
+        const add = (Array.isArray(value) ? value : [value]).map(Number);
+        change = (t) =>
+          this.tickets.update(
+            t.id,
+            { tagIds: [...new Set([...(t.tags ?? []).map((tag) => tag.id), ...add])] },
+            userId,
+          );
+        break;
+      }
+      case 'mark_read':
+      case 'mark_unread': {
+        // Per-agent read markers (ADR 2026-11-05-agent-panel-data).
+        const reads = this.reads;
+        if (!reads) throw new UiValidationException({ action: 'The selected action is invalid.' });
+        change = (t) =>
+          action === 'mark_read' ? reads.markRead(userId, t.id) : reads.markUnread(userId, t.id);
+        break;
+      }
+      default:
+        change = (t) => this.tickets.delete(t.id);
+    }
+
+    const rows = await load(ids);
+    let count = 0;
+    for (const ticket of rows) {
+      try {
+        await change(ticket);
+        count += 1;
+      } catch {
+        // Skip tickets that fail, as Laravel's bulk action does.
+      }
+    }
+    const message = `${count} ticket(s) updated.`;
+    if (wantsPage(this.options, req)) {
+      return back(routeUrl(indexRoute), { success: message });
+    }
+    return { message, count };
   }
 
   /** The ticket status with this slug (built-in or custom) or id, or a field error. */

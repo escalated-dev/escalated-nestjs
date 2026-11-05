@@ -50,3 +50,6 @@ export { ImportJob, IMPORT_TRANSITIONS } from './import-job.entity';
 export { ImportSourceMap } from './import-source-map.entity';
 export { EscalatedPlugin } from './plugin.entity';
 export { PluginStoreRecord } from './plugin-store-record.entity';
+export { TicketRead } from './ticket-read.entity';
+export { CustomerPresence } from './customer-presence.entity';
+export { AgentNotification } from './agent-notification.entity';

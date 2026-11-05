@@ -223,6 +223,8 @@ export class TicketService {
       contactId: dto.contactId ?? null,
       metadata: dto.metadata ?? null,
       guestAccessToken: uuidv4(),
+      // A new ticket is customer activity: unread for agents until opened.
+      lastCustomerActivityAt: new Date(),
     });
 
     const account = context?.account
