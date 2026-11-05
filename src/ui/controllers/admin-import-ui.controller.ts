@@ -20,11 +20,11 @@ import type { ImportAdapter } from '../../services/import-adapter';
 import { ImportJobService } from '../../services/import-job.service';
 import { back, inertia, redirect } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard } from '../inertia.interceptor';
-import { routeUrl } from '../routes';
+import { adminBasePath, routeUrl } from '../routes';
+import { screenCookieSameSite } from '../embed';
 
 /** Tested credentials, sealed, from Connect until the import starts. */
 export const IMPORT_COOKIE = 'escalated_import';
-const COOKIE_PATH = '/escalated/admin/import';
 const COOKIE_TTL = 3600;
 
 function cookieValue(request: any, name: string): string | null {
@@ -36,8 +36,9 @@ function cookieValue(request: any, name: string): string | null {
 }
 
 function cookie(request: any, value: string, maxAge: number): string {
-  const secure = request?.secure || request?.protocol === 'https' ? '; Secure' : '';
-  return `${IMPORT_COOKIE}=${value}; Path=${COOKIE_PATH}; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+  const https = Boolean(request?.secure || request?.protocol === 'https');
+  const sameSite = screenCookieSameSite(request, https);
+  return `${IMPORT_COOKIE}=${value}; Path=${adminBasePath()}/import; Max-Age=${maxAge}; HttpOnly; SameSite=${sameSite}${https ? '; Secure' : ''}`;
 }
 
 /** An import job as the Index and Progress pages read it; never its credentials. */

@@ -18,6 +18,7 @@ import { TicketStatus } from '../entities/ticket-status.entity';
 import { findStatusBySlugOrId } from '../services/status-lookup';
 import { accessFeatureEnabled } from './access-features';
 import { normalizeRoutePath, requiredPermissions } from './route-permissions';
+import { canonicalControllerPath } from '../ui/embed';
 
 function present(id: unknown): id is UserId {
   return (typeof id === 'number' || typeof id === 'string') && id !== '' && String(id) !== '0';
@@ -25,15 +26,16 @@ function present(id: unknown): id is UserId {
 
 /** The route path a handler was declared at (controller path + method path). */
 export function declaredRoutePath(context: ExecutionContext, request?: any): string {
-  const controller = Reflect.getMetadata(PATH_METADATA, context.getClass()) ?? '';
+  const mounted = Reflect.getMetadata(PATH_METADATA, context.getClass()) ?? '';
+  // An embedded admin route keeps the path its base controller declares.
+  const controller = canonicalControllerPath(context.getClass()) || mounted;
   let handler = Reflect.getMetadata(PATH_METADATA, context.getHandler()) ?? '';
   if (Array.isArray(handler)) {
     // Several paths on one handler: the one Express matched, else the first.
     const matched = String(request?.route?.path ?? '');
     handler =
-      handler.find((path: string) =>
-        matched.endsWith(normalizeRoutePath(`${controller}/${path}`)),
-      ) ?? handler[0];
+      handler.find((path: string) => matched.endsWith(normalizeRoutePath(`${mounted}/${path}`))) ??
+      handler[0];
   }
   return normalizeRoutePath(`${controller}/${handler}`);
 }

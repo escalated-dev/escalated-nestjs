@@ -6,7 +6,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PATH_METADATA } from '@nestjs/common/constants';
+import { canonicalControllerPath } from '../ui/embed';
 import { DataSource, QueryBuilder, ObjectLiteral, EntityMetadata } from 'typeorm';
 import { Observable } from 'rxjs';
 import type { EscalatedModuleOptions } from './escalated.config';
@@ -286,7 +286,7 @@ export class TicketAccessInterceptor implements NestInterceptor {
       this.access
         .requestActor(request)
         .then(async (actor) => {
-          const route = Reflect.getMetadata(PATH_METADATA, context.getClass());
+          const route = canonicalControllerPath(context.getClass());
           if (
             !actor &&
             typeof route === 'string' &&

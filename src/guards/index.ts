@@ -17,5 +17,6 @@ export {
   EscalatedCustomerGuard,
   EscalatedAgentOrCustomerGuard,
   EscalatedStaffGuard,
+  EmbeddedAdminGuard,
 } from './escalated-route.guard';
 export type { EscalatedRouteGroup, EscalatedHostGuard } from './escalated-route.guard';

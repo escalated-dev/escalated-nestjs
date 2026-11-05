@@ -18,6 +18,7 @@ import { PluginStoreService } from './plugin-store.service';
 import { PluginDomainService } from './plugin-domain.service';
 import { EscalatedGateway } from '../gateway/escalated.gateway';
 import { cronDue } from './cron-schedule';
+import { adminBasePath } from '../ui/routes';
 
 /** The lifecycle actions, fired to every active plugin. */
 export const PLUGIN_LIFECYCLE_ACTIONS = [
@@ -331,7 +332,7 @@ export class PluginRegistry {
         if (!(await this.allows(request, page.capability))) continue;
         menuItems.push({
           label: page.menu.label,
-          route: `/escalated/admin/plugins/${slug}/${route}`,
+          route: `${adminBasePath()}/plugins/${slug}/${route}`,
           icon: page.menu.icon ?? null,
           position: page.menu.position ?? 100,
           section,

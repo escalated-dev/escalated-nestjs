@@ -319,6 +319,34 @@ npx typeorm migration:run
 
 All tables are prefixed with `escalated_` to avoid conflicts.
 
+## Embedding the admin in your own admin panel (optional)
+
+Escalated's admin is a standalone panel at `/escalated/admin` by default, and
+needs no setup. If your app already has an admin panel, you can show
+Escalated's admin screens inside it instead: under your prefix, your guards
+and middleware, your Vue layout or server-rendered template, or in an iframe
+for another origin. It is off unless you configure it (it needs the screens,
+`ui.enabled`):
+
+```typescript
+import { EscalatedModule, embedAdmin } from '@escalated-dev/escalated-nestjs';
+
+EscalatedModule.forRoot({
+  adminGuard: AdminGuard, // Escalated's admin gate stays on the embedded admin
+  ui: {
+    enabled: true,
+    embed: embedAdmin({ prefix: 'admin/support', guards: [BackOfficeGuard], layout: 'Layouts/AdminLayout' }),
+  },
+});
+```
+
+The admin routes then answer under `/admin/support` (the old
+`/escalated/admin` URLs 404; route names are unchanged), pages carry an
+`escalated.embed` flag, and the admin menu is shared as `escalated.navigation`
+for your sidebar. See [docs/embedding-admin.md](docs/embedding-admin.md) for
+the three setups (Vue + Inertia layout, server-rendered root view, iframe),
+every option and the security notes.
+
 ## Screens (Inertia UI)
 
 The shared Vue 3 + Inertia screens for agents, customers and admins are served

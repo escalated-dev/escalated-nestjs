@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Optional: embed the admin in your own admin panel (off by default; no
+  change unless configured).** `ui.embed` (or `embedAdmin({...})`, or
+  `ESCALATED_EMBED`, `ESCALATED_EMBED_MODE`, `ESCALATED_EMBED_PREFIX`,
+  `ESCALATED_EMBED_FRAME_ANCESTORS`) mounts every admin route that lived under
+  `/escalated/admin` (screens, admin JSON API, plugin admin and pages, API
+  tokens, SSO settings) under your `prefix` with your `middleware` and
+  `guards`, keeping Escalated's admin gate unless `replaceAdminGate`, and
+  two-factor and route permissions always. Route names do not change; the old
+  URLs answer 404. While it is on, every Inertia page shares
+  `escalated.embed` and `escalated.navigation` (the admin menu, filtered by
+  the admin gate, feature switches, route permissions, with plugin items);
+  `EscalatedAdminNavigation` / `adminNavigation()` return the same menu for
+  server-rendered layouts. `rootView` renders embedded pages in your own
+  template; iframe mode sends `Content-Security-Policy: frame-ancestors 'self'
+  <origins>` and drops `X-Frame-Options` on embedded responses only. The agent
+  panel, customer, guest, widget, API, SSO, two-factor and newsletter routes
+  do not move. A test compares the default route table with a snapshot taken
+  before the change. See docs/embedding-admin.md.
+
 ## [1.2.13] - 2026-11-04
 
 ### Upgrading
