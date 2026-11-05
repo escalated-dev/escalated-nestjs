@@ -131,7 +131,7 @@
         ],
         "interceptors": [
           "InertiaInterceptor",
-          "661c3445fa2bc990c6319"
+          "(mixin)"
         ]
       },
       {

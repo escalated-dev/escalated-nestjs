@@ -26,8 +26,10 @@ export interface RouteTable {
 }
 
 function nameOf(item: unknown): string {
-  if (typeof item === 'function') return item.name;
-  return (item as object)?.constructor?.name ?? String(item);
+  const name =
+    typeof item === 'function' ? item.name : ((item as object)?.constructor?.name ?? String(item));
+  // Nest mixins (FileInterceptor(...)) get a random class name per process.
+  return /^[0-9a-f]{16,}$/.test(name) ? '(mixin)' : name;
 }
 
 function join(...parts: string[]): string {
