@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.14] - 2026-11-05
+
 ### Upgrading
+- **Optional: embed the admin in your own admin panel (off by default; no change
+  unless configured).** With no `ui.embed` configuration (and `ESCALATED_EMBED`
+  unset) every route is unchanged; a test compares the default route table with
+  a snapshot taken before the change. See docs/embedding-admin.md.
 - **New migration `AgentPanelData1793664000000`** (exported): adds
   `escalated_tickets.lastCustomerActivityAt`, `escalated_agent_profiles.chatStatus`
   (set to `online` where `isAvailable` was true) and the
