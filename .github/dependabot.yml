@@ -30,6 +30,10 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@nestjs/typeorm"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/event-emitter"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/schedule"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "@nestjs/cli"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@nestjs/schematics"
