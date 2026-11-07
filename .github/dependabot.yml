@@ -43,10 +43,3 @@ updates:
       # typeorm peers better-sqlite3 ^12.
       - dependency-name: "better-sqlite3"
         update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "npm"
-    directory: "/docker/host-app"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
