@@ -95,7 +95,7 @@
     "@typescript-eslint/eslint-plugin": "^8.69.0",
     "@typescript-eslint/parser": "^8.69.0",
     "better-sqlite3": "^12.11.1",
-    "eslint": "^10.10.0",
+    "eslint": "^10.14.0",
     "express-session": "^1.19.0",
     "jest": "^30.5.1",
     "jest-util": "^30.5.0",
