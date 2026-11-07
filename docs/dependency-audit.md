@@ -51,8 +51,20 @@ their own lockfiles.
   Its Jest imports fail under the current configuration. Validate the installed
   CommonJS package as well as the test runner before upgrading.
 - **better-sqlite3 13 (#134):** requires Node 22 or newer. Its Node 20 job reports
-  that mismatch and a native-worker crash. Keep the compatible 12.x line until
-  the runtime support decision is made.
+  that mismatch and a native-worker crash. TypeORM 1.1.1 also declares an
+  optional peer of `better-sqlite3@^12`, so strict installs fail with ERESOLVE
+  (re-checked 2026-11-06). Keep the compatible 12.x line until TypeORM accepts
+  13 and the runtime support decision is made.
+- **uuid 13 (#186):** uuid 12 and later ship ESM only. This package compiles to
+  CommonJS and Jest loads it as CommonJS, so every suite importing `uuid` fails
+  with "ESM syntax that could not be executed as CommonJS". Stay on 11.x, or
+  replace the two `v4()` calls with `crypto.randomUUID()` and drop the
+  dependency.
+- **Nest 12 (#187, #188) and TypeScript 7:** held for the reasons above;
+  TypeScript 7's native compiler is not supported by ts-jest.
+
+`.github/dependabot.yml` ignores these majors so they are not re-proposed;
+remove the matching `ignore` entry when picking one up.
 - **Existing Node support mismatch:** `engines.node` advertises `>=20`, but the
   existing `nestjs-i18n` 10.8.5 dependency requires Node 22. The compatible patch
   does not change the public engine declaration or hide that mismatch. Use a

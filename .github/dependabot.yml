@@ -13,6 +13,36 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    # Held majors; see docs/dependency-audit.md ("Held major updates").
+    ignore:
+      # Nest 12 family: ESM packaging and Nest 12 peers vs this CJS package.
+      - dependency-name: "@nestjs/common"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/core"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/platform-express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/platform-socket.io"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/websockets"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/testing"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/typeorm"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/cli"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@nestjs/schematics"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7's native compiler breaks ts-jest.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # uuid 12+ is ESM-only.
+      - dependency-name: "uuid"
+        update-types: ["version-update:semver-major"]
+      # typeorm peers better-sqlite3 ^12.
+      - dependency-name: "better-sqlite3"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/docker/host-app"
