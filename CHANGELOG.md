@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.15] - 2026-11-07
+
+### Upgrading
+- No code changes. The runtime dependency floors move up within their majors (below); `npm install` picks them up. The `@nestjs/*` peer ranges are unchanged.
+
+### Changed
+- **Dependencies:** @nestjs/platform-socket.io and @nestjs/websockets ^11.2.8, @nestjs/throttler ^6.7.1, nodemailer ^10.3.1, markdown-it ^15.0.3 and otpauth ^9.6.0 (#225, #231, #237).
+- **Dev dependencies:** the Nest 11.2.8 packages, typeorm 1.1.2, mysql2 3.24.6, pg 8.23.1, jest 30.5.2, ts-jest 29.4.15, eslint 10.14.0, typescript-eslint 8.72.1, prettier 3.9.10, socket.io-client 4.8.4 and the @types packages (#225, #231, #237).
+- **Held majors** (Dependabot ignores them; reasons in docs/dependency-audit.md): the Nest 12 family (including @nestjs/event-emitter and @nestjs/schedule), @nestjs-modules/mailer 4, TypeScript 7, uuid 13+ and better-sqlite3 13 (#218, #231, #237). Dependabot no longer runs for the demo host app, which it cannot resolve outside the Docker image (#224).
+
 ## [1.2.14] - 2026-11-05
 
 ### Upgrading
