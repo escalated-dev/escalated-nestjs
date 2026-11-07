@@ -63,6 +63,12 @@ their own lockfiles.
 - **Nest 12 (#187, #188) and TypeScript 7:** held for the reasons above;
   TypeScript 7's native compiler is not supported by ts-jest.
 
+- **@nestjs-modules/mailer 4 (#230):** a behaviour change for every host that
+  sends mail through this package: transient failures are retried by default,
+  transport errors become typed `MailerError`s, a text part is derived from the
+  HTML and messages are validated before sending. Adopt it as a planned change
+  with CHANGELOG upgrade notes, deciding which of the v3 defaults to keep.
+
 `.github/dependabot.yml` ignores these majors so they are not re-proposed;
 remove the matching `ignore` entry when picking one up.
 - **Existing Node support mismatch:** `engines.node` advertises `>=20`, but the

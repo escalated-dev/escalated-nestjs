@@ -40,6 +40,10 @@ updates:
       # uuid 12+ is ESM-only.
       - dependency-name: "uuid"
         update-types: ["version-update:semver-major"]
+      # @nestjs-modules/mailer 4 changes delivery behaviour for hosts
+      # (retries, typed errors, derived text parts, validation).
+      - dependency-name: "@nestjs-modules/mailer"
+        update-types: ["version-update:semver-major"]
       # typeorm peers better-sqlite3 ^12.
       - dependency-name: "better-sqlite3"
         update-types: ["version-update:semver-major"]
