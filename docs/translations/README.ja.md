@@ -1,293 +1,186 @@
-<p align="center">
-  <a href="README.ar.md">العربية</a> •
-  <a href="README.de.md">Deutsch</a> •
-  <a href="../../README.md">English</a> •
-  <a href="README.es.md">Español</a> •
-  <a href="README.fr.md">Français</a> •
-  <a href="README.it.md">Italiano</a> •
-  <b>日本語</b> •
-  <a href="README.ko.md">한국어</a> •
-  <a href="README.nl.md">Nederlands</a> •
-  <a href="README.pl.md">Polski</a> •
-  <a href="README.pt-BR.md">Português (BR)</a> •
-  <a href="README.ru.md">Русский</a> •
-  <a href="README.tr.md">Türkçe</a> •
+<p align="center"><sub>
+  <a href="README.ar.md">العربية</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="../../README.md">English</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.it.md">Italiano</a> ·
+  <b>日本語</b> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.nl.md">Nederlands</a> ·
+  <a href="README.pl.md">Polski</a> ·
+  <a href="README.pt-BR.md">Português (BR)</a> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.tr.md">Türkçe</a> ·
   <a href="README.zh-CN.md">简体中文</a>
+</sub></p>
+
+<p align="center">
+  <a href="https://escalated.dev"><img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/logo.png" width="72" height="72" alt="Escalated"></a>
 </p>
 
-# @escalated-dev/escalated-nestjs
+<h1 align="center">Escalated for NestJS</h1>
 
-NestJSアプリケーション向けの組み込みヘルプデスクモジュール。ドロップインチケッティング、SLA管理、ナレッジベースなど。
+<p align="center">
+  NestJS アプリに本格的なヘルプデスクを追加できます。<br>
+  チケット、SLA、エスカレーションルール、エージェント用受信トレイ、カスタマーポータルが、あなた自身のデータベース上で動きます。
+</p>
+
+<p align="center">
+  <a href="https://escalated.dev"><b>ウェブサイト</b></a> ·
+  <a href="https://escalated.dev/docs"><b>ドキュメント</b></a> ·
+  <a href="https://escalated.dev/cloud"><b>Cloud</b></a> ·
+  <a href="../../CHANGELOG.md"><b>変更履歴</b></a>
+</p>
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-dark.png">
+  <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-light.png" alt="Escalated のエージェント用受信トレイ: 件数付きの保存済みビュー、各チケットの SLA カウントダウンと優先度" width="100%">
+</picture>
+
+## できること
+
+<table>
+  <tr>
+    <td width="40%">
+      <h3>エージェントが一日中使える受信トレイ</h3>
+      会話、内部メモ、定型返信、SLA タイマーをひとつの画面に。チケットは Postmark、Mailgun、SES 経由のメールでも届きます。
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-light.png" alt="エージェントのワークスペースで開いたチケットと返信エディタ">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-light.png" alt="応答時間、CSAT、SLA 違反を表示する管理者用レポートページ">
+      </picture>
+    </td>
+    <td width="40%">
+      <h3>状況が見える SLA とエスカレーションルール</h3>
+      営業時間を考慮した応答・解決目標、目標を外れたときに再割り当てと通知を行うルール、違反に関するレポート。
+    </td>
+  </tr>
+  <tr>
+    <td width="40%">
+      <h3>すぐに使えるカスタマーポータル</h3>
+      顧客はあなたのアプリからチケットを作成し、返信し、状況を確認できます。script タグひとつで他のサイトにウィジェットを埋め込めます。
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-light.png" alt="カスタマーポータルのチケット一覧">
+      </picture>
+    </td>
+  </tr>
+</table>
 
 ## 機能
 
-- **Ticket Management** -- ライフサイクル追跡、優先度、部門、タグ、カスタムフィールドによる完全な管理
-- **SLA Policies** -- 営業時間サポート付きの設定可能な応答/解決目標
-- **Automations** -- `@nestjs/schedule`による時間ベースの処理（SLAチェック、スヌーズウェイクアップ、Webhookリトライ）
-- **Escalation Rules** -- SLA違反時の自動再割り当てと通知
-- **Macros & Canned Responses** -- ワンクリックのマルチアクションマクロとテンプレート返信
-- **Custom Fields** -- バリデーション付きダイナミックフィールド（テキスト、数値、選択、チェックボックス、日付）
-- **Knowledge Base** -- カテゴリ、検索、閲覧追跡、有用性評価付きの記事
-- **Webhooks** -- 指数バックオフリトライ付きHMAC署名配信
-- **API Tokens** -- スコープ付き機能のBearerトークン認証
-- **Roles & Permissions** -- NestJSガード付きの細粒度パーミッションシステム
-- **Audit Logging** -- すべての変更に対するインターセプターベースのアクティビティ追跡
-- **Import System** -- チケット、タグ、部門の一括インポート
-- **Side Conversations** -- チケット内のスレッドディスカッション
-- **Ticket Merging & Linking** -- 重複の統合、関連チケットのリンク
-- **Ticket Splitting** -- チケットを個別の問題に分割
-- **Ticket Snooze** -- cronによる自動ウェイクアップ付きスヌーズ
-- **Saved Views** -- 個人および共有フィルタービュー
-- **Widget API** -- レート制限付きの埋め込み可能なサポートウィジェット用パブリックエンドポイント
-- **Real-time Broadcasting** -- ライブ更新用Socket.IOゲートウェイ（オプトイン）
-- **Capacity Management** -- リアルタイムトラッキング付きエージェントごとのチケット制限
-- **Skill-based Routing** -- エージェントのスキルと空き状況に基づくチケット割り当て
-- **CSAT Ratings** -- トークンベース送信による解決後の満足度調査
-- **2FA (TOTP)** -- `otplib`によるエージェント向け二要素認証
-- **Guest Access** -- 認証不要のトークンベースチケットアクセス
+<table>
+<tr>
+<td width="33%" valign="top">
 
-## 要件
+**チケットと受信トレイ**
+- 優先度、部署、タグ、カスタムフィールド
+- チケットの統合、リンク、分割
+- 自動再開付きのスヌーズ
+- チケット内のサイド会話
+- 個人用と共有の保存済みビュー
+- マクロと定型返信
 
-- Node.js 18+
-- NestJS 11+
-- TypeORM 0.3+
-- Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+</td>
+<td width="33%" valign="top">
 
-## インストール
+**SLA とルーティング**
+- 応答目標と解決目標
+- 営業時間のサポート
+- SLA 違反時のエスカレーションルール
+- エージェントごとの対応上限
+- スキルベースのルーティング
+
+</td>
+<td width="33%" valign="top">
+
+**顧客**
+- レート制限付きのウィジェット API
+- ウィジェットやメールからの公開チケット
+- 署名付き Reply-To によるメールのスレッド化
+- 設定可能なゲストポリシー
+- トークンによるゲストアクセス
+- 解決後の CSAT アンケート
+- 検索と評価に対応したナレッジベース
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**自動化**
+- チケットと返信のイベントで動く Workflow
+- 定期的な SLA チェックとスヌーズの再開
+- 再試行付きの HMAC 署名 Webhook
+- Socket.IO によるリアルタイム更新(オプトイン)
+
+</td>
+<td width="33%" valign="top">
+
+**アクセスとセキュリティ**
+- Nest のガードによるロールと権限
+- 二要素認証 (TOTP)
+- SAML、OAuth 2 / OIDC、JWT による SSO
+- 権限を絞れる Bearer API トークン
+- すべての変更の監査ログ
+
+</td>
+<td width="33%" valign="top">
+
+**拡張**
+- プラグイン SDK で作るプラグイン
+- チケット、タグ、部署の一括インポート
+- @escalated-dev/locale による翻訳
+- どの翻訳もアプリ側で上書き可能
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><a href="../features.md">すべての機能の詳細</a></sub></p>
+
+<p align="center"><b>使用技術</b></p>
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://typeorm.io"><img src="https://img.shields.io/badge/TypeORM-FE0803?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM"></a>
+  <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"></a>
+  <a href="https://inertiajs.com"><img src="https://img.shields.io/badge/Inertia-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia"></a>
+</p>
+
+## クイックスタート
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## セットアップ
+次に、独自の `adminGuard`、`agentGuard`、`customerGuard` を指定して `EscalatedModule.forRoot()` を `AppModule` に追加し、画面を配信するために `ui: { enabled: true }` を設定します(デフォルトでは無効です)。Node.js 22+、NestJS 11、TypeORM 0.3 が必要です。すべてのオプションは[スタートガイド](../getting-started.md)で説明しています。
 
-### 1. モジュールのインポート
+## 詳しく知る
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
+- [すべての機能](../features.md) · [はじめに](../getting-started.md) · [画面 (Inertia UI)](../ui.md)
+- [API リファレンス](../api.md) · [イベントと拡張ポイント](../extending.md) · [Workflow](../workflows.md)
+- [エージェントパネル](../agent-panel.md) · [アクセス制御](../access-control.md) · [チケットのアクセスとルーティング](../ticket-access-and-routing.md)
+- [ウィジェットの埋め込み](../embedding-the-widget.md) · [管理画面の埋め込み](../embedding-admin.md) · [ゲストアクセス](../guest-access.md)
+- [プラグイン](../plugins.md) · [ニュースレター](../newsletters.md) · [開発](../development.md) · [依存関係の監査](../dependency-audit.md)
 
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: 'myapp',
-      username: 'user',
-      password: 'pass',
-      autoLoadEntities: true,
-      synchronize: true, // disable in production
-    }),
-    EscalatedModule.forRoot({
-      routePrefix: 'escalated',
-      appName: 'My App',
-      appUrl: 'https://myapp.com',
-      enableWebsockets: false,
-      enableKnowledgeBase: true,
-      enableCsat: true,
-      enable2fa: false,
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 2. 設定オプション
-
-| Option                | Type       | Default       | 説明                             |
-| --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | すべてのルートのURLプレフィックス               |
-| `enableWebsockets`    | `boolean`  | `false`       | Socket.IOリアルタイムブロードキャストを有効化 |
-| `enableKnowledgeBase` | `boolean`  | `true`        | KB記事とカテゴリを有効化       |
-| `enableCsat`          | `boolean`  | `true`        | 満足度調査を有効化             |
-| `enable2fa`           | `boolean`  | `false`       | エージェント用TOTP 2FAを有効化              |
-| `appName`             | `string`   | `'Escalated'` | メールのブランド名                |
-| `appUrl`              | `string`   | --            | リンクのベースURL                      |
-| `maxFileSize`         | `number`   | `10485760`    | 最大アップロードサイズ（バイト）                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhookリトライ回数                  |
-| `widgetOrigins`       | `string[]` | `[]`          | ウィジェットのCORSオリジン                 |
-| `adminGuard`          | `class`    | --            | 管理者ルート用カスタムガード           |
-| `agentGuard`          | `class`    | --            | エージェントルート用カスタムガード           |
-| `customerGuard`       | `class`    | --            | 顧客ルート用カスタムガード        |
-| `userResolver`        | `function` | --            | リクエストからユーザーを抽出               |
-
-### 3. データベースマイグレーション
-
-`synchronize: true`の場合、TypeORMは自動的にテーブルを作成します。本番環境では、マイグレーションを生成します：
-
-```bash
-npx typeorm migration:generate -n EscalatedSetup
-npx typeorm migration:run
-```
-
-競合を避けるため、すべてのテーブルに`escalated_`プレフィックスが付きます。
-
-## APIエンドポイント
-
-### Agent Routes (`/escalated/agent/`)
-
-| メソッド | パス | 説明 |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | フィルター付きチケット一覧 |
-| POST | `/tickets` | チケット作成 |
-| GET | `/tickets/:id` | 返信付きチケット表示 |
-| PUT | `/tickets/:id` | チケット更新 |
-| DELETE | `/tickets/:id` | チケット削除 |
-| POST | `/tickets/:id/replies` | 返信追加 |
-| POST | `/tickets/:id/merge/:targetId` | チケット統合 |
-| POST | `/tickets/:id/split` | チケット分割 |
-| POST | `/tickets/:id/snooze` | チケットスヌーズ |
-| GET | `/tickets/:ticketId/links` | チケットリンク一覧 |
-| POST | `/tickets/:ticketId/links` | チケットリンク |
-| GET | `/tickets/:ticketId/side-conversations` | サイドカンバセーション一覧 |
-| POST | `/tickets/:ticketId/side-conversations` | サイドカンバセーション作成 |
-| GET | `/macros` | マクロ一覧 |
-| POST | `/macros/:macroId/execute/:ticketId` | マクロ実行 |
-| GET | `/canned-responses` | 定型応答一覧 |
-| GET | `/saved-views` | 保存済みビュー一覧 |
-| POST | `/saved-views` | 保存済みビュー作成 |
-
-### Admin Routes (`/escalated/admin/`)
-
-| メソッド | パス | 説明 |
-| ------ | --------------------------------------- | ------------------------- |
-| GET/PUT | `/settings` | 設定管理 |
-| CRUD | `/departments` | 部門管理 |
-| CRUD | `/tags` | タグ管理 |
-| CRUD | `/custom-fields` | カスタムフィールド管理 |
-| CRUD | `/roles` | ロール管理 |
-| CRUD | `/sla/policies` | SLAポリシー管理 |
-| CRUD | `/sla/escalation-rules` | エスカレーションルール管理 |
-| CRUD | `/sla/schedules` | ビジネススケジュール管理 |
-| CRUD | `/webhooks` | Webhook管理 |
-| CRUD | `/api-tokens` | APIトークン管理 |
-| CRUD | `/agents` | エージェントプロファイル管理 |
-| CRUD | `/macros` | マクロ管理 |
-| CRUD | `/canned-responses` | 定型応答管理 |
-| CRUD | `/kb/categories` | KBカテゴリ管理 |
-| CRUD | `/kb/articles` | KB記事管理 |
-| POST | `/import/tickets` | チケット一括インポート |
-| POST | `/2fa/generate` | 2FAシークレット生成 |
-| POST | `/2fa/enable` | 2FA有効化 |
-| GET | `/audit-logs` | 監査ログ表示 |
-
-### Customer Routes (`/escalated/customer/`)
-
-| メソッド | パス | 説明 |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | 自分のチケット一覧 |
-| POST | `/tickets` | チケット作成 |
-| GET | `/tickets/:id` | 自分のチケット表示 |
-| POST | `/tickets/:id/replies` | 自分のチケットに返信 |
-| POST | `/tickets/:id/rate` | CSAT評価送信 |
-| GET | `/kb/categories` | KBカテゴリ閲覧 |
-| GET | `/kb/articles` | KB記事閲覧 |
-| GET | `/kb/search` | KB検索 |
-
-### Widget Routes (`/escalated/widget/`)
-
-| メソッド | パス | 説明 |
-| ------ | --------------------------------------- | ------------------------- |
-| POST | `/tickets` | チケット作成（公開） |
-| GET | `/tickets/:id` | チケット表示（ゲストトークン） |
-| POST | `/tickets/:id/replies` | 返信（ゲストトークン） |
-| GET | `/kb/search` | KB検索 |
-| POST | `/rate/:token` | CSAT送信 |
-
-## サービスの直接使用
-
-すべてのサービスはエクスポートされており、独自のコードにインジェクトできます：
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { TicketService, AgentService } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly ticketService: TicketService,
-    private readonly agentService: AgentService,
-  ) {}
-
-  async assignToAvailableAgent(ticketId: number) {
-    const agent = await this.agentService.findAvailableAgent();
-    if (agent) {
-      await this.ticketService.update(ticketId, { assigneeId: agent.userId }, 0);
-    }
-  }
-}
-```
-
-## イベント
-
-モジュールは`@nestjs/event-emitter`経由でイベントを発行します：
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import { ESCALATED_EVENTS, TicketCreatedEvent } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class NotificationService {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
-  handleTicketCreated(event: TicketCreatedEvent) {
-    // Send notification, update external system, etc.
-  }
-}
-```
-
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
-
-## リアルタイム更新
-
-ライブチケット更新のためのWebSocketブロードキャストを有効にします：
-
-```typescript
-EscalatedModule.forRoot({
-  enableWebsockets: true,
-});
-```
-
-Client-side (Socket.IO):
-
-```javascript
-const socket = io('/escalated');
-socket.emit('join:ticket', { ticketId: 1 });
-socket.on('ticket:updated', (data) => console.log('Updated:', data));
-socket.on('ticket:reply', (data) => console.log('New reply:', data));
-```
-
-## 開発
-
-```bash
-git clone https://github.com/escalated-dev/escalated-nestjs.git
-cd escalated-nestjs
-npm install --legacy-peer-deps
-npm test
-npm run build
-```
-
-## TypeORMエンティティ
-
-32のエンティティすべてがエクスポートされ、`escalated_`プレフィックスが付いています：
-
-**Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
-
-**SLA:** SlaPolicy, EscalationRule, BusinessSchedule, Holiday
-
-**Agents:** AgentProfile, AgentCapacity, Skill
-
-**Messaging:** CannedResponse, Macro, SideConversation, SideConversationReply
-
-**Admin:** Role, Permission, ApiToken, Webhook, WebhookDelivery, AuditLog
-
-**Custom:** CustomField, CustomFieldValue
-
-**Config:** EscalatedSettings, SavedView
-
-**Knowledge Base:** KbCategory, KbArticle
+Escalated は [Laravel](https://github.com/escalated-dev/escalated-laravel)、[Rails](https://github.com/escalated-dev/escalated-rails)、[Django](https://github.com/escalated-dev/escalated-django)、[AdonisJS](https://github.com/escalated-dev/escalated-adonis)、[Symfony](https://github.com/escalated-dev/escalated-symfony)、[Phoenix](https://github.com/escalated-dev/escalated-phoenix)、[Go](https://github.com/escalated-dev/escalated-go)、[.NET](https://github.com/escalated-dev/escalated-dotnet)、[Spring](https://github.com/escalated-dev/escalated-spring)、[WordPress](https://github.com/escalated-dev/escalated-wordpress)、[Filament](https://github.com/escalated-dev/escalated-filament) 向けにも提供しています。UI は [escalated](https://github.com/escalated-dev/escalated) にあります。
 
 ## ライセンス
 
-MIT
+MIT。Copyright (c) 2026 Escalated.dev。[LICENSE](../../LICENSE) を参照してください。

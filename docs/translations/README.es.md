@@ -1,293 +1,186 @@
-<p align="center">
-  <a href="README.ar.md">العربية</a> •
-  <a href="README.de.md">Deutsch</a> •
-  <a href="../../README.md">English</a> •
-  <b>Español</b> •
-  <a href="README.fr.md">Français</a> •
-  <a href="README.it.md">Italiano</a> •
-  <a href="README.ja.md">日本語</a> •
-  <a href="README.ko.md">한국어</a> •
-  <a href="README.nl.md">Nederlands</a> •
-  <a href="README.pl.md">Polski</a> •
-  <a href="README.pt-BR.md">Português (BR)</a> •
-  <a href="README.ru.md">Русский</a> •
-  <a href="README.tr.md">Türkçe</a> •
+<p align="center"><sub>
+  <a href="README.ar.md">العربية</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="../../README.md">English</a> ·
+  <b>Español</b> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.it.md">Italiano</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.nl.md">Nederlands</a> ·
+  <a href="README.pl.md">Polski</a> ·
+  <a href="README.pt-BR.md">Português (BR)</a> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.tr.md">Türkçe</a> ·
   <a href="README.zh-CN.md">简体中文</a>
+</sub></p>
+
+<p align="center">
+  <a href="https://escalated.dev"><img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/logo.png" width="72" height="72" alt="Escalated"></a>
 </p>
 
-# @escalated-dev/escalated-nestjs
+<h1 align="center">Escalated for NestJS</h1>
 
-Módulo de helpdesk integrado para aplicaciones NestJS. Sistema de tickets listo para usar, gestión de SLA, base de conocimientos y más.
+<p align="center">
+  Añade un helpdesk completo a tu app NestJS.<br>
+  Tickets, SLAs, reglas de escalado, una bandeja de entrada para agentes y un portal de clientes, sobre tu propia base de datos.
+</p>
 
-## Características
+<p align="center">
+  <a href="https://escalated.dev"><b>Sitio web</b></a> ·
+  <a href="https://escalated.dev/docs"><b>Documentación</b></a> ·
+  <a href="https://escalated.dev/cloud"><b>Cloud</b></a> ·
+  <a href="../../CHANGELOG.md"><b>Registro de cambios</b></a>
+</p>
 
-- **Ticket Management** -- Gestión completa con seguimiento del ciclo de vida, prioridades, departamentos, etiquetas y campos personalizados
-- **SLA Policies** -- Objetivos de respuesta/resolución configurables con soporte de horario comercial
-- **Automations** -- Procesamiento basado en tiempo mediante `@nestjs/schedule` (verificaciones SLA, despertar de posposición, reintentos de webhook)
-- **Escalation Rules** -- Reasignación automática y notificaciones por incumplimiento de SLA
-- **Macros & Canned Responses** -- Macros de acción múltiple con un clic y respuestas con plantilla
-- **Custom Fields** -- Campos dinámicos con validación (texto, número, selección, casilla, fecha)
-- **Knowledge Base** -- Artículos con categorías, búsqueda, seguimiento de vistas y calificaciones de utilidad
-- **Webhooks** -- Entrega firmada con HMAC con reintento de retroceso exponencial
-- **API Tokens** -- Autenticación con token Bearer con capacidades delimitadas
-- **Roles & Permissions** -- Sistema de permisos granular con guards de NestJS
-- **Audit Logging** -- Seguimiento de actividad basado en interceptores para todas las mutaciones
-- **Import System** -- Importación masiva de tickets, etiquetas y departamentos
-- **Side Conversations** -- Discusiones con hilos dentro de un ticket
-- **Ticket Merging & Linking** -- Fusionar duplicados, vincular tickets relacionados
-- **Ticket Splitting** -- Dividir un ticket en problemas separados
-- **Ticket Snooze** -- Posponer con despertar automático mediante cron
-- **Saved Views** -- Vistas filtradas personales y compartidas
-- **Widget API** -- Endpoints públicos para widget de soporte integrable con limitación de velocidad
-- **Real-time Broadcasting** -- Gateway Socket.IO para actualizaciones en vivo (opcional)
-- **Capacity Management** -- Límites de tickets por agente con seguimiento en tiempo real
-- **Skill-based Routing** -- Asignar tickets según habilidades y disponibilidad del agente
-- **CSAT Ratings** -- Encuestas de satisfacción post-resolución con envío basado en token
-- **2FA (TOTP)** -- Autenticación de dos factores para agentes mediante `otplib`
-- **Guest Access** -- Acceso a tickets basado en token sin autenticación
+<br>
 
-## Requisitos
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-dark.png">
+  <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-light.png" alt="La bandeja de entrada de agentes de Escalated: vistas guardadas con contadores, cuentas atrás de SLA y prioridades en cada ticket" width="100%">
+</picture>
 
-- Node.js 18+
-- NestJS 11+
-- TypeORM 0.3+
-- Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+## Qué hace
 
-## Instalación
+<table>
+  <tr>
+    <td width="40%">
+      <h3>Una bandeja de entrada en la que tus agentes pueden trabajar todo el día</h3>
+      Conversación, notas internas, respuestas predefinidas y temporizadores de SLA en una sola pantalla. Los tickets también llegan por correo a través de Postmark, Mailgun o SES.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-light.png" alt="Un ticket abierto en el espacio de trabajo del agente con el editor de respuestas">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-light.png" alt="La página de informes del administrador con tiempos de respuesta, CSAT e incumplimientos de SLA">
+      </picture>
+    </td>
+    <td width="40%">
+      <h3>SLAs y reglas de escalado que puedes ver</h3>
+      Objetivos de respuesta y resolución con horario laboral, reglas que reasignan y avisan cuando se incumplen, e informes sobre los incumplimientos.
+    </td>
+  </tr>
+  <tr>
+    <td width="40%">
+      <h3>Un portal de clientes que ya está construido</h3>
+      Los clientes abren tickets, responden y consultan el estado desde tu app. Inserta el widget en otros sitios con una sola etiqueta script.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-light.png" alt="La lista de tickets del portal de clientes">
+      </picture>
+    </td>
+  </tr>
+</table>
+
+## Funciones
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Tickets y bandeja de entrada**
+- Prioridades, departamentos, etiquetas y campos personalizados
+- Fusionar, vincular y dividir tickets
+- Posponer con reactivación automática
+- Conversaciones paralelas dentro de un ticket
+- Vistas guardadas personales y compartidas
+- Macros y respuestas predefinidas
+
+</td>
+<td width="33%" valign="top">
+
+**SLAs y enrutamiento**
+- Objetivos de respuesta y resolución
+- Soporte de horario laboral
+- Reglas de escalado al incumplir un SLA
+- Límites de capacidad por agente
+- Enrutamiento por habilidades
+
+</td>
+<td width="33%" valign="top">
+
+**Clientes**
+- API del widget con límite de peticiones
+- Tickets públicos desde el widget o por correo
+- Hilos de correo con Reply-To firmado
+- Política de invitados configurable
+- Acceso de invitados basado en tokens
+- Encuestas CSAT tras la resolución
+- Base de conocimiento con búsqueda y valoraciones
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**Automatización**
+- Workflows en eventos de tickets y respuestas
+- Comprobaciones de SLA programadas y reactivación de pospuestos
+- Webhooks firmados con HMAC y reintentos
+- Actualizaciones en tiempo real opcionales con Socket.IO
+
+</td>
+<td width="33%" valign="top">
+
+**Acceso y seguridad**
+- Roles y permisos con guards de Nest
+- Autenticación en dos pasos (TOTP)
+- SSO con SAML, OAuth 2 / OIDC o JWT
+- Tokens de API Bearer con permisos acotados
+- Registro de auditoría de cada cambio
+
+</td>
+<td width="33%" valign="top">
+
+**Extensión**
+- Plugins creados con el SDK de plugins
+- Importación masiva de tickets, etiquetas y departamentos
+- Traducciones de @escalated-dev/locale
+- Sobrescribe cualquier traducción desde tu app
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><a href="../features.md">Todas las funciones en detalle</a></sub></p>
+
+<p align="center"><b>Construido con</b></p>
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://typeorm.io"><img src="https://img.shields.io/badge/TypeORM-FE0803?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM"></a>
+  <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"></a>
+  <a href="https://inertiajs.com"><img src="https://img.shields.io/badge/Inertia-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia"></a>
+</p>
+
+## Inicio rápido
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## Configuración
+Después añade `EscalatedModule.forRoot()` a tu `AppModule` con tus propios `adminGuard`, `agentGuard` y `customerGuard`, y define `ui: { enabled: true }` para servir las pantallas (están desactivadas por defecto). Requiere Node.js 22+, NestJS 11 y TypeORM 0.3. La [guía de inicio](../getting-started.md) explica todas las opciones.
 
-### 1. Importar el módulo
+## Más información
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
+- [Todas las funciones](../features.md) · [Primeros pasos](../getting-started.md) · [Las pantallas (Inertia UI)](../ui.md)
+- [Referencia de la API](../api.md) · [Eventos y puntos de extensión](../extending.md) · [Workflows](../workflows.md)
+- [Panel del agente](../agent-panel.md) · [Control de acceso](../access-control.md) · [Acceso a tickets y enrutamiento](../ticket-access-and-routing.md)
+- [Insertar el widget](../embedding-the-widget.md) · [Insertar el panel de administración](../embedding-admin.md) · [Acceso de invitados](../guest-access.md)
+- [Plugins](../plugins.md) · [Boletines](../newsletters.md) · [Desarrollo](../development.md) · [Auditoría de dependencias](../dependency-audit.md)
 
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: 'myapp',
-      username: 'user',
-      password: 'pass',
-      autoLoadEntities: true,
-      synchronize: true, // disable in production
-    }),
-    EscalatedModule.forRoot({
-      routePrefix: 'escalated',
-      appName: 'My App',
-      appUrl: 'https://myapp.com',
-      enableWebsockets: false,
-      enableKnowledgeBase: true,
-      enableCsat: true,
-      enable2fa: false,
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 2. Opciones de configuración
-
-| Option                | Type       | Default       | Descripción                             |
-| --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | Prefijo de URL para todas las rutas               |
-| `enableWebsockets`    | `boolean`  | `false`       | Habilitar transmisión en tiempo real de Socket.IO |
-| `enableKnowledgeBase` | `boolean`  | `true`        | Habilitar artículos y categorías de KB       |
-| `enableCsat`          | `boolean`  | `true`        | Habilitar encuestas de satisfacción             |
-| `enable2fa`           | `boolean`  | `false`       | Habilitar TOTP 2FA para agentes              |
-| `appName`             | `string`   | `'Escalated'` | Nombre de marca para correos                |
-| `appUrl`              | `string`   | --            | URL base para enlaces                      |
-| `maxFileSize`         | `number`   | `10485760`    | Tamaño máximo de carga en bytes                |
-| `webhookMaxRetries`   | `number`   | `3`           | Intentos de reintento de webhook                  |
-| `widgetOrigins`       | `string[]` | `[]`          | Orígenes CORS para el widget                 |
-| `adminGuard`          | `class`    | --            | Guard personalizado para rutas de administrador           |
-| `agentGuard`          | `class`    | --            | Guard personalizado para rutas de agente           |
-| `customerGuard`       | `class`    | --            | Guard personalizado para rutas de cliente        |
-| `userResolver`        | `function` | --            | Extraer usuario de la solicitud               |
-
-### 3. Migración de base de datos
-
-Con `synchronize: true`, TypeORM crea tablas automáticamente. Para producción, genere migraciones:
-
-```bash
-npx typeorm migration:generate -n EscalatedSetup
-npx typeorm migration:run
-```
-
-Todas las tablas llevan el prefijo `escalated_` para evitar conflictos.
-
-## Endpoints de API
-
-### Agent Routes (`/escalated/agent/`)
-
-| Método | Ruta | Descripción |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | Listar tickets con filtros |
-| POST | `/tickets` | Crear ticket |
-| GET | `/tickets/:id` | Mostrar ticket con respuestas |
-| PUT | `/tickets/:id` | Actualizar ticket |
-| DELETE | `/tickets/:id` | Eliminar ticket |
-| POST | `/tickets/:id/replies` | Agregar respuesta |
-| POST | `/tickets/:id/merge/:targetId` | Fusionar tickets |
-| POST | `/tickets/:id/split` | Dividir ticket |
-| POST | `/tickets/:id/snooze` | Posponer ticket |
-| GET | `/tickets/:ticketId/links` | Listar enlaces de tickets |
-| POST | `/tickets/:ticketId/links` | Vincular tickets |
-| GET | `/tickets/:ticketId/side-conversations` | Listar conversaciones laterales |
-| POST | `/tickets/:ticketId/side-conversations` | Crear conversación lateral |
-| GET | `/macros` | Listar macros |
-| POST | `/macros/:macroId/execute/:ticketId` | Ejecutar macro |
-| GET | `/canned-responses` | Listar respuestas predefinidas |
-| GET | `/saved-views` | Listar vistas guardadas |
-| POST | `/saved-views` | Crear vista guardada |
-
-### Admin Routes (`/escalated/admin/`)
-
-| Método | Ruta | Descripción |
-| ------ | --------------------------------------- | ------------------------- |
-| GET/PUT | `/settings` | Gestionar configuraciones |
-| CRUD | `/departments` | Gestionar departamentos |
-| CRUD | `/tags` | Gestionar etiquetas |
-| CRUD | `/custom-fields` | Gestionar campos personalizados |
-| CRUD | `/roles` | Gestionar roles |
-| CRUD | `/sla/policies` | Gestionar políticas SLA |
-| CRUD | `/sla/escalation-rules` | Gestionar reglas de escalamiento |
-| CRUD | `/sla/schedules` | Gestionar horarios comerciales |
-| CRUD | `/webhooks` | Gestionar webhooks |
-| CRUD | `/api-tokens` | Gestionar tokens API |
-| CRUD | `/agents` | Gestionar perfiles de agentes |
-| CRUD | `/macros` | Gestionar macros |
-| CRUD | `/canned-responses` | Gestionar respuestas predefinidas |
-| CRUD | `/kb/categories` | Gestionar categorías de KB |
-| CRUD | `/kb/articles` | Gestionar artículos de KB |
-| POST | `/import/tickets` | Importación masiva de tickets |
-| POST | `/2fa/generate` | Generar secreto 2FA |
-| POST | `/2fa/enable` | Habilitar 2FA |
-| GET | `/audit-logs` | Ver registros de auditoría |
-
-### Customer Routes (`/escalated/customer/`)
-
-| Método | Ruta | Descripción |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | Listar tickets propios |
-| POST | `/tickets` | Crear ticket |
-| GET | `/tickets/:id` | Ver ticket propio |
-| POST | `/tickets/:id/replies` | Responder a ticket propio |
-| POST | `/tickets/:id/rate` | Enviar calificación CSAT |
-| GET | `/kb/categories` | Explorar categorías de KB |
-| GET | `/kb/articles` | Explorar artículos de KB |
-| GET | `/kb/search` | Buscar en KB |
-
-### Widget Routes (`/escalated/widget/`)
-
-| Método | Ruta | Descripción |
-| ------ | --------------------------------------- | ------------------------- |
-| POST | `/tickets` | Crear ticket (público) |
-| GET | `/tickets/:id` | Ver ticket (token invitado) |
-| POST | `/tickets/:id/replies` | Responder (token invitado) |
-| GET | `/kb/search` | Buscar en KB |
-| POST | `/rate/:token` | Enviar CSAT |
-
-## Uso directo de servicios
-
-Todos los servicios están exportados y se pueden inyectar en su propio código:
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { TicketService, AgentService } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly ticketService: TicketService,
-    private readonly agentService: AgentService,
-  ) {}
-
-  async assignToAvailableAgent(ticketId: number) {
-    const agent = await this.agentService.findAvailableAgent();
-    if (agent) {
-      await this.ticketService.update(ticketId, { assigneeId: agent.userId }, 0);
-    }
-  }
-}
-```
-
-## Eventos
-
-El módulo emite eventos a través de `@nestjs/event-emitter`:
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import { ESCALATED_EVENTS, TicketCreatedEvent } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class NotificationService {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
-  handleTicketCreated(event: TicketCreatedEvent) {
-    // Send notification, update external system, etc.
-  }
-}
-```
-
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
-
-## Actualizaciones en tiempo real
-
-Habilitar transmisión WebSocket para actualizaciones de tickets en vivo:
-
-```typescript
-EscalatedModule.forRoot({
-  enableWebsockets: true,
-});
-```
-
-Client-side (Socket.IO):
-
-```javascript
-const socket = io('/escalated');
-socket.emit('join:ticket', { ticketId: 1 });
-socket.on('ticket:updated', (data) => console.log('Updated:', data));
-socket.on('ticket:reply', (data) => console.log('New reply:', data));
-```
-
-## Desarrollo
-
-```bash
-git clone https://github.com/escalated-dev/escalated-nestjs.git
-cd escalated-nestjs
-npm install --legacy-peer-deps
-npm test
-npm run build
-```
-
-## Entidades TypeORM
-
-Las 32 entidades están exportadas y prefijadas con `escalated_`:
-
-**Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
-
-**SLA:** SlaPolicy, EscalationRule, BusinessSchedule, Holiday
-
-**Agents:** AgentProfile, AgentCapacity, Skill
-
-**Messaging:** CannedResponse, Macro, SideConversation, SideConversationReply
-
-**Admin:** Role, Permission, ApiToken, Webhook, WebhookDelivery, AuditLog
-
-**Custom:** CustomField, CustomFieldValue
-
-**Config:** EscalatedSettings, SavedView
-
-**Knowledge Base:** KbCategory, KbArticle
+Escalated también está disponible para [Laravel](https://github.com/escalated-dev/escalated-laravel), [Rails](https://github.com/escalated-dev/escalated-rails), [Django](https://github.com/escalated-dev/escalated-django), [AdonisJS](https://github.com/escalated-dev/escalated-adonis), [Symfony](https://github.com/escalated-dev/escalated-symfony), [Phoenix](https://github.com/escalated-dev/escalated-phoenix), [Go](https://github.com/escalated-dev/escalated-go), [.NET](https://github.com/escalated-dev/escalated-dotnet), [Spring](https://github.com/escalated-dev/escalated-spring), [WordPress](https://github.com/escalated-dev/escalated-wordpress) y [Filament](https://github.com/escalated-dev/escalated-filament). La interfaz está en [escalated](https://github.com/escalated-dev/escalated).
 
 ## Licencia
 
-MIT
+MIT. Copyright (c) 2026 Escalated.dev. Consulta [LICENSE](../../LICENSE).

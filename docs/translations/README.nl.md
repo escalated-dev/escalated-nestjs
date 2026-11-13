@@ -1,293 +1,186 @@
-<p align="center">
-  <a href="README.ar.md">العربية</a> •
-  <a href="README.de.md">Deutsch</a> •
-  <a href="../../README.md">English</a> •
-  <a href="README.es.md">Español</a> •
-  <a href="README.fr.md">Français</a> •
-  <a href="README.it.md">Italiano</a> •
-  <a href="README.ja.md">日本語</a> •
-  <a href="README.ko.md">한국어</a> •
-  <b>Nederlands</b> •
-  <a href="README.pl.md">Polski</a> •
-  <a href="README.pt-BR.md">Português (BR)</a> •
-  <a href="README.ru.md">Русский</a> •
-  <a href="README.tr.md">Türkçe</a> •
+<p align="center"><sub>
+  <a href="README.ar.md">العربية</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="../../README.md">English</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.it.md">Italiano</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <b>Nederlands</b> ·
+  <a href="README.pl.md">Polski</a> ·
+  <a href="README.pt-BR.md">Português (BR)</a> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.tr.md">Türkçe</a> ·
   <a href="README.zh-CN.md">简体中文</a>
+</sub></p>
+
+<p align="center">
+  <a href="https://escalated.dev"><img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/logo.png" width="72" height="72" alt="Escalated"></a>
 </p>
 
-# @escalated-dev/escalated-nestjs
+<h1 align="center">Escalated for NestJS</h1>
 
-Ingebouwde helpdeskmodule voor NestJS-applicaties. Drop-in ticketing, SLA-beheer, kennisbank en meer.
+<p align="center">
+  Voeg een complete helpdesk toe aan je NestJS-app.<br>
+  Tickets, SLA's, escalatieregels, een inbox voor agents en een klantenportaal, op je eigen database.
+</p>
+
+<p align="center">
+  <a href="https://escalated.dev"><b>Website</b></a> ·
+  <a href="https://escalated.dev/docs"><b>Documentatie</b></a> ·
+  <a href="https://escalated.dev/cloud"><b>Cloud</b></a> ·
+  <a href="../../CHANGELOG.md"><b>Wijzigingslog</b></a>
+</p>
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-dark.png">
+  <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-light.png" alt="De agent-inbox van Escalated: opgeslagen weergaven met aantallen, SLA-afteltimers en prioriteiten bij elk ticket" width="100%">
+</picture>
+
+## Wat het doet
+
+<table>
+  <tr>
+    <td width="40%">
+      <h3>Een inbox waarin je agents de hele dag kunnen werken</h3>
+      Gesprek, interne notities, standaardantwoorden en SLA-timers op één scherm. Tickets komen ook binnen per e-mail via Postmark, Mailgun of SES.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-light.png" alt="Een geopend ticket in de agent-werkruimte met de antwoordeditor">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-light.png" alt="De rapportpagina voor beheerders met reactietijden, CSAT en SLA-overschrijdingen">
+      </picture>
+    </td>
+    <td width="40%">
+      <h3>SLA's en escalatieregels die je kunt zien</h3>
+      Reactie- en oplosdoelen met kantooruren, regels die opnieuw toewijzen en meldingen sturen als een doel wordt gemist, en rapporten over overschrijdingen.
+    </td>
+  </tr>
+  <tr>
+    <td width="40%">
+      <h3>Een klantenportaal dat al klaar is</h3>
+      Klanten openen tickets, reageren en bekijken de status vanuit je app. Met één scripttag zet je de widget op andere sites.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-light.png" alt="De ticketlijst in het klantenportaal">
+      </picture>
+    </td>
+  </tr>
+</table>
 
 ## Functies
 
-- **Ticket Management** -- Volledig beheer met levenscyclustracking, prioriteiten, afdelingen, tags en aangepaste velden
-- **SLA Policies** -- Configureerbare respons-/oplossingsdoelen met ondersteuning voor kantooruren
-- **Automations** -- Tijdgebaseerde verwerking via `@nestjs/schedule` (SLA-controles, snooze-wekken, webhook-herhalingen)
-- **Escalation Rules** -- Automatische hertoewijzing en notificaties bij SLA-schending
-- **Macros & Canned Responses** -- Eén-klik multi-actie macro's en sjabloonantwoorden
-- **Custom Fields** -- Dynamische velden met validatie (tekst, nummer, selectie, checkbox, datum)
-- **Knowledge Base** -- Artikelen met categorieën, zoeken, weergavetracking en nuttigheidsbeoordelingen
-- **Webhooks** -- HMAC-ondertekende bezorging met exponentiële backoff-herhaling
-- **API Tokens** -- Bearer-tokenauthenticatie met beperkte bevoegdheden
-- **Roles & Permissions** -- Gedetailleerd permissiesysteem met NestJS-guards
-- **Audit Logging** -- Interceptor-gebaseerde activiteitstracking voor alle mutaties
-- **Import System** -- Bulk import voor tickets, tags en afdelingen
-- **Side Conversations** -- Threaded discussies binnen een ticket
-- **Ticket Merging & Linking** -- Duplicaten samenvoegen, gerelateerde tickets koppelen
-- **Ticket Splitting** -- Een ticket opsplitsen in afzonderlijke problemen
-- **Ticket Snooze** -- Snoozen met automatisch wekken via cron
-- **Saved Views** -- Persoonlijke en gedeelde gefilterde weergaven
-- **Widget API** -- Openbare endpoints voor inbedbaar supportwidget met snelheidsbeperking
-- **Real-time Broadcasting** -- Socket.IO-gateway voor live updates (opt-in)
-- **Capacity Management** -- Ticketlimieten per agent met real-time tracking
-- **Skill-based Routing** -- Tickets toewijzen op basis van agentvaardigheden en beschikbaarheid
-- **CSAT Ratings** -- Tevredenheidsonderzoeken na oplossing met tokengebaseerde indiening
-- **2FA (TOTP)** -- Tweefactorauthenticatie voor agenten via `otplib`
-- **Guest Access** -- Tokengebaseerde tickettoegang zonder authenticatie
+<table>
+<tr>
+<td width="33%" valign="top">
 
-## Vereisten
+**Tickets en inbox**
+- Prioriteiten, afdelingen, tags en aangepaste velden
+- Tickets samenvoegen, koppelen en splitsen
+- Uitstellen met automatisch heropenen
+- Zijgesprekken binnen een ticket
+- Persoonlijke en gedeelde opgeslagen weergaven
+- Macro's en standaardantwoorden
 
-- Node.js 18+
-- NestJS 11+
-- TypeORM 0.3+
-- Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+</td>
+<td width="33%" valign="top">
 
-## Installatie
+**SLA's en routering**
+- Reactie- en oplosdoelen
+- Ondersteuning voor kantooruren
+- Escalatieregels bij SLA-overschrijding
+- Capaciteitslimieten per agent
+- Routering op basis van vaardigheden
+
+</td>
+<td width="33%" valign="top">
+
+**Klanten**
+- Widget-API met rate limiting
+- Openbare tickets via widget of e-mail
+- E-mailthreads met ondertekende Reply-To
+- Instelbaar gastbeleid
+- Gasttoegang met tokens
+- CSAT-enquêtes na afhandeling
+- Kennisbank met zoekfunctie en beoordelingen
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**Automatisering**
+- Workflows bij ticket- en antwoordgebeurtenissen
+- Geplande SLA-controles en heropenen na uitstel
+- Met HMAC ondertekende webhooks met herhaalpogingen
+- Optionele realtime updates via Socket.IO
+
+</td>
+<td width="33%" valign="top">
+
+**Toegang en beveiliging**
+- Rollen en rechten met Nest-guards
+- Tweestapsverificatie (TOTP)
+- SSO met SAML, OAuth 2 / OIDC of JWT
+- Bearer-API-tokens met afgebakende rechten
+- Auditlog van elke wijziging
+
+</td>
+<td width="33%" valign="top">
+
+**Uitbreiden**
+- Plugins gebouwd met de plugin-SDK
+- Bulkimport van tickets, tags en afdelingen
+- Vertalingen uit @escalated-dev/locale
+- Elke vertaling te overschrijven vanuit je app
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><a href="../features.md">Alle functies in detail</a></sub></p>
+
+<p align="center"><b>Gebouwd met</b></p>
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://typeorm.io"><img src="https://img.shields.io/badge/TypeORM-FE0803?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM"></a>
+  <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"></a>
+  <a href="https://inertiajs.com"><img src="https://img.shields.io/badge/Inertia-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia"></a>
+</p>
+
+## Snel aan de slag
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## Installatie
+Voeg daarna `EscalatedModule.forRoot()` toe aan je `AppModule` met je eigen `adminGuard`, `agentGuard` en `customerGuard`, en zet `ui: { enabled: true }` om de schermen te serveren (die staan standaard uit). Vereist Node.js 22+, NestJS 11 en TypeORM 0.3. De [handleiding om te beginnen](../getting-started.md) behandelt elke optie.
 
-### 1. Module importeren
+## Meer weten
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
+- [Alle functies](../features.md) · [Aan de slag](../getting-started.md) · [De schermen (Inertia UI)](../ui.md)
+- [API-referentie](../api.md) · [Events en uitbreidingspunten](../extending.md) · [Workflows](../workflows.md)
+- [Agentpaneel](../agent-panel.md) · [Toegangsbeheer](../access-control.md) · [Tickettoegang en routering](../ticket-access-and-routing.md)
+- [De widget insluiten](../embedding-the-widget.md) · [De beheeromgeving insluiten](../embedding-admin.md) · [Gasttoegang](../guest-access.md)
+- [Plugins](../plugins.md) · [Nieuwsbrieven](../newsletters.md) · [Ontwikkeling](../development.md) · [Audit van afhankelijkheden](../dependency-audit.md)
 
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: 'myapp',
-      username: 'user',
-      password: 'pass',
-      autoLoadEntities: true,
-      synchronize: true, // disable in production
-    }),
-    EscalatedModule.forRoot({
-      routePrefix: 'escalated',
-      appName: 'My App',
-      appUrl: 'https://myapp.com',
-      enableWebsockets: false,
-      enableKnowledgeBase: true,
-      enableCsat: true,
-      enable2fa: false,
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 2. Configuratieopties
-
-| Option                | Type       | Default       | Beschrijving                             |
-| --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | URL-voorvoegsel voor alle routes               |
-| `enableWebsockets`    | `boolean`  | `false`       | Socket.IO real-time broadcasting inschakelen |
-| `enableKnowledgeBase` | `boolean`  | `true`        | KB-artikelen en -categorieën inschakelen       |
-| `enableCsat`          | `boolean`  | `true`        | Tevredenheidsonderzoeken inschakelen             |
-| `enable2fa`           | `boolean`  | `false`       | TOTP 2FA voor agenten inschakelen              |
-| `appName`             | `string`   | `'Escalated'` | Merknaam voor e-mails                |
-| `appUrl`              | `string`   | --            | Basis-URL voor links                      |
-| `maxFileSize`         | `number`   | `10485760`    | Max. uploadgrootte in bytes                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhook-herhalingspogingen                  |
-| `widgetOrigins`       | `string[]` | `[]`          | CORS-oorsprongen voor widget                 |
-| `adminGuard`          | `class`    | --            | Aangepaste guard voor admin-routes           |
-| `agentGuard`          | `class`    | --            | Aangepaste guard voor agent-routes           |
-| `customerGuard`       | `class`    | --            | Aangepaste guard voor klant-routes        |
-| `userResolver`        | `function` | --            | Gebruiker uit verzoek extraheren               |
-
-### 3. Databasemigratie
-
-Met `synchronize: true` maakt TypeORM automatisch tabellen aan. Voor productie genereert u migraties:
-
-```bash
-npx typeorm migration:generate -n EscalatedSetup
-npx typeorm migration:run
-```
-
-Alle tabellen hebben het voorvoegsel `escalated_` om conflicten te voorkomen.
-
-## API-endpoints
-
-### Agent Routes (`/escalated/agent/`)
-
-| Methode | Pad | Beschrijving |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | Tickets met filters weergeven |
-| POST | `/tickets` | Ticket aanmaken |
-| GET | `/tickets/:id` | Ticket met antwoorden tonen |
-| PUT | `/tickets/:id` | Ticket bijwerken |
-| DELETE | `/tickets/:id` | Ticket verwijderen |
-| POST | `/tickets/:id/replies` | Antwoord toevoegen |
-| POST | `/tickets/:id/merge/:targetId` | Tickets samenvoegen |
-| POST | `/tickets/:id/split` | Ticket opsplitsen |
-| POST | `/tickets/:id/snooze` | Ticket snoozen |
-| GET | `/tickets/:ticketId/links` | Ticketlinks weergeven |
-| POST | `/tickets/:ticketId/links` | Tickets koppelen |
-| GET | `/tickets/:ticketId/side-conversations` | Zijgesprekken weergeven |
-| POST | `/tickets/:ticketId/side-conversations` | Zijgesprek aanmaken |
-| GET | `/macros` | Macro's weergeven |
-| POST | `/macros/:macroId/execute/:ticketId` | Macro uitvoeren |
-| GET | `/canned-responses` | Standaardantwoorden weergeven |
-| GET | `/saved-views` | Opgeslagen weergaven tonen |
-| POST | `/saved-views` | Opgeslagen weergave aanmaken |
-
-### Admin Routes (`/escalated/admin/`)
-
-| Methode | Pad | Beschrijving |
-| ------ | --------------------------------------- | ------------------------- |
-| GET/PUT | `/settings` | Instellingen beheren |
-| CRUD | `/departments` | Afdelingen beheren |
-| CRUD | `/tags` | Tags beheren |
-| CRUD | `/custom-fields` | Aangepaste velden beheren |
-| CRUD | `/roles` | Rollen beheren |
-| CRUD | `/sla/policies` | SLA-beleid beheren |
-| CRUD | `/sla/escalation-rules` | Escalatieregels beheren |
-| CRUD | `/sla/schedules` | Bedrijfsroosters beheren |
-| CRUD | `/webhooks` | Webhooks beheren |
-| CRUD | `/api-tokens` | API-tokens beheren |
-| CRUD | `/agents` | Agentprofielen beheren |
-| CRUD | `/macros` | Macro's beheren |
-| CRUD | `/canned-responses` | Standaardantwoorden beheren |
-| CRUD | `/kb/categories` | KB-categorieën beheren |
-| CRUD | `/kb/articles` | KB-artikelen beheren |
-| POST | `/import/tickets` | Tickets massaal importeren |
-| POST | `/2fa/generate` | 2FA-geheim genereren |
-| POST | `/2fa/enable` | 2FA activeren |
-| GET | `/audit-logs` | Auditlogs bekijken |
-
-### Customer Routes (`/escalated/customer/`)
-
-| Methode | Pad | Beschrijving |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | Eigen tickets weergeven |
-| POST | `/tickets` | Ticket aanmaken |
-| GET | `/tickets/:id` | Eigen ticket bekijken |
-| POST | `/tickets/:id/replies` | Op eigen ticket antwoorden |
-| POST | `/tickets/:id/rate` | CSAT-beoordeling indienen |
-| GET | `/kb/categories` | KB-categorieën bladeren |
-| GET | `/kb/articles` | KB-artikelen bladeren |
-| GET | `/kb/search` | KB doorzoeken |
-
-### Widget Routes (`/escalated/widget/`)
-
-| Methode | Pad | Beschrijving |
-| ------ | --------------------------------------- | ------------------------- |
-| POST | `/tickets` | Ticket aanmaken (openbaar) |
-| GET | `/tickets/:id` | Ticket bekijken (gasttoken) |
-| POST | `/tickets/:id/replies` | Antwoorden (gasttoken) |
-| GET | `/kb/search` | KB doorzoeken |
-| POST | `/rate/:token` | CSAT indienen |
-
-## Services direct gebruiken
-
-Alle services zijn geëxporteerd en kunnen worden geïnjecteerd in uw eigen code:
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { TicketService, AgentService } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly ticketService: TicketService,
-    private readonly agentService: AgentService,
-  ) {}
-
-  async assignToAvailableAgent(ticketId: number) {
-    const agent = await this.agentService.findAvailableAgent();
-    if (agent) {
-      await this.ticketService.update(ticketId, { assigneeId: agent.userId }, 0);
-    }
-  }
-}
-```
-
-## Gebeurtenissen
-
-De module zendt gebeurtenissen uit via `@nestjs/event-emitter`:
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import { ESCALATED_EVENTS, TicketCreatedEvent } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class NotificationService {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
-  handleTicketCreated(event: TicketCreatedEvent) {
-    // Send notification, update external system, etc.
-  }
-}
-```
-
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
-
-## Realtime updates
-
-WebSocket-broadcasting inschakelen voor live ticketupdates:
-
-```typescript
-EscalatedModule.forRoot({
-  enableWebsockets: true,
-});
-```
-
-Client-side (Socket.IO):
-
-```javascript
-const socket = io('/escalated');
-socket.emit('join:ticket', { ticketId: 1 });
-socket.on('ticket:updated', (data) => console.log('Updated:', data));
-socket.on('ticket:reply', (data) => console.log('New reply:', data));
-```
-
-## Ontwikkeling
-
-```bash
-git clone https://github.com/escalated-dev/escalated-nestjs.git
-cd escalated-nestjs
-npm install --legacy-peer-deps
-npm test
-npm run build
-```
-
-## TypeORM-entiteiten
-
-Alle 32 entiteiten zijn geëxporteerd en voorzien van het voorvoegsel `escalated_`:
-
-**Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
-
-**SLA:** SlaPolicy, EscalationRule, BusinessSchedule, Holiday
-
-**Agents:** AgentProfile, AgentCapacity, Skill
-
-**Messaging:** CannedResponse, Macro, SideConversation, SideConversationReply
-
-**Admin:** Role, Permission, ApiToken, Webhook, WebhookDelivery, AuditLog
-
-**Custom:** CustomField, CustomFieldValue
-
-**Config:** EscalatedSettings, SavedView
-
-**Knowledge Base:** KbCategory, KbArticle
+Escalated is ook beschikbaar voor [Laravel](https://github.com/escalated-dev/escalated-laravel), [Rails](https://github.com/escalated-dev/escalated-rails), [Django](https://github.com/escalated-dev/escalated-django), [AdonisJS](https://github.com/escalated-dev/escalated-adonis), [Symfony](https://github.com/escalated-dev/escalated-symfony), [Phoenix](https://github.com/escalated-dev/escalated-phoenix), [Go](https://github.com/escalated-dev/escalated-go), [.NET](https://github.com/escalated-dev/escalated-dotnet), [Spring](https://github.com/escalated-dev/escalated-spring), [WordPress](https://github.com/escalated-dev/escalated-wordpress) en [Filament](https://github.com/escalated-dev/escalated-filament). De UI staat in [escalated](https://github.com/escalated-dev/escalated).
 
 ## Licentie
 
-MIT
+MIT. Copyright (c) 2026 Escalated.dev. Zie [LICENSE](../../LICENSE).

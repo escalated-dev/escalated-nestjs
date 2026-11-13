@@ -1,293 +1,186 @@
-<p align="center">
-  <b>العربية</b> •
-  <a href="README.de.md">Deutsch</a> •
-  <a href="../../README.md">English</a> •
-  <a href="README.es.md">Español</a> •
-  <a href="README.fr.md">Français</a> •
-  <a href="README.it.md">Italiano</a> •
-  <a href="README.ja.md">日本語</a> •
-  <a href="README.ko.md">한국어</a> •
-  <a href="README.nl.md">Nederlands</a> •
-  <a href="README.pl.md">Polski</a> •
-  <a href="README.pt-BR.md">Português (BR)</a> •
-  <a href="README.ru.md">Русский</a> •
-  <a href="README.tr.md">Türkçe</a> •
+<p align="center"><sub>
+  <b>العربية</b> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="../../README.md">English</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.it.md">Italiano</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.nl.md">Nederlands</a> ·
+  <a href="README.pl.md">Polski</a> ·
+  <a href="README.pt-BR.md">Português (BR)</a> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.tr.md">Türkçe</a> ·
   <a href="README.zh-CN.md">简体中文</a>
+</sub></p>
+
+<p align="center">
+  <a href="https://escalated.dev"><img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/logo.png" width="72" height="72" alt="Escalated"></a>
 </p>
 
-# @escalated-dev/escalated-nestjs
+<h1 align="center">Escalated for NestJS</h1>
 
-وحدة مكتب مساعدة مضمنة لتطبيقات NestJS. نظام تذاكر جاهز للاستخدام وإدارة SLA وقاعدة معرفة والمزيد.
+<p align="center">
+  أضف مكتب دعم متكاملًا إلى تطبيق NestJS الخاص بك.<br>
+  التذاكر واتفاقيات مستوى الخدمة (SLA) وقواعد التصعيد وصندوق وارد للوكلاء وبوابة للعملاء، تعمل كلها على قاعدة بياناتك.
+</p>
+
+<p align="center">
+  <a href="https://escalated.dev"><b>الموقع</b></a> ·
+  <a href="https://escalated.dev/docs"><b>التوثيق</b></a> ·
+  <a href="https://escalated.dev/cloud"><b>Cloud</b></a> ·
+  <a href="../../CHANGELOG.md"><b>سجل التغييرات</b></a>
+</p>
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-dark.png">
+  <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-light.png" alt="صندوق وارد الوكلاء في Escalated: طرق عرض محفوظة مع أعداد، وعدّادات SLA التنازلية والأولويات على كل تذكرة" width="100%">
+</picture>
+
+## ماذا يفعل
+
+<table>
+  <tr>
+    <td width="40%">
+      <h3>صندوق وارد يستطيع وكلاؤك العمل فيه طوال اليوم</h3>
+      المحادثة والملاحظات الداخلية والردود الجاهزة ومؤقتات SLA في شاشة واحدة. وتصل التذاكر أيضًا عبر البريد الإلكتروني من خلال Postmark أو Mailgun أو SES.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-light.png" alt="تذكرة مفتوحة في مساحة عمل الوكيل مع محرر الرد">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-light.png" alt="صفحة التقارير في لوحة الإدارة مع أوقات الاستجابة وCSAT وخروقات SLA">
+      </picture>
+    </td>
+    <td width="40%">
+      <h3>اتفاقيات SLA وقواعد تصعيد تراها أمامك</h3>
+      أهداف للاستجابة والحل تراعي ساعات العمل، وقواعد تعيد الإسناد وترسل التنبيهات عند التأخر، وتقارير عن الخروقات.
+    </td>
+  </tr>
+  <tr>
+    <td width="40%">
+      <h3>بوابة عملاء جاهزة بالفعل</h3>
+      يفتح العملاء التذاكر ويردّون ويتابعون حالتها من تطبيقك. يمكنك تضمين الأداة في مواقع أخرى بوسم script واحد.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-light.png" alt="قائمة التذاكر في بوابة العملاء">
+      </picture>
+    </td>
+  </tr>
+</table>
 
 ## الميزات
 
-- **Ticket Management** -- إدارة كاملة مع تتبع دورة الحياة والأولويات والأقسام والعلامات والحقول المخصصة
-- **SLA Policies** -- أهداف استجابة/حل قابلة للتكوين مع دعم ساعات العمل
-- **Automations** -- معالجة مبنية على الوقت عبر `@nestjs/schedule` (فحوصات SLA، إيقاظ التأجيل، إعادة محاولة webhook)
-- **Escalation Rules** -- إعادة تعيين تلقائية وإشعارات عند انتهاك SLA
-- **Macros & Canned Responses** -- ماكرو متعدد الإجراءات بنقرة واحدة وردود نموذجية
-- **Custom Fields** -- حقول ديناميكية مع تحقق (نص، رقم، اختيار، مربع اختيار، تاريخ)
-- **Knowledge Base** -- مقالات مع فئات وبحث وتتبع المشاهدات وتقييمات المفيدية
-- **Webhooks** -- تسليم موقّع بـ HMAC مع إعادة محاولة بتراجع أسي
-- **API Tokens** -- مصادقة بالرمز Bearer مع صلاحيات محددة النطاق
-- **Roles & Permissions** -- نظام أذونات دقيق مع حراس NestJS
-- **Audit Logging** -- تتبع نشاط قائم على المعترض لجميع التعديلات
-- **Import System** -- استيراد جماعي للتذاكر والعلامات والأقسام
-- **Side Conversations** -- مناقشات مترابطة داخل التذكرة
-- **Ticket Merging & Linking** -- دمج المكررات وربط التذاكر ذات الصلة
-- **Ticket Splitting** -- تقسيم تذكرة إلى مشكلات منفصلة
-- **Ticket Snooze** -- تأجيل مع إيقاظ تلقائي عبر cron
-- **Saved Views** -- عروض شخصية ومشتركة مفلترة
-- **Widget API** -- نقاط نهاية عامة لأداة دعم قابلة للتضمين مع تحديد معدل
-- **Real-time Broadcasting** -- بوابة Socket.IO للتحديثات المباشرة (اختياري)
-- **Capacity Management** -- حدود تذاكر لكل وكيل مع تتبع في الوقت الحقيقي
-- **Skill-based Routing** -- تعيين التذاكر بناءً على مهارات الوكلاء وتوفرهم
-- **CSAT Ratings** -- استبيانات رضا بعد الحل مع إرسال قائم على الرمز المميز
-- **2FA (TOTP)** -- مصادقة ثنائية للوكلاء عبر `otplib`
-- **Guest Access** -- وصول إلى التذاكر قائم على الرمز المميز بدون مصادقة
+<table>
+<tr>
+<td width="33%" valign="top">
 
-## المتطلبات
+**التذاكر وصندوق الوارد**
+- الأولويات والأقسام والوسوم والحقول المخصصة
+- دمج التذاكر وربطها وتقسيمها
+- التأجيل مع إعادة التنشيط التلقائي
+- محادثات جانبية داخل التذكرة
+- طرق عرض محفوظة شخصية ومشتركة
+- وحدات الماكرو والردود الجاهزة
 
-- Node.js 18+
-- NestJS 11+
-- TypeORM 0.3+
-- Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+</td>
+<td width="33%" valign="top">
 
-## التثبيت
+**SLA والتوجيه**
+- أهداف الاستجابة والحل
+- دعم ساعات العمل
+- قواعد التصعيد عند خرق SLA
+- حدود السعة لكل وكيل
+- توجيه حسب المهارات
+
+</td>
+<td width="33%" valign="top">
+
+**العملاء**
+- واجهة API للأداة مع تحديد معدل الطلبات
+- تذاكر عامة من الأداة أو البريد الإلكتروني
+- تسلسل رسائل البريد عبر Reply-To موقّع
+- سياسة ضيوف قابلة للضبط
+- وصول الضيوف عبر رموز مميزة
+- استبيانات CSAT بعد الحل
+- قاعدة معرفة مع البحث والتقييمات
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**الأتمتة**
+- Workflows على أحداث التذاكر والردود
+- فحوصات SLA مجدولة وإعادة تنشيط التذاكر المؤجلة
+- Webhooks موقّعة بـ HMAC مع إعادة المحاولة
+- تحديثات فورية اختيارية عبر Socket.IO
+
+</td>
+<td width="33%" valign="top">
+
+**الوصول والأمان**
+- الأدوار والصلاحيات عبر حراس Nest
+- المصادقة الثنائية (TOTP)
+- تسجيل الدخول الموحد SSO عبر SAML أو OAuth 2 / OIDC أو JWT
+- رموز API من نوع Bearer بصلاحيات محددة
+- سجل تدقيق لكل تغيير
+
+</td>
+<td width="33%" valign="top">
+
+**التوسيع**
+- إضافات مبنية باستخدام SDK الإضافات
+- استيراد جماعي للتذاكر والوسوم والأقسام
+- ترجمات من @escalated-dev/locale
+- تجاوز أي ترجمة من تطبيقك
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><a href="../features.md">كل الميزات بالتفصيل</a></sub></p>
+
+<p align="center"><b>مبني باستخدام</b></p>
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://typeorm.io"><img src="https://img.shields.io/badge/TypeORM-FE0803?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM"></a>
+  <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"></a>
+  <a href="https://inertiajs.com"><img src="https://img.shields.io/badge/Inertia-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia"></a>
+</p>
+
+## البدء السريع
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## الإعداد
+بعد ذلك أضف `EscalatedModule.forRoot()` إلى `AppModule` مع `adminGuard` و`agentGuard` و`customerGuard` الخاصة بك، واضبط `ui: { enabled: true }` لتقديم الشاشات (فهي معطّلة افتراضيًا). يتطلب Node.js 22+ وNestJS 11 وTypeORM 0.3. يشرح [دليل البدء](../getting-started.md) كل خيار.
 
-### 1. استيراد الوحدة
+## اعرف المزيد
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
+- [كل الميزات](../features.md) · [البدء](../getting-started.md) · [الشاشات (Inertia UI)](../ui.md)
+- [مرجع API](../api.md) · [الأحداث ونقاط التوسيع](../extending.md) · [Workflows](../workflows.md)
+- [لوحة الوكيل](../agent-panel.md) · [التحكم في الوصول](../access-control.md) · [الوصول إلى التذاكر والتوجيه](../ticket-access-and-routing.md)
+- [تضمين الأداة](../embedding-the-widget.md) · [تضمين لوحة الإدارة](../embedding-admin.md) · [وصول الضيوف](../guest-access.md)
+- [الإضافات](../plugins.md) · [النشرات البريدية](../newsletters.md) · [التطوير](../development.md) · [تدقيق التبعيات](../dependency-audit.md)
 
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: 'myapp',
-      username: 'user',
-      password: 'pass',
-      autoLoadEntities: true,
-      synchronize: true, // disable in production
-    }),
-    EscalatedModule.forRoot({
-      routePrefix: 'escalated',
-      appName: 'My App',
-      appUrl: 'https://myapp.com',
-      enableWebsockets: false,
-      enableKnowledgeBase: true,
-      enableCsat: true,
-      enable2fa: false,
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 2. خيارات التكوين
-
-| Option                | Type       | Default       | الوصف                             |
-| --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | بادئة URL لجميع المسارات               |
-| `enableWebsockets`    | `boolean`  | `false`       | تمكين بث Socket.IO في الوقت الحقيقي |
-| `enableKnowledgeBase` | `boolean`  | `true`        | تمكين مقالات وفئات قاعدة المعرفة       |
-| `enableCsat`          | `boolean`  | `true`        | تمكين استبيانات الرضا             |
-| `enable2fa`           | `boolean`  | `false`       | تمكين TOTP 2FA للوكلاء              |
-| `appName`             | `string`   | `'Escalated'` | اسم العلامة التجارية للبريد الإلكتروني                |
-| `appUrl`              | `string`   | --            | عنوان URL الأساسي للروابط                      |
-| `maxFileSize`         | `number`   | `10485760`    | الحد الأقصى لحجم الرفع بالبايت                |
-| `webhookMaxRetries`   | `number`   | `3`           | محاولات إعادة المحاولة للـ Webhook                  |
-| `widgetOrigins`       | `string[]` | `[]`          | مصادر CORS للأداة                 |
-| `adminGuard`          | `class`    | --            | حارس مخصص لمسارات المسؤول           |
-| `agentGuard`          | `class`    | --            | حارس مخصص لمسارات الوكيل           |
-| `customerGuard`       | `class`    | --            | حارس مخصص لمسارات العميل        |
-| `userResolver`        | `function` | --            | استخراج المستخدم من الطلب               |
-
-### 3. ترحيل قاعدة البيانات
-
-مع `synchronize: true`، يقوم TypeORM بإنشاء الجداول تلقائياً. للإنتاج، قم بإنشاء ترحيلات:
-
-```bash
-npx typeorm migration:generate -n EscalatedSetup
-npx typeorm migration:run
-```
-
-جميع الجداول مسبوقة بـ `escalated_` لتجنب التعارضات.
-
-## نقاط نهاية API
-
-### Agent Routes (`/escalated/agent/`)
-
-| الطريقة | المسار | الوصف |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | عرض التذاكر مع فلاتر |
-| POST | `/tickets` | إنشاء تذكرة |
-| GET | `/tickets/:id` | عرض التذكرة مع الردود |
-| PUT | `/tickets/:id` | تحديث تذكرة |
-| DELETE | `/tickets/:id` | حذف تذكرة |
-| POST | `/tickets/:id/replies` | إضافة رد |
-| POST | `/tickets/:id/merge/:targetId` | دمج التذاكر |
-| POST | `/tickets/:id/split` | تقسيم تذكرة |
-| POST | `/tickets/:id/snooze` | تأجيل تذكرة |
-| GET | `/tickets/:ticketId/links` | عرض روابط التذاكر |
-| POST | `/tickets/:ticketId/links` | ربط التذاكر |
-| GET | `/tickets/:ticketId/side-conversations` | عرض المحادثات الجانبية |
-| POST | `/tickets/:ticketId/side-conversations` | إنشاء محادثة جانبية |
-| GET | `/macros` | عرض الماكرو |
-| POST | `/macros/:macroId/execute/:ticketId` | تنفيذ ماكرو |
-| GET | `/canned-responses` | عرض الردود الجاهزة |
-| GET | `/saved-views` | عرض العروض المحفوظة |
-| POST | `/saved-views` | إنشاء عرض محفوظ |
-
-### Admin Routes (`/escalated/admin/`)
-
-| الطريقة | المسار | الوصف |
-| ------ | --------------------------------------- | ------------------------- |
-| GET/PUT | `/settings` | إدارة الإعدادات |
-| CRUD | `/departments` | إدارة الأقسام |
-| CRUD | `/tags` | إدارة العلامات |
-| CRUD | `/custom-fields` | إدارة الحقول المخصصة |
-| CRUD | `/roles` | إدارة الأدوار |
-| CRUD | `/sla/policies` | إدارة سياسات SLA |
-| CRUD | `/sla/escalation-rules` | إدارة قواعد التصعيد |
-| CRUD | `/sla/schedules` | إدارة جداول العمل |
-| CRUD | `/webhooks` | إدارة Webhooks |
-| CRUD | `/api-tokens` | إدارة رموز API |
-| CRUD | `/agents` | إدارة ملفات الوكلاء |
-| CRUD | `/macros` | إدارة الماكرو |
-| CRUD | `/canned-responses` | إدارة الردود الجاهزة |
-| CRUD | `/kb/categories` | إدارة فئات قاعدة المعرفة |
-| CRUD | `/kb/articles` | إدارة مقالات قاعدة المعرفة |
-| POST | `/import/tickets` | استيراد جماعي للتذاكر |
-| POST | `/2fa/generate` | إنشاء سر 2FA |
-| POST | `/2fa/enable` | تمكين 2FA |
-| GET | `/audit-logs` | عرض سجلات التدقيق |
-
-### Customer Routes (`/escalated/customer/`)
-
-| الطريقة | المسار | الوصف |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | عرض التذاكر الخاصة |
-| POST | `/tickets` | إنشاء تذكرة |
-| GET | `/tickets/:id` | عرض تذكرة خاصة |
-| POST | `/tickets/:id/replies` | الرد على تذكرة خاصة |
-| POST | `/tickets/:id/rate` | إرسال تقييم CSAT |
-| GET | `/kb/categories` | تصفح فئات قاعدة المعرفة |
-| GET | `/kb/articles` | تصفح مقالات قاعدة المعرفة |
-| GET | `/kb/search` | بحث في قاعدة المعرفة |
-
-### Widget Routes (`/escalated/widget/`)
-
-| الطريقة | المسار | الوصف |
-| ------ | --------------------------------------- | ------------------------- |
-| POST | `/tickets` | إنشاء تذكرة (عامة) |
-| GET | `/tickets/:id` | عرض تذكرة (رمز ضيف) |
-| POST | `/tickets/:id/replies` | الرد (رمز ضيف) |
-| GET | `/kb/search` | بحث في قاعدة المعرفة |
-| POST | `/rate/:token` | إرسال CSAT |
-
-## استخدام الخدمات مباشرة
-
-جميع الخدمات مُصدّرة ويمكن حقنها في الكود الخاص بك:
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { TicketService, AgentService } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly ticketService: TicketService,
-    private readonly agentService: AgentService,
-  ) {}
-
-  async assignToAvailableAgent(ticketId: number) {
-    const agent = await this.agentService.findAvailableAgent();
-    if (agent) {
-      await this.ticketService.update(ticketId, { assigneeId: agent.userId }, 0);
-    }
-  }
-}
-```
-
-## الأحداث
-
-تصدر الوحدة أحداثاً عبر `@nestjs/event-emitter`:
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import { ESCALATED_EVENTS, TicketCreatedEvent } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class NotificationService {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
-  handleTicketCreated(event: TicketCreatedEvent) {
-    // Send notification, update external system, etc.
-  }
-}
-```
-
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
-
-## التحديثات في الوقت الحقيقي
-
-تمكين بث WebSocket لتحديثات التذاكر المباشرة:
-
-```typescript
-EscalatedModule.forRoot({
-  enableWebsockets: true,
-});
-```
-
-Client-side (Socket.IO):
-
-```javascript
-const socket = io('/escalated');
-socket.emit('join:ticket', { ticketId: 1 });
-socket.on('ticket:updated', (data) => console.log('Updated:', data));
-socket.on('ticket:reply', (data) => console.log('New reply:', data));
-```
-
-## التطوير
-
-```bash
-git clone https://github.com/escalated-dev/escalated-nestjs.git
-cd escalated-nestjs
-npm install --legacy-peer-deps
-npm test
-npm run build
-```
-
-## كيانات TypeORM
-
-جميع الكيانات الـ 32 مُصدّرة ومسبوقة بـ `escalated_`:
-
-**Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
-
-**SLA:** SlaPolicy, EscalationRule, BusinessSchedule, Holiday
-
-**Agents:** AgentProfile, AgentCapacity, Skill
-
-**Messaging:** CannedResponse, Macro, SideConversation, SideConversationReply
-
-**Admin:** Role, Permission, ApiToken, Webhook, WebhookDelivery, AuditLog
-
-**Custom:** CustomField, CustomFieldValue
-
-**Config:** EscalatedSettings, SavedView
-
-**Knowledge Base:** KbCategory, KbArticle
+يتوفر Escalated أيضًا لـ [Laravel](https://github.com/escalated-dev/escalated-laravel) و[Rails](https://github.com/escalated-dev/escalated-rails) و[Django](https://github.com/escalated-dev/escalated-django) و[AdonisJS](https://github.com/escalated-dev/escalated-adonis) و[Symfony](https://github.com/escalated-dev/escalated-symfony) و[Phoenix](https://github.com/escalated-dev/escalated-phoenix) و[Go](https://github.com/escalated-dev/escalated-go) و[.NET](https://github.com/escalated-dev/escalated-dotnet) و[Spring](https://github.com/escalated-dev/escalated-spring) و[WordPress](https://github.com/escalated-dev/escalated-wordpress) و[Filament](https://github.com/escalated-dev/escalated-filament). توجد الواجهة في [escalated](https://github.com/escalated-dev/escalated).
 
 ## الترخيص
 
-MIT
+MIT. حقوق النشر (c) 2026 Escalated.dev. راجع [LICENSE](../../LICENSE).

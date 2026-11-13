@@ -1,293 +1,186 @@
-<p align="center">
-  <a href="README.ar.md">العربية</a> •
-  <a href="README.de.md">Deutsch</a> •
-  <a href="../../README.md">English</a> •
-  <a href="README.es.md">Español</a> •
-  <a href="README.fr.md">Français</a> •
-  <a href="README.it.md">Italiano</a> •
-  <a href="README.ja.md">日本語</a> •
-  <a href="README.ko.md">한국어</a> •
-  <a href="README.nl.md">Nederlands</a> •
-  <a href="README.pl.md">Polski</a> •
-  <a href="README.pt-BR.md">Português (BR)</a> •
-  <a href="README.ru.md">Русский</a> •
-  <a href="README.tr.md">Türkçe</a> •
+<p align="center"><sub>
+  <a href="README.ar.md">العربية</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="../../README.md">English</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.it.md">Italiano</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="README.nl.md">Nederlands</a> ·
+  <a href="README.pl.md">Polski</a> ·
+  <a href="README.pt-BR.md">Português (BR)</a> ·
+  <a href="README.ru.md">Русский</a> ·
+  <a href="README.tr.md">Türkçe</a> ·
   <b>简体中文</b>
+</sub></p>
+
+<p align="center">
+  <a href="https://escalated.dev"><img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/logo.png" width="72" height="72" alt="Escalated"></a>
 </p>
 
-# @escalated-dev/escalated-nestjs
+<h1 align="center">Escalated for NestJS</h1>
 
-NestJS 应用程序的嵌入式帮助台模块。即插即用的工单系统、SLA 管理、知识库等。
+<p align="center">
+  为你的 NestJS 应用添加一套完整的客服工单系统。<br>
+  工单、SLA、升级规则、客服收件箱和客户门户，全部运行在你自己的数据库上。
+</p>
+
+<p align="center">
+  <a href="https://escalated.dev"><b>官网</b></a> ·
+  <a href="https://escalated.dev/docs"><b>文档</b></a> ·
+  <a href="https://escalated.dev/cloud"><b>Cloud</b></a> ·
+  <a href="../../CHANGELOG.md"><b>更新日志</b></a>
+</p>
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-dark.png">
+  <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-light.png" alt="Escalated 客服收件箱：带计数的已保存视图，每个工单都有 SLA 倒计时和优先级" width="100%">
+</picture>
+
+## 功能概览
+
+<table>
+  <tr>
+    <td width="40%">
+      <h3>客服可以整天使用的收件箱</h3>
+      对话、内部备注、预设回复和 SLA 计时器都在同一个界面上。工单也可以通过 Postmark、Mailgun 或 SES 以邮件形式进入。
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-light.png" alt="在客服工作区中打开的工单及回复编辑器">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-light.png" alt="管理后台的报表页面，显示响应时间、CSAT 和 SLA 违规">
+      </picture>
+    </td>
+    <td width="40%">
+      <h3>一目了然的 SLA 和升级规则</h3>
+      支持工作时间的响应和解决目标，在目标逾期时重新分配并发送通知的规则，以及违规报表。
+    </td>
+  </tr>
+  <tr>
+    <td width="40%">
+      <h3>开箱即用的客户门户</h3>
+      客户可以在你的应用中提交工单、回复并查看状态。只需一个 script 标签即可把小部件嵌入到其他网站。
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-light.png" alt="客户门户中的工单列表">
+      </picture>
+    </td>
+  </tr>
+</table>
 
 ## 功能
 
-- **Ticket Management** -- 通过生命周期跟踪、优先级、部门、标签和自定义字段实现完整管理
-- **SLA Policies** -- 可配置的响应/解决目标，支持工作时间
-- **Automations** -- 通过 `@nestjs/schedule` 进行基于时间的处理（SLA 检查、休眠唤醒、Webhook 重试）
-- **Escalation Rules** -- SLA 违规时自动重新分配和通知
-- **Macros & Canned Responses** -- 一键多操作宏和模板回复
-- **Custom Fields** -- 带验证的动态字段（文本、数字、选择、复选框、日期）
-- **Knowledge Base** -- 带分类、搜索、浏览跟踪和有用性评分的文章
-- **Webhooks** -- 带指数退避重试的 HMAC 签名交付
-- **API Tokens** -- 具有范围权限的 Bearer 令牌认证
-- **Roles & Permissions** -- 使用 NestJS 守卫的细粒度权限系统
-- **Audit Logging** -- 基于拦截器的所有变更活动跟踪
-- **Import System** -- 工单、标签和部门的批量导入
-- **Side Conversations** -- 工单内的线程讨论
-- **Ticket Merging & Linking** -- 合并重复项，链接相关工单
-- **Ticket Splitting** -- 将工单拆分为独立问题
-- **Ticket Snooze** -- 通过 cron 自动唤醒的休眠
-- **Saved Views** -- 个人和共享的过滤视图
-- **Widget API** -- 带速率限制的可嵌入式支持小部件公共端点
-- **Real-time Broadcasting** -- 用于实时更新的 Socket.IO 网关（可选启用）
-- **Capacity Management** -- 带实时跟踪的每个客服人员工单限制
-- **Skill-based Routing** -- 根据客服人员技能和可用性分配工单
-- **CSAT Ratings** -- 基于令牌提交的解决后满意度调查
-- **2FA (TOTP)** -- 通过 `otplib` 为客服人员提供双因素认证
-- **Guest Access** -- 无需认证的基于令牌的工单访问
+<table>
+<tr>
+<td width="33%" valign="top">
 
-## 要求
+**工单与收件箱**
+- 优先级、部门、标签和自定义字段
+- 合并、关联和拆分工单
+- 暂缓并自动唤醒
+- 工单内的旁路对话
+- 个人和共享的已保存视图
+- 宏和预设回复
 
-- Node.js 18+
-- NestJS 11+
-- TypeORM 0.3+
-- Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+</td>
+<td width="33%" valign="top">
 
-## 安装
+**SLA 与分配**
+- 响应和解决目标
+- 支持工作时间
+- SLA 违规时的升级规则
+- 按客服设置的容量上限
+- 基于技能的分配
+
+</td>
+<td width="33%" valign="top">
+
+**客户**
+- 带速率限制的小部件 API
+- 来自小部件或邮件的公开工单
+- 基于签名 Reply-To 的邮件会话串联
+- 可配置的访客策略
+- 基于令牌的访客访问
+- 解决后的 CSAT 调查
+- 支持搜索和评分的知识库
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**自动化**
+- 基于工单和回复事件的 Workflows
+- 定时 SLA 检查和暂缓唤醒
+- 带重试的 HMAC 签名 webhook
+- 可选的 Socket.IO 实时更新
+
+</td>
+<td width="33%" valign="top">
+
+**访问与安全**
+- 基于 Nest guards 的角色和权限
+- 双因素认证（TOTP）
+- 通过 SAML、OAuth 2 / OIDC 或 JWT 实现 SSO
+- 带作用域权限的 Bearer API 令牌
+- 记录每次变更的审计日志
+
+</td>
+<td width="33%" valign="top">
+
+**扩展**
+- 使用插件 SDK 构建的插件
+- 批量导入工单、标签和部门
+- 来自 @escalated-dev/locale 的翻译
+- 可在应用中覆盖任意翻译
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><a href="../features.md">查看所有功能详情</a></sub></p>
+
+<p align="center"><b>技术栈</b></p>
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://typeorm.io"><img src="https://img.shields.io/badge/TypeORM-FE0803?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM"></a>
+  <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"></a>
+  <a href="https://inertiajs.com"><img src="https://img.shields.io/badge/Inertia-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia"></a>
+</p>
+
+## 快速开始
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## 设置
+然后在你的 `AppModule` 中添加 `EscalatedModule.forRoot()`，传入你自己的 `adminGuard`、`agentGuard` 和 `customerGuard`，并设置 `ui: { enabled: true }` 来提供界面（默认关闭）。需要 Node.js 22+、NestJS 11 和 TypeORM 0.3。[入门指南](../getting-started.md)介绍了所有选项。
 
-### 1. 导入模块
+## 了解更多
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
+- [全部功能](../features.md) · [入门](../getting-started.md) · [界面（Inertia UI）](../ui.md)
+- [API 参考](../api.md) · [事件与扩展点](../extending.md) · [Workflows](../workflows.md)
+- [客服面板](../agent-panel.md) · [访问控制](../access-control.md) · [工单访问与分配](../ticket-access-and-routing.md)
+- [嵌入小部件](../embedding-the-widget.md) · [嵌入管理后台](../embedding-admin.md) · [访客访问](../guest-access.md)
+- [插件](../plugins.md) · [新闻通讯](../newsletters.md) · [开发](../development.md) · [依赖审计](../dependency-audit.md)
 
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: 'myapp',
-      username: 'user',
-      password: 'pass',
-      autoLoadEntities: true,
-      synchronize: true, // disable in production
-    }),
-    EscalatedModule.forRoot({
-      routePrefix: 'escalated',
-      appName: 'My App',
-      appUrl: 'https://myapp.com',
-      enableWebsockets: false,
-      enableKnowledgeBase: true,
-      enableCsat: true,
-      enable2fa: false,
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 2. 配置选项
-
-| Option                | Type       | Default       | 描述                             |
-| --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | 所有路由的 URL 前缀               |
-| `enableWebsockets`    | `boolean`  | `false`       | 启用 Socket.IO 实时广播 |
-| `enableKnowledgeBase` | `boolean`  | `true`        | 启用知识库文章和分类       |
-| `enableCsat`          | `boolean`  | `true`        | 启用满意度调查             |
-| `enable2fa`           | `boolean`  | `false`       | 为客服人员启用 TOTP 2FA              |
-| `appName`             | `string`   | `'Escalated'` | 电子邮件品牌名称                |
-| `appUrl`              | `string`   | --            | 链接的基本 URL                      |
-| `maxFileSize`         | `number`   | `10485760`    | 最大上传大小（字节）                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhook 重试次数                  |
-| `widgetOrigins`       | `string[]` | `[]`          | 小部件的 CORS 来源                 |
-| `adminGuard`          | `class`    | --            | 管理员路由的自定义守卫           |
-| `agentGuard`          | `class`    | --            | 客服人员路由的自定义守卫           |
-| `customerGuard`       | `class`    | --            | 客户路由的自定义守卫        |
-| `userResolver`        | `function` | --            | 从请求中提取用户               |
-
-### 3. 数据库迁移
-
-使用 `synchronize: true` 时，TypeORM 会自动创建表。对于生产环境，请生成迁移：
-
-```bash
-npx typeorm migration:generate -n EscalatedSetup
-npx typeorm migration:run
-```
-
-所有表都以 `escalated_` 为前缀以避免冲突。
-
-## API 端点
-
-### Agent Routes (`/escalated/agent/`)
-
-| 方法 | 路径 | 描述 |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | 列出带过滤器的工单 |
-| POST | `/tickets` | 创建工单 |
-| GET | `/tickets/:id` | 显示带回复的工单 |
-| PUT | `/tickets/:id` | 更新工单 |
-| DELETE | `/tickets/:id` | 删除工单 |
-| POST | `/tickets/:id/replies` | 添加回复 |
-| POST | `/tickets/:id/merge/:targetId` | 合并工单 |
-| POST | `/tickets/:id/split` | 拆分工单 |
-| POST | `/tickets/:id/snooze` | 休眠工单 |
-| GET | `/tickets/:ticketId/links` | 列出工单链接 |
-| POST | `/tickets/:ticketId/links` | 链接工单 |
-| GET | `/tickets/:ticketId/side-conversations` | 列出侧边对话 |
-| POST | `/tickets/:ticketId/side-conversations` | 创建侧边对话 |
-| GET | `/macros` | 列出宏 |
-| POST | `/macros/:macroId/execute/:ticketId` | 执行宏 |
-| GET | `/canned-responses` | 列出预设回复 |
-| GET | `/saved-views` | 列出已保存视图 |
-| POST | `/saved-views` | 创建已保存视图 |
-
-### Admin Routes (`/escalated/admin/`)
-
-| 方法 | 路径 | 描述 |
-| ------ | --------------------------------------- | ------------------------- |
-| GET/PUT | `/settings` | 管理设置 |
-| CRUD | `/departments` | 管理部门 |
-| CRUD | `/tags` | 管理标签 |
-| CRUD | `/custom-fields` | 管理自定义字段 |
-| CRUD | `/roles` | 管理角色 |
-| CRUD | `/sla/policies` | 管理 SLA 策略 |
-| CRUD | `/sla/escalation-rules` | 管理升级规则 |
-| CRUD | `/sla/schedules` | 管理业务日程 |
-| CRUD | `/webhooks` | 管理 Webhooks |
-| CRUD | `/api-tokens` | 管理 API 令牌 |
-| CRUD | `/agents` | 管理客服人员资料 |
-| CRUD | `/macros` | 管理宏 |
-| CRUD | `/canned-responses` | 管理预设回复 |
-| CRUD | `/kb/categories` | 管理知识库分类 |
-| CRUD | `/kb/articles` | 管理知识库文章 |
-| POST | `/import/tickets` | 批量导入工单 |
-| POST | `/2fa/generate` | 生成 2FA 密钥 |
-| POST | `/2fa/enable` | 启用 2FA |
-| GET | `/audit-logs` | 查看审计日志 |
-
-### Customer Routes (`/escalated/customer/`)
-
-| 方法 | 路径 | 描述 |
-| ------ | --------------------------------------- | ------------------------- |
-| GET | `/tickets` | 列出自己的工单 |
-| POST | `/tickets` | 创建工单 |
-| GET | `/tickets/:id` | 查看自己的工单 |
-| POST | `/tickets/:id/replies` | 回复自己的工单 |
-| POST | `/tickets/:id/rate` | 提交 CSAT 评分 |
-| GET | `/kb/categories` | 浏览知识库分类 |
-| GET | `/kb/articles` | 浏览知识库文章 |
-| GET | `/kb/search` | 搜索知识库 |
-
-### Widget Routes (`/escalated/widget/`)
-
-| 方法 | 路径 | 描述 |
-| ------ | --------------------------------------- | ------------------------- |
-| POST | `/tickets` | 创建工单（公开） |
-| GET | `/tickets/:id` | 查看工单（访客令牌） |
-| POST | `/tickets/:id/replies` | 回复（访客令牌） |
-| GET | `/kb/search` | 搜索知识库 |
-| POST | `/rate/:token` | 提交 CSAT |
-
-## 直接使用服务
-
-所有服务均已导出，可以注入到您自己的代码中：
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { TicketService, AgentService } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly ticketService: TicketService,
-    private readonly agentService: AgentService,
-  ) {}
-
-  async assignToAvailableAgent(ticketId: number) {
-    const agent = await this.agentService.findAvailableAgent();
-    if (agent) {
-      await this.ticketService.update(ticketId, { assigneeId: agent.userId }, 0);
-    }
-  }
-}
-```
-
-## 事件
-
-该模块通过 `@nestjs/event-emitter` 发出事件：
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import { ESCALATED_EVENTS, TicketCreatedEvent } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class NotificationService {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
-  handleTicketCreated(event: TicketCreatedEvent) {
-    // Send notification, update external system, etc.
-  }
-}
-```
-
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_ASSIGNED`, `TICKET_STATUS_CHANGED`, `TICKET_REPLY_CREATED`, `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_BREACHED`.
-
-## 实时更新
-
-启用 WebSocket 广播以实现实时工单更新：
-
-```typescript
-EscalatedModule.forRoot({
-  enableWebsockets: true,
-});
-```
-
-Client-side (Socket.IO):
-
-```javascript
-const socket = io('/escalated');
-socket.emit('join:ticket', { ticketId: 1 });
-socket.on('ticket:updated', (data) => console.log('Updated:', data));
-socket.on('ticket:reply', (data) => console.log('New reply:', data));
-```
-
-## 开发
-
-```bash
-git clone https://github.com/escalated-dev/escalated-nestjs.git
-cd escalated-nestjs
-npm install --legacy-peer-deps
-npm test
-npm run build
-```
-
-## TypeORM 实体
-
-所有 32 个实体均已导出并以 `escalated_` 为前缀：
-
-**Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
-
-**SLA:** SlaPolicy, EscalationRule, BusinessSchedule, Holiday
-
-**Agents:** AgentProfile, AgentCapacity, Skill
-
-**Messaging:** CannedResponse, Macro, SideConversation, SideConversationReply
-
-**Admin:** Role, Permission, ApiToken, Webhook, WebhookDelivery, AuditLog
-
-**Custom:** CustomField, CustomFieldValue
-
-**Config:** EscalatedSettings, SavedView
-
-**Knowledge Base:** KbCategory, KbArticle
+Escalated 也提供 [Laravel](https://github.com/escalated-dev/escalated-laravel)、[Rails](https://github.com/escalated-dev/escalated-rails)、[Django](https://github.com/escalated-dev/escalated-django)、[AdonisJS](https://github.com/escalated-dev/escalated-adonis)、[Symfony](https://github.com/escalated-dev/escalated-symfony)、[Phoenix](https://github.com/escalated-dev/escalated-phoenix)、[Go](https://github.com/escalated-dev/escalated-go)、[.NET](https://github.com/escalated-dev/escalated-dotnet)、[Spring](https://github.com/escalated-dev/escalated-spring)、[WordPress](https://github.com/escalated-dev/escalated-wordpress) 和 [Filament](https://github.com/escalated-dev/escalated-filament) 版本。UI 位于 [escalated](https://github.com/escalated-dev/escalated)。
 
 ## 许可证
 
-MIT
+MIT。Copyright (c) 2026 Escalated.dev。参见 [LICENSE](../../LICENSE)。
