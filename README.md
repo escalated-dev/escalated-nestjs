@@ -1,756 +1,186 @@
-<p align="center">
-  <a href="docs/translations/README.ar.md">العربية</a> •
-  <a href="docs/translations/README.de.md">Deutsch</a> •
-  <b>English</b> •
-  <a href="docs/translations/README.es.md">Español</a> •
-  <a href="docs/translations/README.fr.md">Français</a> •
-  <a href="docs/translations/README.it.md">Italiano</a> •
-  <a href="docs/translations/README.ja.md">日本語</a> •
-  <a href="docs/translations/README.ko.md">한국어</a> •
-  <a href="docs/translations/README.nl.md">Nederlands</a> •
-  <a href="docs/translations/README.pl.md">Polski</a> •
-  <a href="docs/translations/README.pt-BR.md">Português (BR)</a> •
-  <a href="docs/translations/README.ru.md">Русский</a> •
-  <a href="docs/translations/README.tr.md">Türkçe</a> •
+<p align="center"><sub>
+  <a href="docs/translations/README.ar.md">العربية</a> ·
+  <a href="docs/translations/README.de.md">Deutsch</a> ·
+  <b>English</b> ·
+  <a href="docs/translations/README.es.md">Español</a> ·
+  <a href="docs/translations/README.fr.md">Français</a> ·
+  <a href="docs/translations/README.it.md">Italiano</a> ·
+  <a href="docs/translations/README.ja.md">日本語</a> ·
+  <a href="docs/translations/README.ko.md">한국어</a> ·
+  <a href="docs/translations/README.nl.md">Nederlands</a> ·
+  <a href="docs/translations/README.pl.md">Polski</a> ·
+  <a href="docs/translations/README.pt-BR.md">Português (BR)</a> ·
+  <a href="docs/translations/README.ru.md">Русский</a> ·
+  <a href="docs/translations/README.tr.md">Türkçe</a> ·
   <a href="docs/translations/README.zh-CN.md">简体中文</a>
+</sub></p>
+
+<p align="center">
+  <a href="https://escalated.dev"><img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/logo.png" width="72" height="72" alt="Escalated"></a>
 </p>
 
-# @escalated-dev/escalated-nestjs
+<h1 align="center">Escalated for NestJS</h1>
 
-[![Views](https://hits.sh/github.com/escalated-dev/escalated-nestjs.svg?style=flat&label=views&color=007ec6)](https://hits.sh/github.com/escalated-dev/escalated-nestjs/)
+<p align="center">
+  Add a complete helpdesk to your NestJS app.<br>
+  Tickets, SLAs, escalation rules, an agent inbox and a customer portal, running on your own database.
+</p>
 
-**Website:** [escalated.dev](https://escalated.dev)
+<p align="center">
+  <a href="https://escalated.dev"><b>Website</b></a> ·
+  <a href="https://escalated.dev/docs"><b>Docs</b></a> ·
+  <a href="https://escalated.dev/cloud"><b>Cloud</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a>
+</p>
 
-Embedded helpdesk module for NestJS applications. Drop-in ticketing, SLA management, knowledge base, and more.
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-dark.png">
+  <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/inbox-light.png" alt="The Escalated agent inbox: saved views with counts, SLA countdowns and priorities on every ticket" width="100%">
+</picture>
+
+## What it does
+
+<table>
+  <tr>
+    <td width="40%">
+      <h3>An inbox your agents can work in all day</h3>
+      Conversation, internal notes, canned replies and SLA timers on one screen. Tickets also arrive by email through Postmark, Mailgun or SES.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/ticket-light.png" alt="A ticket open in the agent workspace with the reply composer">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/dashboard-light.png" alt="The admin reports page with response times, CSAT and SLA breaches">
+      </picture>
+    </td>
+    <td width="40%">
+      <h3>SLAs and escalation rules you can see</h3>
+      Response and resolution targets with business hours, rules that reassign and notify when they slip, and reports on breaches.
+    </td>
+  </tr>
+  <tr>
+    <td width="40%">
+      <h3>A customer portal that's already built</h3>
+      Customers open tickets, reply and check status from your app. Embed the widget on other sites with one script tag.
+    </td>
+    <td width="60%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-dark.png">
+        <img src="https://raw.githubusercontent.com/escalated-dev/escalated/main/docs/assets/readme/portal-light.png" alt="The customer portal ticket list">
+      </picture>
+    </td>
+  </tr>
+</table>
 
 ## Features
 
-- **Ticket Management** -- Full CRUD with lifecycle tracking, priorities, departments, tags, and custom fields
-- **SLA Policies** -- Configurable response/resolution targets with business hours support
-- **Automations** -- Time-based processing via `@nestjs/schedule` (SLA checks, snooze wake-up, webhook retries)
-- **Escalation Rules** -- Automatic reassignment and notifications on SLA breach
-- **Macros & Canned Responses** -- One-click multi-action macros and templated replies
-- **Custom Fields** -- Dynamic fields with validation (text, number, select, checkbox, date)
-- **Knowledge Base** -- Articles with categories, search, view tracking, and helpfulness ratings
-- **Webhooks** -- HMAC-signed delivery with exponential backoff retry
-- **API Tokens** -- Bearer token authentication with scoped abilities
-- **Roles & Permissions** -- Granular permission system with NestJS guards
-- **Audit Logging** -- Interceptor-based activity tracking for all mutations
-- **Import System** -- Bulk import for tickets, tags, and departments
-- **Side Conversations** -- Threaded discussions within a ticket
-- **Ticket Merging & Linking** -- Merge duplicates, link related tickets
-- **Ticket Splitting** -- Break a ticket into separate issues
-- **Ticket Snooze** -- Snooze with automatic wake-up via cron
-- **Saved Views** -- Personal and shared filtered views
-- **Widget API** -- Public endpoints for embeddable support widget with rate limiting
-- **Public Ticket System** -- Unauthenticated submission via widget form or inbound email, Contact-based identity with email dedupe, configurable guest policy, signed Reply-To for threaded email conversations
-- **Workflow Engine** -- Admin-configured rules fire on ticket/reply events (conditions + actions: assign, tag, set priority/status/department, insert canned reply, etc.); evaluation logs per execution
-- **Access control** -- Roles & permissions, two-factor authentication and single sign-on (SAML, OAuth 2 / OIDC, JWT) as install-level switches (`access.rolesPermissions`, `access.twoFactor`, `access.sso`), enforced on every admin and agent route when on and hidden when off (see [docs/access-control.md](docs/access-control.md))
-- **Plugins** -- `@escalated-dev/plugin-sdk` plugins registered in the module run in-process, with Admin > Plugins, plugin pages, endpoints and webhooks (see [docs/plugins.md](docs/plugins.md))
-- **Real-time Broadcasting** -- Socket.IO gateway for live updates (opt-in)
-- **Capacity Management** -- Per-agent ticket limits with real-time tracking
-- **Skill-based Routing** -- Assign tickets based on agent skills and availability
-- **CSAT Ratings** -- Post-resolution satisfaction surveys with token-based submission
-- **2FA (TOTP)** -- Two-factor authentication for agents via `otplib`
-- **Guest Access** -- Token-based ticket access without authentication
-- **Internationalization** -- Translations sourced from the central [`@escalated-dev/locale`](https://github.com/escalated-dev/escalated-locale) package via `nestjs-i18n`, with a chained overlay loader for plugin-local and host-app overrides (see `src/i18n/overrides/README.md`)
+<table>
+<tr>
+<td width="33%" valign="top">
 
-## Requirements
+**Tickets and inbox**
+- Priorities, departments, tags and custom fields
+- Merge, link and split tickets
+- Snooze with automatic wake-up
+- Side conversations inside a ticket
+- Personal and shared saved views
+- Macros and canned responses
 
-- Node.js 22+ for the current dependency graph
-- NestJS 11
-- TypeORM 0.3.x (the published peer range)
-- Any TypeORM-supported database (PostgreSQL, MySQL, SQLite, etc.)
+</td>
+<td width="33%" valign="top">
 
-The manifest's broader Node 20 and Nest 10 compatibility declarations are under
-review. See the [dependency audit](docs/dependency-audit.md) for the existing
-engine mismatch, installed-host checks and held major upgrades.
+**SLAs and routing**
+- Response and resolution targets
+- Business hours support
+- Escalation rules on SLA breach
+- Per-agent capacity limits
+- Skill-based routing
 
-## Installation
+</td>
+<td width="33%" valign="top">
+
+**Customers**
+- Widget API with rate limiting
+- Public tickets from widget or email
+- Signed Reply-To email threading
+- Configurable guest policy
+- Token-based guest access
+- CSAT surveys after resolution
+- Knowledge base with search and ratings
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**Automation**
+- Workflows on ticket and reply events
+- Scheduled SLA checks and snooze wake-up
+- HMAC-signed webhooks with retries
+- Opt-in real-time updates over Socket.IO
+
+</td>
+<td width="33%" valign="top">
+
+**Access and security**
+- Roles and permissions with Nest guards
+- Two-factor authentication (TOTP)
+- SSO with SAML, OAuth 2 / OIDC or JWT
+- Bearer API tokens with scoped abilities
+- Audit log of every change
+
+</td>
+<td width="33%" valign="top">
+
+**Extending**
+- Plugins built with the plugin SDK
+- Bulk import of tickets, tags, departments
+- Translations from @escalated-dev/locale
+- Host overrides for any translation
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><a href="docs/features.md">Every feature in detail</a></sub></p>
+
+<p align="center"><b>Built with</b></p>
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://typeorm.io"><img src="https://img.shields.io/badge/TypeORM-FE0803?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM"></a>
+  <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"></a>
+  <a href="https://inertiajs.com"><img src="https://img.shields.io/badge/Inertia-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia"></a>
+</p>
+
+## Quick start
 
 ```bash
 npm install @escalated-dev/escalated-nestjs
 ```
 
-## Setup
+Then add `EscalatedModule.forRoot()` to your `AppModule` with your own `adminGuard`, `agentGuard` and `customerGuard`, and set `ui: { enabled: true }` to serve the screens (they are off by default). Needs Node.js 22+, NestJS 11 and TypeORM 0.3. The [getting started guide](docs/getting-started.md) covers every option.
 
-### 1. Import the module
+## Learn more
 
-```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { EscalatedModule } from '@escalated-dev/escalated-nestjs';
-import { AdminGuard, AgentGuard, CustomerGuard } from './auth'; // your own guards
+- [All features](docs/features.md) · [Getting started](docs/getting-started.md) · [The screens (Inertia UI)](docs/ui.md)
+- [API reference](docs/api.md) · [Events and extension points](docs/extending.md) · [Workflows](docs/workflows.md)
+- [Agent panel](docs/agent-panel.md) · [Access control](docs/access-control.md) · [Ticket access and routing](docs/ticket-access-and-routing.md)
+- [Embedding the widget](docs/embedding-the-widget.md) · [Embedding the admin](docs/embedding-admin.md) · [Guest access](docs/guest-access.md)
+- [Plugins](docs/plugins.md) · [Newsletters](docs/newsletters.md) · [Development](docs/development.md) · [Dependency audit](docs/dependency-audit.md)
 
-@Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: 'myapp',
-      username: 'user',
-      password: 'pass',
-      autoLoadEntities: true,
-      synchronize: true, // disable in production
-    }),
-    EscalatedModule.forRoot({
-      routePrefix: 'escalated',
-      // Required: admin, agent and customer routes refuse every request without them.
-      adminGuard: AdminGuard,
-      agentGuard: AgentGuard,
-      customerGuard: CustomerGuard,
-      appName: 'My App',
-      appUrl: 'https://myapp.com',
-      enableWebsockets: false,
-      enableKnowledgeBase: true,
-      enableCsat: true,
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 2. Configuration options
-
-| Option                | Type       | Default       | Description                             |
-| --------------------- | ---------- | ------------- | --------------------------------------- |
-| `routePrefix`         | `string`   | `'escalated'` | URL prefix for all routes               |
-| `connection`          | `string`   | --            | Named TypeORM DataSource for Escalated's tables (default DataSource when unset) |
-| `enableWebsockets`    | `boolean`  | `false`       | Enable Socket.IO real-time broadcasting |
-| `enableKnowledgeBase` | `boolean`  | `true`        | Enable KB articles and categories       |
-| `enableCsat`          | `boolean`  | `true`        | Enable satisfaction surveys             |
-| `enable2fa`           | `boolean`  | `false`       | Deprecated and unused; two-factor is `access.twoFactor` |
-| `appName`             | `string`   | `'Escalated'` | Branding name for emails                |
-| `appUrl`              | `string`   | --            | Base URL for links                      |
-| `debug`               | `boolean`  | `false`       | A 500 on an Inertia visit to a screen reaches your filters and Nest's handling instead of the generic Error page (see [docs/ui.md](docs/ui.md#errors)). Development only |
-
-### Database connection
-
-By default Escalated's entities register against your default TypeORM
-DataSource. Name a different one to keep the support tables somewhere else — a
-schema shared with a legacy system, a separate reporting store, or simply out
-of your primary database:
-
-```ts
-TypeOrmModule.forRoot({ name: 'support', /* ... */ }),
-
-EscalatedModule.forRoot({
-  connection: 'support',
-});
-```
-
-The name is whatever you passed to `TypeOrmModule.forRoot({ name })`.
-
-Every service in the package injects its repository with a plain
-`@InjectRepository(X)`, which binds the default DataSource's token where the
-decorator is written — long before your connection name is known. Escalated
-registers its entities against the named DataSource and aliases those default
-tokens onto it, so the whole package follows your choice with no change to how
-you consume it.
-
-**Your user entity does not move.** It belongs to your application, and
-Escalated stores host user ids as plain unconstrained columns precisely so the
-two can live on different connections — there is no foreign key that would have
-to span them.
-| `maxFileSize`         | `number`   | `10485760`    | Max upload size in bytes                |
-| `webhookMaxRetries`   | `number`   | `3`           | Webhook retry attempts                  |
-| `access`              | `object`   | all off       | Install-level access switches: `rolesPermissions`, `twoFactor`, `sso` (env `ESCALATED_ROLES_PERMISSIONS`, `ESCALATED_TWO_FACTOR`, `ESCALATED_SSO`) (see [docs/access-control.md](docs/access-control.md)) |
-| `guestAccess`         | `object`   | --            | Verified guest access: `secret`, `ttlMinutes`, code budgets, `legacyTokens`, `sendCode` (see [docs/guest-access.md](docs/guest-access.md)) |
-| `slaWarningMinutes`   | `number`   | `30`          | Minutes before an SLA deadline that `sla.warning` fires (`0` = off) |
-| `widgetOrigins`       | `string[]` | `[]`          | Sites that may embed the widget (see [Embedding the widget](docs/embedding-the-widget.md)) |
-| `adminGuard`          | `class`    | --            | Guard for `/escalated/admin/*`. Unset refuses every admin route (see Route guards) |
-| `agentGuard`          | `class`    | --            | Guard for `/escalated/agent/*`. Unset refuses every agent route |
-| `customerGuard`       | `class`    | --            | Guard for `/escalated/customer/tickets/*`. Unset refuses every customer ticket route |
-| `userResolver`        | `function` | --            | Extract user from request               |
-| `userEntity`          | `class \| string` | --      | Your user entity (or table); SSO finds users in it by email when `sso.findUserByEmail` is unset |
-| `session`             | `object \| false` | --      | Escalated's own session for its routes when the host mounts none (two-factor and SSO; needs `express-session`) |
-| `mail`                | `object`   | --            | Outbound email config (see below)       |
-| `inbound`             | `object`   | --            | Inbound email config (see below)        |
-| `guestPolicy`         | `object`   | unassigned    | Guest identity policy (see below)       |
-| `ticketActions`       | `object`   | `{actions:[]}`| Custom agent ticket actions (see below) |
-| `ticketSubjects`      | `object`   | `{types:[]}`  | Host entities a ticket is about (see below) |
-
-#### Route guards (`adminGuard`, `agentGuard`, `customerGuard`)
-
-Escalated owns no users or sessions, so your app decides who is an admin, an agent or a customer. Give each route group a guard:
-
-| Option                                   | Routes it protects              |
-| ---------------------------------------- | ------------------------------- |
-| `adminGuard`                             | `/escalated/admin/*`            |
-| `agentGuard`                             | `/escalated/agent/*`            |
-| `customerGuard`                          | `/escalated/customer/tickets/*` |
-| either `agentGuard` or `customerGuard`   | `/escalated/attachments/*`      |
-
-**Route groups fail closed.** When a group's guard is not configured, every request to that group is refused with `403` and a warning is logged once. The routes are never open by default.
-
-A guard is any NestJS `CanActivate`, given as a class or an instance. If you also register the class as a provider in your own module, Escalated uses that instance, so the guard can inject your services. Otherwise Escalated creates it with dependency injection inside its own module. An exception thrown by the guard (for example `UnauthorizedException`) is sent as the response; a guard that returns `false` produces `403`.
-
-Controllers read the acting user from `req.user.id`, so authenticate the request and set `req.user` in the guard, or in middleware that runs before it.
-
-```typescript
-@Injectable()
-export class SupportAdminGuard implements CanActivate {
-  constructor(private readonly auth: AuthService) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest();
-    const user = await this.auth.userFromRequest(req); // your authentication
-    if (!user) throw new UnauthorizedException();
-    req.user = user;
-    return user.isAdmin;
-  }
-}
-
-@Module({
-  imports: [
-    EscalatedModule.forRoot({
-      adminGuard: SupportAdminGuard,
-      agentGuard: SupportAgentGuard,
-      customerGuard: SupportCustomerGuard,
-    }),
-  ],
-  providers: [AuthService, SupportAdminGuard, SupportAgentGuard, SupportCustomerGuard],
-})
-export class AppModule {}
-```
-
-None of the three guards apply to these routes, which are public or carry their own authentication:
-
-- `/escalated/widget/*`, including widget chat, and `/escalated/guest/*` (public; guests prove their email with a code and read their ticket with an expiring grant, see [Verified guest access](docs/guest-access.md))
-- `/escalated/customer/kb/*` (published knowledge base articles)
-- `/escalated/webhook/email/*` (`X-Escalated-Inbound-Secret`, see below)
-- `/escalated/api/v1/auth/*` (your `apiAuth` callbacks)
-- `/escalated/api/v1/mobile/guest/*` (the mobile guest API: email codes and expiring grants, see [Verified guest access](docs/guest-access.md#mobile-guest-api))
-- `/escalated/n/*` and `/escalated/webhooks/newsletter/*` (newsletter tracking, unsubscribe and ESP webhooks)
-
-The newsletter admin routes (`/admin/newsletters/*`) check the `newsletters.manage` and `newsletters.send` permissions on every request.
-
-#### Outbound email (`mail`)
-
-```typescript
-EscalatedModule.forRoot({
-  mail: {
-    from: 'support@example.com',
-    transport: {
-      host: 'smtp.example.com',
-      port: 587,
-      auth: { user: 'x', pass: 'y' },
-    },
-  },
-});
-```
-
-When `mail` is absent, the `MailerModule` is not registered and `EmailService` silently no-ops — modules boot cleanly without a transport.
-
-#### Inbound email (`inbound`)
-
-```typescript
-EscalatedModule.forRoot({
-  inbound: {
-    replyDomain: 'reply.example.com',   // domain in our Message-ID + Reply-To
-    replySecret: '32-byte-hex-secret',  // HMAC key for signed reply-to
-    webhookSecret: 'shared-secret',     // X-Escalated-Inbound-Secret header value
-    provider: 'postmark',               // parser adapter
-  },
-});
-```
-
-Webhook endpoint: `POST /escalated/webhook/email/inbound`. Guard requires `X-Escalated-Inbound-Secret` header to match `webhookSecret` (constant-time compare).
-
-How an inbound email is routed:
-
-- **Finding the ticket.** With `replySecret` set (outbound mail then carries `reply+{id}.{hmac8}@replyDomain` as its Reply-To), only that signed address identifies a ticket. Without a secret, the `In-Reply-To` / `References` headers and a `[TK-XXX]` subject reference are used instead.
-- **Sender check.** A matched email becomes a reply only when the `From` address (case-insensitive) is the ticket's requester: the ticket's Contact, or a Contact linked to the requester user. The reply is posted as that requester. Identity is never taken from `From`, so an email naming an agent's address is not posted as that agent; agents reply in the app.
-- **Everything else** (no match, or a sender who is not the requester) creates a new ticket for the sender, so mail is never dropped and the matched ticket is left untouched.
-
-`From` can still be forged for the requester's own address, so also have your inbound provider enforce SPF/DKIM/DMARC.
-
-#### Guest policy (`guestPolicy`)
-
-Controls the identity assigned to a ticket submitted via the public form or inbound email.
-
-```typescript
-// Default: no host-app user, contact carries identity
-{ mode: 'unassigned' }
-
-// Assign all guest tickets to a shared "guest" user in the host app
-{ mode: 'guest_user', guestUserId: 42 }
-
-// Ticket stays unassigned until the guest accepts a signup invite
-{ mode: 'prompt_signup', signupUrlTemplate: 'https://app.example.com/signup?token={token}' }
-```
-
-Admins can override at runtime via `PUT /escalated/admin/settings`:
-```json
-{ "key": "guest_policy", "type": "json", "value": { "mode": "guest_user", "guestUserId": 99 } }
-```
-
-#### Host user key type (UUID / string users)
-
-Escalated stores references to your host app's users (ticket requester,
-assignee, reply author, etc.). By default those columns are integers, matching
-a classic auto-incrementing user primary key. If your host app's user table
-uses a **UUID or other string primary key**, set `ESCALATED_USER_KEY_TYPE`
-before the app bootstraps so the TypeORM entity columns are created as
-`varchar(255)` instead of `int`:
-
-```bash
-# .env — one of: int (default) | bigint | uuid | string
-ESCALATED_USER_KEY_TYPE=uuid
-```
-
-This is read from the environment (not the module options) because TypeORM
-column decorators are evaluated at class-load time, before
-`EscalatedModule.forRoot()` runs. Existing integer-keyed installs need no
-change — the default (`int`) produces exactly the same schema as before.
-`uuid` and `string` both map to a portable `varchar(255)` that can hold a UUID
-or a stringified integer id. All Escalated APIs accept a host user id as either
-a `number` or a `string` (`UserId`).
-
-### 3. Database migration
-
-With `synchronize: true`, TypeORM auto-creates tables. For production, generate migrations:
-
-```bash
-npx typeorm migration:generate -n EscalatedSetup
-npx typeorm migration:run
-```
-
-All tables are prefixed with `escalated_` to avoid conflicts.
-
-## Embedding the admin in your own admin panel (optional)
-
-Escalated's admin is a standalone panel at `/escalated/admin` by default, and
-needs no setup. If your app already has an admin panel, you can show
-Escalated's admin screens inside it instead: under your prefix, your guards
-and middleware, your Vue layout or server-rendered template, or in an iframe
-for another origin. It is off unless you configure it (it needs the screens,
-`ui.enabled`):
-
-```typescript
-import { EscalatedModule, embedAdmin } from '@escalated-dev/escalated-nestjs';
-
-EscalatedModule.forRoot({
-  adminGuard: AdminGuard, // Escalated's admin gate stays on the embedded admin
-  ui: {
-    enabled: true,
-    embed: embedAdmin({ prefix: 'admin/support', guards: [BackOfficeGuard], layout: 'Layouts/AdminLayout' }),
-  },
-});
-```
-
-The admin routes then answer under `/admin/support` (the old
-`/escalated/admin` URLs 404; route names are unchanged), pages carry an
-`escalated.embed` flag, and the admin menu is shared as `escalated.navigation`
-for your sidebar. See [docs/embedding-admin.md](docs/embedding-admin.md) for
-the three setups (Vue + Inertia layout, server-rendered root view, iframe),
-every option and the security notes.
-
-## Screens (Inertia UI)
-
-The shared Vue 3 + Inertia screens for agents, customers and admins are served
-when you set `ui: { enabled: true }`. They are off by default, which keeps the
-package API-only (escalated-laravel defaults to on; this default will flip in a
-future minor). See [docs/ui.md](docs/ui.md).
-
-## API Endpoints
-
-### Agent Routes (`/escalated/agent/`)
-
-Protected by `agentGuard`.
-
-| Method | Path                                    | Description               |
-| ------ | --------------------------------------- | ------------------------- |
-| GET    | `/tickets`                              | List tickets with filters |
-| POST   | `/tickets`                              | Create ticket             |
-| GET    | `/tickets/:id`                          | Show ticket with replies  |
-| PUT    | `/tickets/:id`                          | Update ticket             |
-| DELETE | `/tickets/:id`                          | Delete ticket             |
-| POST   | `/tickets/:id/replies`                  | Add reply                 |
-| POST   | `/tickets/:id/actions/:actionKey`       | Trigger custom action     |
-| POST   | `/tickets/:id/merge/:targetId`          | Merge tickets             |
-| POST   | `/tickets/:id/split`                    | Split ticket              |
-| POST   | `/tickets/:id/snooze`                   | Snooze ticket             |
-| GET    | `/tickets/:ticketId/links`              | List ticket links         |
-| POST   | `/tickets/:ticketId/links`              | Link tickets              |
-| GET    | `/tickets/:ticketId/side-conversations` | List side conversations   |
-| POST   | `/tickets/:ticketId/side-conversations` | Create side conversation  |
-| GET    | `/macros`                               | List macros               |
-| POST   | `/macros/:macroId/execute/:ticketId`    | Execute macro             |
-| GET    | `/canned-responses`                     | List canned responses     |
-| GET    | `/saved-views`                          | List saved views          |
-| POST   | `/saved-views`                          | Create saved view         |
-
-### Admin Routes (`/escalated/admin/`)
-
-Protected by `adminGuard`.
-
-| Method  | Path                    | Description               |
-| ------- | ----------------------- | ------------------------- |
-| GET/PUT | `/settings`             | Manage settings           |
-| CRUD    | `/departments`          | Manage departments        |
-| CRUD    | `/tags`                 | Manage tags               |
-| CRUD    | `/custom-fields`        | Manage custom fields      |
-| CRUD    | `/roles`                | Manage roles              |
-| CRUD    | `/sla/policies`         | Manage SLA policies       |
-| CRUD    | `/sla/escalation-rules` | Manage escalation rules   |
-| CRUD    | `/sla/schedules`        | Manage business schedules |
-| CRUD    | `/webhooks`             | Manage webhooks           |
-| CRUD    | `/api-tokens`           | Manage API tokens         |
-| CRUD    | `/agents`               | Manage agent profiles     |
-| CRUD    | `/macros`               | Manage macros             |
-| CRUD    | `/workflows`            | Manage workflows (see [Workflows](docs/workflows.md)) |
-| CRUD    | `/canned-responses`     | Manage canned responses   |
-| CRUD    | `/kb/categories`        | Manage KB categories      |
-| CRUD    | `/kb/articles`          | Manage KB articles        |
-| POST    | `/import/tickets`       | Bulk import tickets       |
-| GET/POST | `/settings/two-factor[/setup,/confirm,/disable]` | Your own two-factor enrolment (any staff user; 404 unless `access.twoFactor`) |
-| GET     | `/audit-logs`           | View audit logs           |
-
-### Customer Routes (`/escalated/customer/`)
-
-The ticket routes are protected by `customerGuard`. The knowledge base routes are public.
-
-| Method | Path                   | Description          |
-| ------ | ---------------------- | -------------------- |
-| GET    | `/tickets`             | List own tickets     |
-| POST   | `/tickets`             | Create ticket        |
-| GET    | `/tickets/:id`         | View own ticket      |
-| POST   | `/tickets/:id/replies` | Reply to own ticket  |
-| POST   | `/tickets/:id/rate`    | Submit CSAT rating   |
-| GET    | `/kb/categories`       | Browse KB categories |
-| GET    | `/kb/articles`         | Browse KB articles   |
-| GET    | `/kb/search`           | Search KB            |
-
-### Widget Routes (`/escalated/widget/`)
-
-Public. No route-group guard applies.
-
-| Method | Path                   | Description               |
-| ------ | ---------------------- | ------------------------- |
-| GET    | `/config`              | Widget settings (colour, position, greeting, departments, `accepts_metadata`) |
-| GET    | `/embed.js`            | Standalone widget script for other sites |
-| POST   | `/verification`        | Email a guest a one-time code (`ticket`, `chat` or `lookup`) |
-| POST   | `/lookup`              | Find a ticket by reference and proven email; answers fresh grants |
-| POST   | `/tickets`             | Create ticket (public). A guest sends `email` plus the code (`verification_id`, `verification_code`) and gets an expiring grant; a host-authenticated `req.user` needs no code. A `requesterId` in the body is ignored. Optional `metadata` |
-| GET    | `/tickets/:reference`  | View ticket (`Authorization: Bearer <grant>`) |
-| POST   | `/tickets/:reference/replies` | Reply (`Authorization: Bearer <grant>`) |
-| GET    | `/kb/search`           | Search KB                 |
-| POST   | `/rate/:token`         | Submit CSAT               |
-
-Live chat lives under `/escalated/widget/chat/`. To run the widget on another
-site, list that site and load `embed.js` there; see
-[Embedding the widget](docs/embedding-the-widget.md).
-
-## Using Services Directly
-
-All services are exported and can be injected into your own code:
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { TicketService, AgentService } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly ticketService: TicketService,
-    private readonly agentService: AgentService,
-  ) {}
-
-  async assignToAvailableAgent(ticketId: number) {
-    const agent = await this.agentService.findAvailableAgent();
-    if (agent) {
-      await this.ticketService.update(ticketId, { assigneeId: agent.userId }, 0);
-    }
-  }
-}
-```
-
-## Events
-
-The module emits events via `@nestjs/event-emitter`:
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import { ESCALATED_EVENTS, TicketCreatedEvent } from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class NotificationService {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CREATED)
-  handleTicketCreated(event: TicketCreatedEvent) {
-    // Send notification, update external system, etc.
-  }
-}
-```
-
-Events: `TICKET_CREATED`, `TICKET_UPDATED`, `TICKET_STATUS_CHANGED`, `TICKET_RESOLVED`, `TICKET_CLOSED`, `TICKET_REOPENED`, `TICKET_ASSIGNED`, `TICKET_UNASSIGNED`, `TICKET_ESCALATED`, `TICKET_PRIORITY_CHANGED`, `TICKET_DEPARTMENT_CHANGED`, `TICKET_TAG_ADDED`, `TICKET_TAG_REMOVED`, `TICKET_REPLY_CREATED` (every reply, internal notes included), `NOTE_CREATED` (internal notes), `TICKET_MERGED`, `TICKET_SPLIT`, `SLA_WARNING`, `SLA_BREACHED`, `CHAT_STARTED`, `CHAT_ASSIGNED`, `CHAT_TRANSFERRED`, `CHAT_MESSAGE`, `CHAT_ENDED`, `TICKET_CUSTOM_ACTION_TRIGGERED`. Unassigning a ticket emits `TICKET_UNASSIGNED`, not `TICKET_ASSIGNED`. `CHAT_ACCEPTED` is deprecated and still emitted beside `CHAT_ASSIGNED`.
-
-`sla.warning` fires once per deadline that falls due within `slaWarningMinutes` (default `30`, `0` turns it off). `ticket.escalated` fires the first time each escalation rule matches a ticket. Existing installations run the exported `SlaWarningFlags1792540800000` migration, which adds the warning flags to tickets.
-
-Escalated registers `EventEmitterModule` with `wildcard: true` and the `.` delimiter, so a listener can use a pattern such as `@OnEvent('escalated.ticket.*')`. A listener name that contains `*` is treated as a pattern; names without `*` match exactly, as before.
-
-### Outbound webhooks
-
-Webhooks managed under `/escalated/admin/webhooks` receive the shared event vocabulary (escalated-developer-context ADR 2026-10-21, exported as `CANONICAL_EVENTS`): `ticket.created`, `ticket.updated`, `ticket.status_changed`, `ticket.resolved`, `ticket.closed`, `ticket.reopened`, `ticket.assigned`, `ticket.unassigned`, `ticket.escalated`, `ticket.priority_changed`, `ticket.department_changed`, `ticket.tag_added`, `ticket.tag_removed`, `reply.created`, `note.created`, `sla.warning`, `sla.breached`, `chat.started`, `chat.assigned`, `chat.transferred`, `chat.message` and `chat.ended`, plus `ticket.merged` and `ticket.split`. Each is a JSON `POST` signed with `X-Escalated-Signature` (HMAC-SHA256 of the body with the webhook's secret). Subscribe to `*` for all of them. Chat payloads carry `chat: { session_id, ticket_id, status, agent_id, department_id, ... }`, never the visitor's token or email.
-
-Names from earlier releases are read as their canonical name (`LEGACY_EVENT_NAMES`): a subscription stored as `ticket.reply_created` or `ticket.replied` receives `reply.created`, `ticket.tagged` receives `ticket.tag_added`, and so on. Saving a webhook stores canonical names. Workflows saved with a legacy trigger keep running.
-
-A webhook URL must use `http` or `https` and must resolve only to public addresses. Loopback, private, link-local (including cloud metadata) and reserved targets are refused when the webhook is saved (`400`) and checked again before every delivery attempt. Redirects are not followed.
-
-## Ticket subjects
-
-A ticket has a **requester** (the person who raised it) and a **subject line**
-(free text). Sometimes a ticket is also *about* one or more host-app entities —
-a Project, a Customer, an asset — that are not people. Attach them as ticket
-**subjects** so agents see what the ticket concerns and can jump straight to it
-in your app.
-
-Implement the `TicketSubject` contract on any host model you want attachable:
-
-```typescript
-import { TicketSubject } from '@escalated-dev/escalated-nestjs';
-
-export class Project implements TicketSubject {
-  ticketSubjectTitle(): string {
-    return this.name;
-  }
-
-  ticketSubjectSubtitle(): string | null {
-    return `Project · ${this.customer.name}`;
-  }
-
-  ticketSubjectUrl(): string | null {
-    return `/projects/${this.id}`;
-  }
-
-  ticketSubjectColor(): string | null {
-    return '#2563eb';
-  }
-
-  ticketSubjectIcon(): string | null {
-    return 'folder';
-  }
-}
-```
-
-Register an allowlist and optional resolver when importing the module. NestJS
-does not own your host models — the resolver maps a stored `type` + `id` to a
-`TicketSubject` for API serialization:
-
-```typescript
-EscalatedModule.forRoot({
-  ticketSubjects: {
-    types: ['Project', 'Customer'],
-    resolver: async (type, id) => {
-      if (type === 'Project') return projectRepo.findOne({ where: { id } });
-      if (type === 'Customer') return customerRepo.findOne({ where: { id } });
-      return null;
-    },
-  },
-});
-```
-
-Each attached subject is serialized on the ticket as:
-
-```json
-{
-  "type": "Project",
-  "id": "7",
-  "role": "project",
-  "title": "Acme Redesign",
-  "subtitle": "Project · Acme",
-  "url": "/projects/7",
-  "color": "#2563eb",
-  "icon": "folder",
-  "missing": false
-}
-```
-
-`subjectId` is stored as a string so integer, UUID, or string-keyed host models
-all work. When the resolver is absent or returns null, `title` falls back to
-`type#id`, presentation fields are null, and `missing` is `true`.
-
-Agent API (types must be allowlisted):
-
-- `POST /escalated/agent/tickets/:id/subjects` — body `{ type, id, role? }`
-- `DELETE /escalated/agent/tickets/:id/subjects/:linkId`
-
-Programmatic attach via `TicketSubjectService` works for any type when the
-allowlist is empty; the agent API only accepts allowlisted types.
-
-## Custom Ticket Actions
-
-Host applications can add custom buttons to the agent ticket screen and handle
-clicks with normal event listeners. Register actions when importing the module:
-
-```typescript
-EscalatedModule.forRoot({
-  ticketActions: {
-    actions: [
-      {
-        key: 'sync-crm',
-        label: 'Sync CRM',
-        variant: 'primary',
-        confirmation: 'Sync this ticket to the CRM?',
-        metadata: { icon: 'refresh-cw' },
-      },
-    ],
-  },
-});
-```
-
-`label`, `visible`, `enabled`, `confirmation`, and `metadata` may each be a
-value or a `(ticket, user) => value` function for dynamic behavior. For richer
-logic you can instead provide an object implementing the `TicketAction`
-interface (`key()`, `label()`, `visible()`, `enabled()`, `variant()`,
-`confirmation()`, `metadata()`).
-
-The agent ticket show response exposes the visible actions as `customActions`
-(each with a `url` and `method`). When the agent triggers one
-(`POST /escalated/agent/tickets/:id/actions/:actionKey`), Escalated dispatches
-`TicketCustomActionTriggered`:
-
-```typescript
-import { OnEvent } from '@nestjs/event-emitter';
-import {
-  ESCALATED_EVENTS,
-  TicketCustomActionTriggeredEvent,
-} from '@escalated-dev/escalated-nestjs';
-
-@Injectable()
-export class CrmSyncListener {
-  @OnEvent(ESCALATED_EVENTS.TICKET_CUSTOM_ACTION_TRIGGERED)
-  handle(event: TicketCustomActionTriggeredEvent) {
-    if (event.action !== 'sync-crm') return;
-    // event.ticket, event.userId, event.payload, event.metadata
-  }
-}
-```
-
-The event exposes `ticket`, `action`, `userId`, `payload`, and `metadata`.
-Escalated also records an internal note on the ticket whenever an action fires,
-for auditability.
-
-## Real-time Updates
-
-Enable WebSocket broadcasting for live ticket updates:
-
-```typescript
-EscalatedModule.forRoot({
-  enableWebsockets: true,
-  // Who is connecting: return the host user id, or null for a guest.
-  websocketAuth: async (socket) => verifyMyToken(socket.handshake.auth.token),
-  // Agent rooms, the chat queue and internal notes need confirmed roles.
-  ticketAccess: { resolveUser: async (id) => ({ id, isAgent: true, isAdmin: false }) },
-});
-```
-
-Every connection must identify a host user or present a guest token
-(`auth.guestToken`, the ticket's guest access token, or `auth.chatToken`, the
-widget chat visitor token); anything else is disconnected. Without
-`websocketAuth`, `userResolver(handshakeRequest)` or a `user` set on the
-handshake request by your socket middleware is used. New tickets, queue, SLA and
-assignment events go to agents only, internal notes never reach guest or
-customer sockets, and guest tokens are never broadcast.
-
-Plugins broadcast through the same gateway with `ctx.broadcast`: `toUser`
-reaches that user's sockets, `toTicket` the sockets in the ticket's room that
-may see it, and `toChannel(name, ...)` the sockets that sent
-`join:plugin` with `{ channel: name }` (any connection may join; `leave:plugin`
-leaves).
-
-Client-side (Socket.IO):
-
-```javascript
-const socket = io('/escalated', { auth: { token } });
-socket.emit('join:ticket', { ticketId: 1 });
-socket.on('ticket:updated', (data) => console.log('Updated:', data));
-socket.on('ticket:reply', (data) => console.log('New reply:', data));
-```
-
-## Development
-
-```bash
-git clone https://github.com/escalated-dev/escalated-nestjs.git
-cd escalated-nestjs
-npm ci
-npm test -- --runInBand
-npm run build
-npm run lint
-npm run format:check
-npm run test:package
-npm audit
-```
-
-Use a current patched Node 22 release for development (`.nvmrc` selects 22.x).
-CI installs the committed lockfile with strict peer checking and runs the test
-suite on Node 20, 22 and 24, plus the PostgreSQL/MySQL access and migration checks.
-Node 20's existing upstream engine mismatch remains open; a functional test
-pass does not establish engine compatibility. The full audit also reports the
-remaining unpatched `braces` and `sprintf-js` findings described above.
-
-## TypeORM Entities
-
-All 32 entities are exported and prefixed with `escalated_`:
-
-**Core:** Ticket, TicketStatus, Reply, Attachment, TicketActivity, Tag, Department, TicketLink, SatisfactionRating
-
-**SLA:** SlaPolicy, EscalationRule, BusinessSchedule, Holiday
-
-**Agents:** AgentProfile, AgentCapacity, Skill
-
-**Messaging:** CannedResponse, Macro, SideConversation, SideConversationReply
-
-**Admin:** Role, Permission, ApiToken, Webhook, WebhookDelivery, AuditLog
-
-**Custom:** CustomField, CustomFieldValue
-
-**Config:** EscalatedSettings, SavedView
-
-**Knowledge Base:** KbCategory, KbArticle
-
-**Newsletters (optional):** NewsletterList, NewsletterListMember, NewsletterTemplate, Newsletter, NewsletterDelivery
-
-## Newsletters (optional, disabled by default)
-
-Admin-only broadcast feature for sending Markdown emails to contacts. Off by default — when disabled, `NewsletterModule` is not imported and its entities are not registered.
-
-```ts
-EscalatedModule.forRoot({
-  appUrl: 'https://support.example.com',
-  enableNewsletters: true,
-  newsletters: {
-    defaultFrom: 'hi@example.com',
-    defaultTheme: 'default',
-    rateLimitPerMinute: 60,
-    trackingEnabled: true,
-    brand: {
-      name: 'Acme',
-      accent: '#2563eb',
-      physicalAddress: 'Acme Inc. · 123 Main St · Springfield USA',
-    },
-  },
-  mail: {
-    from: 'hi@example.com',
-    transport: { service: 'postmark', auth: { user: '...', pass: '...' } },
-  },
-})
-```
-
-Schedule the dispatcher every minute. The cron tick is currently exposed via `NewsletterDispatcherService.dispatchBatch()` — wire it into your host's scheduler module (or call from a controller for testing):
-
-```ts
-@Cron(CronExpression.EVERY_MINUTE)
-async runNewsletterDispatch() {
-  await this.newsletterDispatcher.dispatchBatch();
-}
-```
-
-Custom themes are Handlebars files placed in the directory pointed to by `newsletters.themesDir`. Each theme receives `subject`, `body` (pre-rendered HTML), `unsubscribe_url`, `view_in_browser_url`, and `brand.*`.
+Escalated is also available for [Laravel](https://github.com/escalated-dev/escalated-laravel), [Rails](https://github.com/escalated-dev/escalated-rails), [Django](https://github.com/escalated-dev/escalated-django), [AdonisJS](https://github.com/escalated-dev/escalated-adonis), [Symfony](https://github.com/escalated-dev/escalated-symfony), [Phoenix](https://github.com/escalated-dev/escalated-phoenix), [Go](https://github.com/escalated-dev/escalated-go), [.NET](https://github.com/escalated-dev/escalated-dotnet), [Spring](https://github.com/escalated-dev/escalated-spring), [WordPress](https://github.com/escalated-dev/escalated-wordpress) and [Filament](https://github.com/escalated-dev/escalated-filament). The UI lives in [escalated](https://github.com/escalated-dev/escalated).
 
 ## License
 
-MIT - Copyright (c) Escalated.dev. See [LICENSE](LICENSE).
-
-See [ticket access and routing](docs/ticket-access-and-routing.md) for opt-in department/account visibility and targeted SLAs.
+MIT. Copyright (c) 2026 Escalated.dev. See [LICENSE](LICENSE).
