@@ -261,6 +261,7 @@ import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
 
 // Scheduling
 import { EscalatedSchedulerService } from './scheduling/escalated-scheduler.service';
+import { EscalatedSetupCheck } from './config/setup-check';
 
 // Gateway
 import { EscalatedGateway } from './gateway/escalated.gateway';
@@ -609,6 +610,7 @@ export class EscalatedModule implements NestModule {
         InboundWebhookSignatureGuard,
         AuditLogInterceptor,
         EscalatedSchedulerService,
+        EscalatedSetupCheck,
         WorkflowListener,
         EmailListener,
         RecordCustomActionInternalNoteListener,

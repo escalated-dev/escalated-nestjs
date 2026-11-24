@@ -28,6 +28,7 @@ import {
   twoFactorPassed,
 } from '../access/two-factor-session';
 import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../config/escalated.config';
+import { missingUserMessage } from '../config/request-user';
 import { ESCALATED_ROUTE_GROUP, EscalatedStaffGuard } from '../guards/escalated-route.guard';
 import { TwoFactorService } from '../services/two-factor.service';
 import { back, inertia, redirect } from '../ui/inertia';
@@ -203,7 +204,7 @@ export class TwoFactorController {
 
   private userId(req: any) {
     const id = this.access.userId(req);
-    if (!id) throw new ForbiddenException('Host authentication must identify the current user');
+    if (!id) throw new ForbiddenException(missingUserMessage(req));
     return id;
   }
 

@@ -70,6 +70,10 @@ export { AgentPanelData1793664000000 } from './migrations/1793664000000-AgentPan
 export * from './access';
 export * from './events/event-names';
 
+// Setup check
+export { EscalatedSetupCheck, SetupProblem, setupProblems } from './config/setup-check';
+export { missingUserMessage } from './config/request-user';
+
 // Widget embedding
 export { WidgetCorsMiddleware } from './middleware/widget-cors.middleware';
 export { WIDGET_EMBED_ORIGIN, embedOrigin } from './config/widget-embed';

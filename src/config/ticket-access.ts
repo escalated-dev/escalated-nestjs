@@ -13,6 +13,7 @@ import type { EscalatedModuleOptions } from './escalated.config';
 import type { UserId } from './user-id-column';
 import { Ticket } from '../entities/ticket.entity';
 import { embedOrigin } from './widget-embed';
+import { missingUserMessage } from './request-user';
 
 export interface AccountIdentity {
   type: string;
@@ -292,7 +293,7 @@ export class TicketAccessInterceptor implements NestInterceptor {
             typeof route === 'string' &&
             /^escalated\/(agent|admin)(\/|$)/.test(route)
           ) {
-            throw new ForbiddenException('Host authentication must identify the current user');
+            throw new ForbiddenException(missingUserMessage(request));
           }
           if (request.guestTicket && !(await this.access.allows(actor, request.guestTicket)))
             throw new NotFoundException();
