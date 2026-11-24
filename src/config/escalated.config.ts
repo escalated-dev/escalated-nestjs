@@ -103,6 +103,36 @@ export interface EscalatedModuleOptions {
    */
   customerGuard?: any;
 
+  /**
+   * Extra guards for the customer routes, run after `customerGuard` (default
+   * `[]`). They apply to the customer ticket routes (JSON and screens), the
+   * customer side of attachment downloads, and the customer knowledge base
+   * (`/escalated/customer/kb/*`, `/escalated/kb`). While the list is empty the
+   * knowledge base stays public as before; once it is set, the knowledge base
+   * also runs `customerGuard` and then these guards. Each entry is a
+   * `CanActivate` class or instance, like `customerGuard`; every one must
+   * admit the request (one returning false gives 403).
+   *
+   * Use it to make the portal staff-only: pass a guard that admits only your
+   * support staff, together with `guest.routesEnabled: false` and
+   * `widget.enabled: false`.
+   */
+  customerRouteGuards?: any[];
+
+  /**
+   * The embeddable widget. `enabled` (default true, else env
+   * `ESCALATED_WIDGET_ENABLED`): false registers none of the widget routes
+   * (`/escalated/widget/*`, widget chat, `embed.js`).
+   */
+  widget?: { enabled?: boolean };
+
+  /**
+   * The guest portal. `routesEnabled` (default true, else env
+   * `ESCALATED_GUEST_ROUTES`): false registers none of the guest routes
+   * (`/escalated/guest/*`, JSON and screens).
+   */
+  guest?: { routesEnabled?: boolean };
+
   /** Enable WebSocket broadcasting (default: false) */
   enableWebsockets?: boolean;
 

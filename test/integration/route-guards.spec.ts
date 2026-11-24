@@ -258,6 +258,71 @@ describe('Escalated route guards', () => {
     });
   });
 
+  describe('customerRouteGuards (staff-only installs)', () => {
+    const staffOnly: CanActivate = {
+      canActivate(context: ExecutionContext) {
+        return context.switchToHttp().getRequest().user?.staff === true;
+      },
+    };
+    const CUSTOMER_ROUTES = ['/escalated/customer/tickets', '/escalated/customer/kb/categories'];
+
+    it('refuses a signed-in user who fails the extra guard on customer and KB routes', async () => {
+      running = await startApp({
+        customerGuard: allow({ id: 5 }),
+        customerRouteGuards: [staffOnly],
+      });
+
+      for (const path of CUSTOMER_ROUTES) {
+        expect((await running.request('GET', path)).status).toBe(403);
+      }
+      expect(running.stubs.tickets.findAll).not.toHaveBeenCalled();
+      expect(running.stubs.kb.findAllCategories).not.toHaveBeenCalled();
+    });
+
+    it('admits a user who passes customerGuard and every extra guard', async () => {
+      running = await startApp({
+        customerGuard: allow({ id: 5, staff: true }),
+        customerRouteGuards: [staffOnly, allow()],
+      });
+
+      for (const path of CUSTOMER_ROUTES) {
+        expect((await running.request('GET', path)).status).toBe(200);
+      }
+    });
+
+    it('runs customerGuard before the extra guards on the knowledge base', async () => {
+      running = await startApp({ customerRouteGuards: [allow({ id: 5, staff: true })] });
+
+      // No customerGuard: the knowledge base is a guarded customer route now.
+      expect((await running.request('GET', '/escalated/customer/kb/categories')).status).toBe(
+        403,
+      );
+    });
+
+    it('propagates an exception thrown by an extra guard', async () => {
+      running = await startApp({
+        customerGuard: allow({ id: 5 }),
+        customerRouteGuards: [
+          {
+            canActivate() {
+              throw new UnauthorizedException();
+            },
+          },
+        ],
+      });
+
+      expect((await running.request('GET', '/escalated/customer/tickets')).status).toBe(401);
+    });
+
+    it('leaves the customer routes and the public knowledge base as they were by default', async () => {
+      running = await startApp({ customerGuard: allow({ id: 5 }) });
+
+      for (const path of CUSTOMER_ROUTES) {
+        expect((await running.request('GET', path)).status).toBe(200);
+      }
+    });
+  });
+
   describe('public endpoints keep their own auth model', () => {
     beforeEach(async () => {
       running = await startApp();

@@ -28,6 +28,7 @@ import {
   defaultOptions,
 } from './config/escalated.config';
 import { escalatedRepositoryProviders } from './config/connection';
+import { guestRoutesEnabled, widgetRoutesEnabled } from './config/route-switches';
 import { EscalatedI18nModule } from './i18n';
 import { NewsletterModule } from './services/newsletter/newsletter.module';
 
@@ -440,9 +441,11 @@ export class EscalatedModule implements NestModule {
    * chat route (not on `embed.js`, which is public to every origin).
    */
   configure(consumer: MiddlewareConsumer): void {
-    consumer
-      .apply(WidgetCorsMiddleware)
-      .forRoutes(...routesOf(WidgetController, WidgetChatController));
+    if (widgetRoutesEnabled(this.options)) {
+      consumer
+        .apply(WidgetCorsMiddleware)
+        .forRoutes(...routesOf(WidgetController, WidgetChatController));
+    }
     // Guest privacy headers on every mobile guest answer, guard refusals too.
     consumer.apply(GuestPrivacyHeadersMiddleware).forRoutes(...routesOf(MobileGuestController));
     // A session for two-factor and SSO when the host mounts none, and the SSO
@@ -519,12 +522,22 @@ export class EscalatedModule implements NestModule {
       );
     }
 
+    // The optional public route groups are registered only while their
+    // switch is on (both default on): `widget.enabled`, `guest.routesEnabled`.
+    const switchedOff = new Set<unknown>([
+      ...(widgetRoutesEnabled(mergedOptions)
+        ? []
+        : [WidgetController, WidgetChatController, WidgetScriptController]),
+      ...(guestRoutesEnabled(mergedOptions) ? [] : [GuestController, GuestUiController]),
+    ]);
+    const registered = conditionalControllers.filter((c) => !switchedOff.has(c));
+
     // Embedding the admin in the host's admin panel (optional; ADR
     // 2026-11-05-embeddable-admin): the admin controllers move under the embed
     // prefix and the named routes follow. Off by default, when this is a no-op.
     const embed = resolveEmbed(mergedOptions);
     mountAdminRoutes(embed?.prefix ?? null);
-    const mounted = mountControllers(conditionalControllers, embed);
+    const mounted = mountControllers(registered, embed);
 
     return {
       module: EscalatedModule,

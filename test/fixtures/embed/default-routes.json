@@ -3899,35 +3899,45 @@
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/articles",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "POST",
         "path": "/escalated/customer/kb/articles/:id/rate",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/articles/:slug",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/categories",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/search",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
@@ -4130,6 +4140,7 @@
         "method": "GET",
         "path": "/escalated/kb",
         "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard",
           "ScriptedRequestGuard"
         ],
         "interceptors": [
@@ -4141,6 +4152,7 @@
         "method": "GET",
         "path": "/escalated/kb/:slug",
         "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard",
           "ScriptedRequestGuard"
         ],
         "interceptors": [
@@ -4152,6 +4164,7 @@
         "method": "POST",
         "path": "/escalated/kb/:slug/feedback",
         "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard",
           "ScriptedRequestGuard"
         ],
         "interceptors": [
@@ -8175,35 +8188,45 @@
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/articles",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "POST",
         "path": "/escalated/customer/kb/articles/:id/rate",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/articles/:slug",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/categories",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
         "controller": "CustomerKnowledgeBaseController",
         "method": "GET",
         "path": "/escalated/customer/kb/search",
-        "guards": [],
+        "guards": [
+          "EscalatedCustomerKnowledgeBaseGuard"
+        ],
         "interceptors": []
       },
       {
