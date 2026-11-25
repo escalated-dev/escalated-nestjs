@@ -14,6 +14,7 @@ import { NewsletterPlannerService } from '../services/newsletter/newsletter-plan
 import { Ticket } from '../entities/ticket.entity';
 import { DataRetentionService } from '../services/data-retention.service';
 import { PluginRegistry } from '../plugins/plugin-registry.service';
+import { SchedulerHeartbeatService } from './scheduler-heartbeat.service';
 
 @Injectable()
 export class EscalatedSchedulerService {
@@ -41,6 +42,8 @@ export class EscalatedSchedulerService {
     private readonly dataRetention?: DataRetentionService,
     @Optional()
     private readonly plugins?: PluginRegistry,
+    @Optional()
+    private readonly heartbeat?: SchedulerHeartbeatService,
   ) {}
 
   /** Runs active plugins' cron schedules that are due this minute. */
@@ -74,9 +77,13 @@ export class EscalatedSchedulerService {
     }
   }
 
-  /** Check for SLA breaches every minute */
+  /**
+   * Check for SLA breaches every minute, stamping the scheduler heartbeat
+   * that tells admins the recurring jobs are running.
+   */
   @Cron(CronExpression.EVERY_MINUTE)
   async checkSlaBreaches(): Promise<void> {
+    await this.heartbeat?.record();
     try {
       await this.slaService.checkBreaches();
     } catch (error) {

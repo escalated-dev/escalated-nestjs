@@ -2539,6 +2539,19 @@
         ]
       },
       {
+        "controller": "AdminSettingsController",
+        "method": "GET",
+        "path": "/escalated/admin/status",
+        "guards": [
+          "EscalatedAdminGuard",
+          "BrowserFormGuard"
+        ],
+        "interceptors": [
+          "InertiaInterceptor",
+          "AuditLogInterceptor"
+        ]
+      },
+      {
         "controller": "AdminConfigUiController",
         "method": "GET",
         "path": "/escalated/admin/statuses",
@@ -7258,6 +7271,19 @@
           "EscalatedAdminGuard"
         ],
         "interceptors": [
+          "AuditLogInterceptor"
+        ]
+      },
+      {
+        "controller": "AdminSettingsController",
+        "method": "GET",
+        "path": "/escalated/admin/status",
+        "guards": [
+          "EscalatedAdminGuard",
+          "BrowserFormGuard"
+        ],
+        "interceptors": [
+          "InertiaInterceptor",
           "AuditLogInterceptor"
         ]
       },
