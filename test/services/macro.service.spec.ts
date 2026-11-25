@@ -56,6 +56,13 @@ describe('MacroService', () => {
           useValue: {
             findOne: jest.fn().mockResolvedValue(mockTicket),
             update: jest.fn().mockResolvedValue({ affected: 1 }),
+            manager: {
+              getRepository: () => ({
+                findOne: jest.fn(async ({ where }: any) =>
+                  where.id === 3 ? { id: 3, slug: 'closed', isClosed: true } : null,
+                ),
+              }),
+            },
           },
         },
         {
@@ -88,8 +95,13 @@ describe('MacroService', () => {
     it('should execute all macro actions on a ticket', async () => {
       await service.execute(1, 1, 1);
 
-      // set_status action
-      expect(ticketRepo.update).toHaveBeenCalledWith(1, { statusId: 3 });
+      // set_status action: the older name of `status`, so a solved status
+      // stamps resolvedAt/closedAt as the status action does.
+      expect(ticketRepo.update).toHaveBeenCalledWith(1, {
+        statusId: 3,
+        closedAt: expect.any(Date),
+        resolvedAt: expect.any(Date),
+      });
       // add_reply action
       expect(replyRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({

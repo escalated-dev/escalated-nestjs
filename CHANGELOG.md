@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scheduler heartbeat.** `checkSlaBreaches()` records when it last ran. When that is missing or older than 15 minutes, the admin Settings, Reports and Reports dashboard screens get `scheduler: { healthy: false, last_run_at, message, commands }`, and a warning is logged. `EscalatedSchedulerService` is now exported for hosts that must call the jobs from their own scheduler (see "Required: schedule the recurring jobs" in docs/getting-started.md).
 - **`GET /escalated/admin/status`** (admin, `settings.view`): the scheduler status and the setup check. The setup check also logs, at startup, each route group guard that is missing or is not a `CanActivate`.
 
+### Fixed
+- **Reopening a ticket clears `resolvedAt` and `closedAt`**, as escalated-laravel's markReopened does. Any move from a solved status to an open one (the agent API, the screen status action, the customer's reopen action, bulk actions, macros, workflows) now nulls both, so SLA and the agent pages treat the ticket as running again, and resolving it again stamps fresh times. Before, the old stamps stayed and a reopened ticket's resolution SLA showed as finished. The macro `set_status` action (the older name of `status`) now goes through the same status path.
+
 ### Changed
 - A staff request admitted by a host guard that set no `req.user.id` still answers 401 (403 on the ticket access and two-factor checks), now with a message naming the contract (`req.user = { id }`) and the keys `req.user` had, logged once.
 
