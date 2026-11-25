@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`widget.enabled` and `guest.routesEnabled`** (env `ESCALATED_WIDGET_ENABLED`, `ESCALATED_GUEST_ROUTES`; both default true). When false, the widget routes (`/escalated/widget/*`, widget chat, `embed.js`) or the guest portal routes (`/escalated/guest/*`, JSON and screens) are not registered, and the screens' `guest_tickets_enabled` is false while the guest routes are off.
+- **`customerRouteGuards`** (default `[]`): extra guards run after `customerGuard` on the customer ticket routes, customer attachment downloads and the customer knowledge base. Set it, with the two switches above, to make the portal staff-only. While it is empty the knowledge base stays public as before.
+- **Scheduler heartbeat.** `checkSlaBreaches()` records when it last ran. When that is missing or older than 15 minutes, the admin Settings, Reports and Reports dashboard screens get `scheduler: { healthy: false, last_run_at, message, commands }`, and a warning is logged. `EscalatedSchedulerService` is now exported for hosts that must call the jobs from their own scheduler (see "Required: schedule the recurring jobs" in docs/getting-started.md).
+- **`GET /escalated/admin/status`** (admin, `settings.view`): the scheduler status and the setup check. The setup check also logs, at startup, each route group guard that is missing or is not a `CanActivate`.
+
+### Changed
+- A staff request admitted by a host guard that set no `req.user.id` still answers 401 (403 on the ticket access and two-factor checks), now with a message naming the contract (`req.user = { id }`) and the keys `req.user` had, logged once.
+
+### Tests
+- The agent and admin ticket screens send `ticket.subjects` exactly as the agent JSON API does (already the case; now covered).
+
 ## [1.2.15] - 2026-11-07
 
 ### Upgrading

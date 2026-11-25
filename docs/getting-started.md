@@ -107,6 +107,9 @@ to span them.
 | `adminGuard`          | `class`    | --            | Guard for `/escalated/admin/*`. Unset refuses every admin route (see Route guards) |
 | `agentGuard`          | `class`    | --            | Guard for `/escalated/agent/*`. Unset refuses every agent route |
 | `customerGuard`       | `class`    | --            | Guard for `/escalated/customer/tickets/*`. Unset refuses every customer ticket route |
+| `customerRouteGuards` | `class[]`  | `[]`          | Extra guards after `customerGuard` on the customer ticket routes and the customer knowledge base (see [Staff-only installs](#staff-only-installs)) |
+| `widget.enabled`      | `boolean`  | `true`        | Register the widget routes (`/escalated/widget/*`). Env `ESCALATED_WIDGET_ENABLED` |
+| `guest.routesEnabled` | `boolean`  | `true`        | Register the guest portal routes (`/escalated/guest/*`). Env `ESCALATED_GUEST_ROUTES` |
 | `userResolver`        | `function` | --            | Extract user from request               |
 | `userEntity`          | `class \| string` | --      | Your user entity (or table); SSO finds users in it by email when `sso.findUserByEmail` is unset |
 | `session`             | `object \| false` | --      | Escalated's own session for its routes when the host mounts none (two-factor and SSO; needs `express-session`) |
@@ -131,7 +134,21 @@ Escalated owns no users or sessions, so your app decides who is an admin, an age
 
 A guard is any NestJS `CanActivate`, given as a class or an instance. If you also register the class as a provider in your own module, Escalated uses that instance, so the guard can inject your services. Otherwise Escalated creates it with dependency injection inside its own module. An exception thrown by the guard (for example `UnauthorizedException`) is sent as the response; a guard that returns `false` produces `403`.
 
-Controllers read the acting user from `req.user.id`, so authenticate the request and set `req.user` in the guard, or in middleware that runs before it.
+Controllers read the acting user from `req.user.id`, so authenticate the request and set `req.user` in the guard, or in middleware that runs before it. This is Escalated's user contract: `req.user = { id, name?, email? }`, where `id` is your user's primary key (a number or a string). A passport strategy that returns `{ sub }` or `{ userId }` must map it to `id`. When a guard admits a request without one, staff actions answer `401` with a message naming the contract (and the keys `req.user` did have), and the same message is logged once.
+
+**Setup check.** At startup Escalated logs a warning for each route group guard that is missing or is not a `CanActivate`. Admins can read the same list, with the recurring jobs' status, from `GET /escalated/admin/status`:
+
+```json
+{
+  "scheduler": {
+    "healthy": true,
+    "last_run_at": "2026-11-24T12:00:00.000Z",
+    "message": "The recurring jobs are running.",
+    "commands": [{ "command": "EscalatedSchedulerService.checkSlaBreaches()", "interval": "every minute" }]
+  },
+  "setup": [{ "check": "customerGuard", "message": "customerGuard is not configured, so every /escalated/customer/tickets/* route answers 403. ..." }]
+}
+```
 
 ```typescript
 @Injectable()
@@ -162,14 +179,50 @@ export class AppModule {}
 
 None of the three guards apply to these routes, which are public or carry their own authentication:
 
-- `/escalated/widget/*`, including widget chat, and `/escalated/guest/*` (public; guests prove their email with a code and read their ticket with an expiring grant, see [Verified guest access](guest-access.md))
-- `/escalated/customer/kb/*` (published knowledge base articles)
+- `/escalated/widget/*`, including widget chat, and `/escalated/guest/*` (public; guests prove their email with a code and read their ticket with an expiring grant, see [Verified guest access](guest-access.md)). Turn either group off with `widget: { enabled: false }` or `guest: { routesEnabled: false }` (env `ESCALATED_WIDGET_ENABLED=false`, `ESCALATED_GUEST_ROUTES=false`): its routes are then not registered at all. Both are on by default.
+- `/escalated/customer/kb/*` and `/escalated/kb` (published knowledge base articles; guarded once `customerRouteGuards` is set, see below)
 - `/escalated/webhook/email/*` (`X-Escalated-Inbound-Secret`, see below)
 - `/escalated/api/v1/auth/*` (your `apiAuth` callbacks)
 - `/escalated/api/v1/mobile/guest/*` (the mobile guest API: email codes and expiring grants, see [Verified guest access](guest-access.md#mobile-guest-api))
 - `/escalated/n/*` and `/escalated/webhooks/newsletter/*` (newsletter tracking, unsubscribe and ESP webhooks)
 
 The newsletter admin routes (`/admin/newsletters/*`) check the `newsletters.manage` and `newsletters.send` permissions on every request.
+
+#### Staff-only installs
+
+By default any user your `customerGuard` admits can list and raise tickets, and the customer knowledge base is public. When only your staff use Escalated, close the portal:
+
+```typescript
+EscalatedModule.forRoot({
+  adminGuard: SupportAdminGuard,
+  agentGuard: SupportAgentGuard,
+  customerGuard: SignedInGuard,
+  // Run after customerGuard on the customer ticket routes and the customer
+  // knowledge base; every one must admit the request (false gives 403).
+  customerRouteGuards: [SupportStaffGuard],
+  guest: { routesEnabled: false }, // no /escalated/guest/* routes
+  widget: { enabled: false }, // no /escalated/widget/* routes
+});
+```
+
+`customerRouteGuards` takes `CanActivate` classes or instances, like the other guards. It applies to `/escalated/customer/tickets/*` and the customer screens, to customer attachment downloads, and to the customer knowledge base (`/escalated/customer/kb/*`, `/escalated/kb`). While it is empty (the default) nothing changes; once it is set, the knowledge base also runs `customerGuard` first, so it is no longer public.
+
+#### Required: schedule the recurring jobs
+
+SLA checks, escalation rules, automations and snooze wake-ups are recurring jobs. `EscalatedModule` registers them with `@nestjs/schedule` in the process that imports it, so an app that stays up needs nothing more. If yours does not stay up to run cron jobs (serverless functions, or a setup where the process that imports `EscalatedModule` is not a long-running one), call them from your own scheduler on these intervals:
+
+| Job, on `app.get(EscalatedSchedulerService)`                            | Interval        |
+| ----------------------------------------------------------------------- | --------------- |
+| `checkSlaBreaches()` (SLA breaches and warnings; records the heartbeat) | every minute    |
+| `unsnoozeTickers()` (snooze wake-ups)                                   | every minute    |
+| `processEscalations()` (escalation rules)                               | every 5 minutes |
+| `runAutomations()` (time-based automations)                             | every 5 minutes |
+| `retryWebhooks()`                                                       | every 5 minutes |
+| `cleanupIdleChatSessions()`                                             | every minute    |
+| `runPluginCron()`                                                       | every minute    |
+| `purgeExpiredData()` (data retention)                                   | daily at 03:30  |
+
+Each run of `checkSlaBreaches()` records a heartbeat (the `scheduler_heartbeat_at` row of `escalated_settings`). When it is missing or older than 15 minutes, the admin Settings, Reports and Reports dashboard screens get a `scheduler` prop with `healthy: false` and the list above (the screens show it as a warning), `GET /escalated/admin/status` says the same, and a warning is logged.
 
 #### Outbound email (`mail`)
 
