@@ -294,9 +294,7 @@ describe('Escalated route guards', () => {
       running = await startApp({ customerRouteGuards: [allow({ id: 5, staff: true })] });
 
       // No customerGuard: the knowledge base is a guarded customer route now.
-      expect((await running.request('GET', '/escalated/customer/kb/categories')).status).toBe(
-        403,
-      );
+      expect((await running.request('GET', '/escalated/customer/kb/categories')).status).toBe(403);
     });
 
     it('propagates an exception thrown by an extra guard', async () => {

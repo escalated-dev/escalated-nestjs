@@ -99,8 +99,6 @@ describe('guest_tickets_enabled with the guest routes off', () => {
     const result = await page(base, '/escalated/admin/settings', { as: 'admin' });
     expect(result.component).toBe('Escalated/Admin/Settings');
     expect(result.props.escalated.guest_tickets_enabled).toBe(false);
-    expect((await apiFetch(base, '/escalated/guest/create', { as: 'customer' })).status).toBe(
-      404,
-    );
+    expect((await apiFetch(base, '/escalated/guest/create', { as: 'customer' })).status).toBe(404);
   });
 });
