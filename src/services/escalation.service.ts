@@ -1,5 +1,9 @@
 import { accountIdentity, caseSensitiveEquals } from '../config/ticket-access';
-import { NOT_SOLVED_STATUS_PARAMS, notSolvedStatusSql } from '../entities/status-category';
+import {
+  NOT_SOLVED_STATUS_PARAMS,
+  notSolvedStatusSql,
+  solvedTimestamps,
+} from '../entities/status-category';
 import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -292,7 +296,10 @@ export class EscalationService {
     if (status && this.tickets) {
       await this.tickets.update(ticket.id, { statusId: status.id } as any, null as any);
     } else if (status) {
-      await this.ticketRepo.update(ticket.id, { statusId: status.id });
+      await this.ticketRepo.update(ticket.id, {
+        statusId: status.id,
+        ...solvedTimestamps(current ?? ticket, status),
+      });
     }
     await this.announce(ticket, rule, `Escalation rule: ${rule.name}`);
   }

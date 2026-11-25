@@ -20,6 +20,7 @@ import { inertia } from '../inertia';
 import { EscalatedUi } from '../inertia.interceptor';
 import { iso, person } from '../serializers';
 import { UiDataService } from '../ui-data.service';
+import { SchedulerHeartbeatService } from '../../scheduling/scheduler-heartbeat.service';
 
 /**
  * What the response-time and resolution screens measure "on target" against,
@@ -50,6 +51,7 @@ export class AdminReportsUiController {
     private readonly reporting: ReportingService,
     private readonly data: UiDataService,
     @InjectRepository(Reply) private readonly replies: Repository<Reply>,
+    private readonly heartbeat: SchedulerHeartbeatService,
   ) {}
 
   private window(days: number) {
@@ -114,6 +116,7 @@ export class AdminReportsUiController {
         total: ratings.length,
         breakdown,
       },
+      scheduler: await this.heartbeat.status(),
     });
   }
 
@@ -137,6 +140,7 @@ export class AdminReportsUiController {
       sla_compliance: this.reporting.slaCompliance(facts),
       csat_average: this.reporting.csatAverage(ratings),
       agent_performance: await this.named(this.reporting.agentPerformance(facts)),
+      scheduler: await this.heartbeat.status(),
     });
   }
 

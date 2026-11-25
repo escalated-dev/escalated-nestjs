@@ -15,6 +15,7 @@ export {
   EscalatedAdminGuard,
   EscalatedAgentGuard,
   EscalatedCustomerGuard,
+  EscalatedCustomerKnowledgeBaseGuard,
   EscalatedAgentOrCustomerGuard,
   EscalatedStaffGuard,
   EmbeddedAdminGuard,

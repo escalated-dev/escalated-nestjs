@@ -14,7 +14,11 @@ import { SlaService } from './sla.service';
 import { UserId } from '../config/user-id-column';
 import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
-import { isSolvedStatus, pickDefaultStatus } from '../entities/status-category';
+import {
+  pickDefaultStatus,
+  solvedTimestamps,
+  type SolvedTimestamps,
+} from '../entities/status-category';
 import { TicketActivity } from '../entities/ticket-activity.entity';
 import { TicketLink } from '../entities/ticket-link.entity';
 import { Reply } from '../entities/reply.entity';
@@ -410,6 +414,7 @@ export class TicketService {
     }
 
     // Handle status change
+    let stamps: SolvedTimestamps = {};
     if (dto.statusId !== undefined && dto.statusId !== ticket.statusId) {
       const previousStatusId = ticket.statusId;
       changes.statusId = { old: previousStatusId, new: dto.statusId };
@@ -417,11 +422,9 @@ export class TicketService {
       const newStatus = await this.statusRepo.findOne({ where: { id: dto.statusId } });
       const previousStatus = ticket.status ?? null;
       pending.push((fresh) => lifecycleEvent(previousStatus, newStatus, fresh, userId));
-      // A `solved` status closes the ticket: this stamps resolvedAt, which stops SLA.
-      if (isSolvedStatus(newStatus) && !ticket.closedAt) {
-        (dto as any).closedAt = new Date();
-        (dto as any).resolvedAt = new Date();
-      }
+      // A `solved` status closes the ticket: this stamps resolvedAt, which stops
+      // SLA. Leaving it for an open status (a reopen) clears both stamps.
+      stamps = solvedTimestamps(ticket, newStatus);
 
       await this.activityRepo.save({
         ticketId: id,
@@ -539,8 +542,8 @@ export class TicketService {
         updateData[key] = dto[key];
       }
     }
-    if ((dto as any).closedAt) updateData.closedAt = (dto as any).closedAt;
-    if ((dto as any).resolvedAt) updateData.resolvedAt = (dto as any).resolvedAt;
+    if (stamps.closedAt !== undefined) updateData.closedAt = stamps.closedAt;
+    if (stamps.resolvedAt !== undefined) updateData.resolvedAt = stamps.resolvedAt;
     if ((dto as any).snoozedUntil !== undefined)
       updateData.snoozedUntil = (dto as any).snoozedUntil;
 

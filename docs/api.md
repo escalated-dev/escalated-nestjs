@@ -35,6 +35,7 @@ Protected by `adminGuard`.
 | Method  | Path                    | Description               |
 | ------- | ----------------------- | ------------------------- |
 | GET/PUT | `/settings`             | Manage settings           |
+| GET     | `/status`               | Recurring jobs (`scheduler`) and the setup check (`setup`) |
 | CRUD    | `/departments`          | Manage departments        |
 | CRUD    | `/tags`                 | Manage tags               |
 | CRUD    | `/custom-fields`        | Manage custom fields      |

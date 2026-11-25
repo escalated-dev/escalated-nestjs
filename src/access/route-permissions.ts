@@ -180,6 +180,7 @@ export const ROUTE_PERMISSIONS: readonly PermissionEntry[] = [
   // ---- Settings --------------------------------------------------------------
   ['*', `${A}/import`, ['settings.manage']],
   ['*', `${A}/import/**`, ['settings.manage']],
+  ['GET', `${A}/status`, ['settings.view']],
   ['GET', `${A}/settings`, ['settings.view']],
   ['GET', `${A}/settings/**`, ['settings.view']],
   ['*', `${A}/settings`, ['settings.manage']],

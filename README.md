@@ -169,7 +169,7 @@
 npm install @escalated-dev/escalated-nestjs
 ```
 
-Then add `EscalatedModule.forRoot()` to your `AppModule` with your own `adminGuard`, `agentGuard` and `customerGuard`, and set `ui: { enabled: true }` to serve the screens (they are off by default). Needs Node.js 22+, NestJS 11 and TypeORM 0.3. The [getting started guide](docs/getting-started.md) covers every option.
+Then add `EscalatedModule.forRoot()` to your `AppModule` with your own `adminGuard`, `agentGuard` and `customerGuard`, and set `ui: { enabled: true }` to serve the screens (they are off by default). Needs Node.js 22+, NestJS 11 and TypeORM 0.3. The [getting started guide](docs/getting-started.md) covers every option, including the [recurring jobs](docs/getting-started.md#required-schedule-the-recurring-jobs) an app that does not stay up must schedule itself, and [staff-only installs](docs/getting-started.md#staff-only-installs).
 
 ## Learn more
 

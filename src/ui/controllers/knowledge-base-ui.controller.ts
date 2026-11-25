@@ -21,7 +21,10 @@ import { ESCALATED_OPTIONS, type EscalatedModuleOptions } from '../../config/esc
 import { requireUserId } from '../../config/request-user';
 import { KbArticle } from '../../entities/kb-article.entity';
 import { KbCategory } from '../../entities/kb-category.entity';
-import { EscalatedAdminGuard } from '../../guards/escalated-route.guard';
+import {
+  EscalatedAdminGuard,
+  EscalatedCustomerKnowledgeBaseGuard,
+} from '../../guards/escalated-route.guard';
 import { KnowledgeBaseService } from '../../services/knowledge-base.service';
 import { back, inertia, redirect } from '../inertia';
 import { EscalatedUi, ScriptedRequestGuard, UiValidationException } from '../inertia.interceptor';
@@ -352,9 +355,10 @@ export class AdminKnowledgeBaseUiController extends KnowledgeBaseScreens {
 /**
  * The public knowledge base screens (registered with `ui.enabled`), as
  * escalated-laravel's Customer\KnowledgeBaseController serves them: published
- * articles only. Public like the `/escalated/customer/kb` JSON routes.
+ * articles only. Public like the `/escalated/customer/kb` JSON routes, unless
+ * `customerRouteGuards` is set.
  */
-@UseGuards(ScriptedRequestGuard)
+@UseGuards(EscalatedCustomerKnowledgeBaseGuard, ScriptedRequestGuard)
 @EscalatedUi()
 @Controller('escalated/kb')
 export class CustomerKnowledgeBaseUiController extends KnowledgeBaseScreens {

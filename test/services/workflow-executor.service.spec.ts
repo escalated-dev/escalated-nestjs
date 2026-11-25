@@ -172,7 +172,31 @@ describe('WorkflowExecutorService', () => {
       await executor.execute(ticket, [{ type: 'change_status', value: 'resolved' }]);
 
       expect(statusRepo.findOne).toHaveBeenCalledWith({ where: { slug: 'resolved' } });
-      expect(ticketRepo.update).toHaveBeenCalledWith(10, { statusId: 2 });
+      // A solved status stamps resolvedAt/closedAt, as on the TicketService path.
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, {
+        statusId: 2,
+        resolvedAt: expect.any(Date),
+        closedAt: expect.any(Date),
+      });
+    });
+
+    it('clears resolvedAt/closedAt when it reopens a solved ticket', async () => {
+      const stamp = new Date('2026-11-01T10:00:00.000Z');
+      const ticket = buildTicket({
+        id: 10,
+        statusId: 2,
+        resolvedAt: stamp,
+        closedAt: stamp,
+      }) as unknown as Ticket;
+      statusRepo.findOne.mockResolvedValue({ id: 1, slug: 'open', isClosed: false });
+
+      await executor.execute(ticket, [{ type: 'change_status', value: 'open' }]);
+
+      expect(ticketRepo.update).toHaveBeenCalledWith(10, {
+        statusId: 1,
+        resolvedAt: null,
+        closedAt: null,
+      });
     });
 
     it('accepts numeric status id directly', async () => {

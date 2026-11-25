@@ -34,6 +34,8 @@ import { EscalatedUi, BrowserFormGuard, UiValidationException } from '../../ui/i
 import { wantsPage } from '../../ui/request';
 import { routeUrl } from '../../ui/routes';
 import { UiDataService } from '../../ui/ui-data.service';
+import { SchedulerHeartbeatService } from '../../scheduling/scheduler-heartbeat.service';
+import { EscalatedSetupCheck } from '../../config/setup-check';
 import { roleInput } from '../../ui/admin-people';
 import {
   supportedSettings,
@@ -59,10 +61,25 @@ export class AdminSettingsController {
     private readonly auditLogService: AuditLogService,
     @Optional() private readonly ui?: UiDataService,
     @Optional() @Inject(ESCALATED_OPTIONS) private readonly options?: EscalatedModuleOptions,
+    @Optional() private readonly heartbeat?: SchedulerHeartbeatService,
+    @Optional() private readonly setup?: EscalatedSetupCheck,
   ) {}
 
   private screen(req: any): boolean {
     return !!this.ui && wantsPage(this.options, req);
+  }
+
+  /**
+   * Install health as JSON, for headless installs and monitoring: whether
+   * the recurring jobs are running (`scheduler`, the same object the admin
+   * screens get) and what the host has not set up yet (`setup`).
+   */
+  @Get('status')
+  async status() {
+    return {
+      scheduler: (await this.heartbeat?.status()) ?? null,
+      setup: this.setup?.problems() ?? [],
+    };
   }
 
   // Settings
@@ -79,6 +96,7 @@ export class AdminSettingsController {
         supported_settings: Object.keys(supported),
         departments: await this.ui!.departmentOptions(),
         update_url: routeUrl('escalated.admin.settings.update'),
+        scheduler: (await this.heartbeat?.status()) ?? null,
       });
     }
     return this.settingsService.getAll(group);

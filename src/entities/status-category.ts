@@ -104,3 +104,27 @@ export function pickDefaultStatus<
   );
   return defaults[0] ?? null;
 }
+
+/** The two timestamps a ticket's status decides. */
+export interface SolvedTimestamps {
+  resolvedAt?: Date | null;
+  closedAt?: Date | null;
+}
+
+/**
+ * What a move to `status` writes to the ticket's `resolvedAt`/`closedAt`, as
+ * escalated-laravel's markResolved/markClosed and markReopened do: entering
+ * a solved status stamps both (once; an already closed ticket keeps its
+ * stamps), and leaving one for an open status (a reopen, by any path) clears
+ * both, so SLA and the agent pages see the ticket as running again. Nothing
+ * when the status is unknown or nothing changes.
+ */
+export function solvedTimestamps(
+  ticket: { resolvedAt?: Date | null; closedAt?: Date | null },
+  status: StatusLike | null | undefined,
+  now: Date = new Date(),
+): SolvedTimestamps {
+  if (!status) return {};
+  if (isSolvedStatus(status)) return ticket.closedAt ? {} : { closedAt: now, resolvedAt: now };
+  return ticket.resolvedAt || ticket.closedAt ? { resolvedAt: null, closedAt: null } : {};
+}

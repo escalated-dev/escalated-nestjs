@@ -7,6 +7,7 @@ import { Reply } from '../entities/reply.entity';
 import { TicketStatus } from '../entities/ticket-status.entity';
 import { UserId } from '../config/user-id-column';
 import { findStatusBySlugOrId } from './status-lookup';
+import { solvedTimestamps } from '../entities/status-category';
 import { TicketService } from './ticket.service';
 
 @Injectable()
@@ -81,6 +82,8 @@ export class MacroService {
   ): Promise<void> {
     switch (action.type) {
       // escalated-laravel's action names, which the shared Macros screen saves.
+      // `set_status` is the older name of `status`.
+      case 'set_status':
       case 'status': {
         const status = await findStatusBySlugOrId(
           this.ticketRepo.manager.getRepository(TicketStatus),
@@ -90,7 +93,11 @@ export class MacroService {
         // Through TicketService, so a solved status stamps resolvedAt and the
         // status events go out as for any other status change.
         if (this.tickets) await this.tickets.update(ticket.id, { statusId: status.id }, userId);
-        else await this.ticketRepo.update(ticket.id, { statusId: status.id });
+        else
+          await this.ticketRepo.update(ticket.id, {
+            statusId: status.id,
+            ...solvedTimestamps(ticket, status),
+          });
         break;
       }
       case 'priority':
@@ -137,9 +144,6 @@ export class MacroService {
           type: 'note',
           isInternal: true,
         });
-        break;
-      case 'set_status':
-        await this.ticketRepo.update(ticket.id, { statusId: action.value });
         break;
       case 'set_priority':
         await this.ticketRepo.update(ticket.id, { priority: action.value });

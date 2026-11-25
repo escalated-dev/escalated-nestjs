@@ -10,6 +10,7 @@ import { Reply } from '../entities/reply.entity';
 import { TicketFollower } from '../entities/ticket-follower.entity';
 import { resolveFollowerUserIds } from './follower-recipients';
 import { findStatusBySlugOrId } from './status-lookup';
+import { solvedTimestamps } from '../entities/status-category';
 import { TicketService } from './ticket.service';
 import {
   ESCALATED_EVENTS,
@@ -187,7 +188,10 @@ export class WorkflowExecutorService {
       (previousStatusId != null
         ? await this.statusRepo.findOne({ where: { id: previousStatusId } })
         : null);
-    await this.ticketRepo.update(ticket.id, { statusId: status.id });
+    await this.ticketRepo.update(ticket.id, {
+      statusId: status.id,
+      ...solvedTimestamps(ticket, status),
+    });
     const followerUserIds = await resolveFollowerUserIds(this.followerRepo, ticket.id, 0);
     this.eventEmitter.emit(
       ESCALATED_EVENTS.TICKET_STATUS_CHANGED,

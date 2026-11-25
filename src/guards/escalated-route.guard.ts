@@ -87,7 +87,10 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
     for (const { group, guard } of hostGuards) {
       try {
         if (request) request[ESCALATED_REQUESTED_GROUP] = group;
-        if (await this.runHostGuard(guard, context)) {
+        if (
+          (await this.runHostGuard(guard, context)) &&
+          (group !== 'customer' || (await this.runCustomerRouteGuards(context)))
+        ) {
           // Shared routes (attachments) authorise differently per group.
           if (context.getType() === 'http') {
             context.switchToHttp().getRequest()[ESCALATED_ROUTE_GROUP] = group;
@@ -135,6 +138,17 @@ abstract class EscalatedRouteGroupGuard implements CanActivate {
       throw new ForbiddenException();
     }
     await access.enforceRoute(context);
+  }
+
+  /**
+   * The host's extra customer guards (`customerRouteGuards`), run after
+   * `customerGuard` admitted the request. Every one must admit it.
+   */
+  protected async runCustomerRouteGuards(context: ExecutionContext): Promise<boolean> {
+    for (const guard of this.options?.customerRouteGuards ?? []) {
+      if (!(await this.runHostGuard(guard, context))) return false;
+    }
+    return true;
   }
 
   protected async runHostGuard(
@@ -212,6 +226,27 @@ export class EscalatedCustomerGuard extends EscalatedRouteGroupGuard {
     @Optional() @Inject(ESCALATED_OPTIONS) options?: EscalatedModuleOptions,
   ) {
     super(['customer'], moduleRef, options);
+  }
+}
+
+/**
+ * Guards the customer knowledge base (`/escalated/customer/kb/*`,
+ * `/escalated/kb`). Public while `customerRouteGuards` is empty, as before;
+ * once it is set, the knowledge base is a customer route like the others:
+ * `customerGuard`, then every extra guard.
+ */
+@Injectable()
+export class EscalatedCustomerKnowledgeBaseGuard extends EscalatedRouteGroupGuard {
+  constructor(
+    moduleRef: ModuleRef,
+    @Optional() @Inject(ESCALATED_OPTIONS) options?: EscalatedModuleOptions,
+  ) {
+    super(['customer'], moduleRef, options);
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (!this.options?.customerRouteGuards?.length) return true;
+    return super.canActivate(context);
   }
 }
 

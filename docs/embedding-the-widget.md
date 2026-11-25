@@ -128,7 +128,10 @@ and `status_lookup_enabled` is `true`, so the widget shows its Status tab. See
 
 ### Widget routes
 
-The shared widget calls these routes, relative to `/escalated/widget`.
+The shared widget calls these routes, relative to `/escalated/widget`. They
+are registered unless `widget: { enabled: false }` (or
+`ESCALATED_WIDGET_ENABLED=false`) turns the widget off, which removes every
+widget route, widget chat and `embed.js` included.
 Validation errors answer 422 with `{ message, errors: { field: [message] } }`.
 
 | Route | Request | Answer |

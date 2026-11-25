@@ -1,6 +1,12 @@
-import { Controller, Get, Param, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, Query, Post, Body, UseGuards } from '@nestjs/common';
 import { KnowledgeBaseService } from '../../services/knowledge-base.service';
+import { EscalatedCustomerKnowledgeBaseGuard } from '../../guards/escalated-route.guard';
 
+/**
+ * The customer knowledge base as JSON. Public unless `customerRouteGuards` is
+ * set, when it runs `customerGuard` and those guards.
+ */
+@UseGuards(EscalatedCustomerKnowledgeBaseGuard)
 @Controller('escalated/customer/kb')
 export class CustomerKnowledgeBaseController {
   constructor(private readonly kbService: KnowledgeBaseService) {}

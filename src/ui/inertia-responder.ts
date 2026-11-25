@@ -1,3 +1,4 @@
+import { guestRoutesEnabled } from '../config/route-switches';
 import { AccessControlService } from '../access/access-control.service';
 import { takeSessionFlash } from '../access/two-factor-session';
 import { TwoFactorService } from '../services/two-factor.service';
@@ -207,7 +208,8 @@ export class InertiaResponder {
           newsletters: this.options.enableNewsletters === true,
           ...sharedAccessFeatures(this.options),
         },
-        guest_tickets_enabled: true,
+        // The screens hide their guest links while the guest routes are off.
+        guest_tickets_enabled: guestRoutesEnabled(this.options),
         show_powered_by: await this.setting('show_powered_by', true),
         knowledge_base_enabled: this.options.enableKnowledgeBase !== false,
         knowledge_base_public: true,
