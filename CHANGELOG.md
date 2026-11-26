@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.16] - 2026-11-25
+
+### Upgrading
+- No migrations and no breaking changes. Every new option is additive and defaults to the current behaviour. The scheduler heartbeat is stored in the existing `escalated_settings` table.
+- A host whose process does not stay up (serverless, or a separate worker) should call the recurring jobs from its own scheduler; see "Required: schedule the recurring jobs" in docs/getting-started.md.
+
 ### Added
 - **`widget.enabled` and `guest.routesEnabled`** (env `ESCALATED_WIDGET_ENABLED`, `ESCALATED_GUEST_ROUTES`; both default true). When false, the widget routes (`/escalated/widget/*`, widget chat, `embed.js`) or the guest portal routes (`/escalated/guest/*`, JSON and screens) are not registered, and the screens' `guest_tickets_enabled` is false while the guest routes are off.
 - **`customerRouteGuards`** (default `[]`): extra guards run after `customerGuard` on the customer ticket routes, customer attachment downloads and the customer knowledge base. Set it, with the two switches above, to make the portal staff-only. While it is empty the knowledge base stays public as before.
